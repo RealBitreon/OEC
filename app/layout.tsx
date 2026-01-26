@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { getSession } from '@/lib/auth/session'
+import { ToastProvider } from '@/components/ui'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -32,9 +33,11 @@ export default async function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <body className="overflow-x-hidden">
-        <div data-session={session ? JSON.stringify(session) : null}>
-          {children}
-        </div>
+        <ToastProvider>
+          <div data-session={session ? JSON.stringify(session) : null}>
+            {children}
+          </div>
+        </ToastProvider>
       </body>
     </html>
   )

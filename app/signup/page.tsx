@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createUser } from '@/lib/auth/store'
 import { setSessionCookie, getSession } from '@/lib/auth/session'
+import { checkRateLimit, getProgressiveDelay } from '@/lib/auth/rateLimit'
+import { headers } from 'next/headers'
 import Link from 'next/link'
 
 export default async function SignupPage() {
@@ -16,13 +18,29 @@ export default async function SignupPage() {
     const username = formData.get('username') as string
     const password = formData.get('password') as string
     const code = formData.get('code') as string
+    const honeypot = formData.get('website') as string
     
-    if (!username || !password) {
+    // Honeypot check (bot trap)
+    if (honeypot) {
+      throw new Error('Invalid submission')
+    }
+    
+    if (!username || !password || !code) {
       throw new Error('جميع الحقول مطلوبة')
     }
     
+    // Rate limiting
+    const headersList = await headers()
+    const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown'
+    const identifier = `${ip}:${username}`
+    
+    const rateLimit = checkRateLimit(identifier)
+    if (!rateLimit.allowed) {
+      throw new Error(`تم تجاوز عدد المحاولات. حاول مرة أخرى بعد ${rateLimit.retryAfter} ثانية`)
+    }
+    
     try {
-      const user = await createUser(username.trim(), password, code || undefined)
+      const user = await createUser(username.trim(), password, code.trim())
       
       await setSessionCookie({
         username: user.username,
@@ -31,7 +49,13 @@ export default async function SignupPage() {
       })
       
       redirect('/dashboard')
-    } catch (error) {
+    } catch (error: any) {
+      // Progressive delay on failed attempts
+      const attempts = 1 // Could track this better
+      const delay = getProgressiveDelay(attempts)
+      if (delay > 0) {
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
       throw error
     }
   }
@@ -55,6 +79,16 @@ export default async function SignupPage() {
 
           {/* Form */}
           <form action={handleSignup} className="space-y-5">
+            {/* Honeypot field (hidden from users, visible to bots) */}
+            <input
+              type="text"
+              name="website"
+              autoComplete="off"
+              tabIndex={-1}
+              style={{ position: 'absolute', left: '-9999px' }}
+              aria-hidden="true"
+            />
+            
             <div>
               <label htmlFor="username" className="block text-sm font-semibold text-neutral-700 mb-2">
                 اسم المستخدم
@@ -64,6 +98,7 @@ export default async function SignupPage() {
                 id="username"
                 name="username"
                 required
+                minLength={3}
                 className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-right"
                 placeholder="أدخل اسم المستخدم"
               />
@@ -86,17 +121,20 @@ export default async function SignupPage() {
 
             <div>
               <label htmlFor="code" className="block text-sm font-semibold text-neutral-700 mb-2">
-                رمز الدور (اختياري)
+                رمز الدور <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
                 id="code"
                 name="code"
-                className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-right"
-                placeholder="اتركه فارغاً للطالب"
+                required
+                minLength={12}
+                className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-right font-mono"
+                placeholder="أدخل رمز الدور (12 حرفاً على الأقل)"
+                autoComplete="off"
               />
               <p className="text-xs text-neutral-500 mt-1">
-                استخدم الرمز الخاص إذا كنت مديراً
+                رمز الدور مطلوب للتسجيل. احصل عليه من المشرف.
               </p>
             </div>
 

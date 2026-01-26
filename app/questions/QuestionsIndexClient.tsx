@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { Header, Footer } from '@/components'
 
 interface Question {
   id: string
@@ -50,9 +51,11 @@ export default function QuestionsIndexClient({ questions }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-l from-primary to-primary-dark text-white py-16">
+    <>
+      <Header />
+      <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
+        {/* Hero Section */}
+        <section className="bg-gradient-to-l from-primary to-primary-dark text-white py-16">
         <div className="section-container">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
@@ -179,6 +182,8 @@ export default function QuestionsIndexClient({ questions }: Props) {
           )}
         </div>
       </section>
-    </div>
+      </div>
+      <Footer />
+    </>
   )
 }

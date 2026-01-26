@@ -102,20 +102,12 @@ export default function HeaderClient() {
                 </Link>
               </>
             ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="text-neutral-700 font-medium hover:text-primary transition-colors px-4 py-2"
-                >
-                  تسجيل الدخول
-                </Link>
-                <Link
-                  href="/signup"
-                  className="bg-primary hover:bg-primary-dark text-white font-semibold px-5 py-2.5 rounded-button transition-all duration-300 hover:scale-105 shadow-button"
-                >
-                  إنشاء حساب
-                </Link>
-              </>
+              <Link
+                href="/login"
+                className="bg-primary hover:bg-primary-dark text-white font-semibold px-5 py-2.5 rounded-button transition-all duration-300 hover:scale-105 shadow-button"
+              >
+                تسجيل الدخول
+              </Link>
             )}
           </div>
         </div>

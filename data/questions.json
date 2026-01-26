@@ -10,7 +10,13 @@
     "explanation": "نعم، عُمان من الدول المؤسسة لمجلس التعاون الخليجي الذي تأسس عام 1981م.",
     "difficulty": "easy",
     "isActive": true,
-    "createdAt": "2026-01-25T10:00:00.000Z"
+    "createdAt": "2026-01-25T10:00:00.000Z",
+    "sourceRef": {
+      "volume": "",
+      "page": "",
+      "lineFrom": 0,
+      "lineTo": 0
+    }
   },
   {
     "id": "train-002",
@@ -29,7 +35,13 @@
     "explanation": "مسقط هي العاصمة السياسية والإدارية لسلطنة عُمان.",
     "difficulty": "easy",
     "isActive": true,
-    "createdAt": "2026-01-25T10:05:00.000Z"
+    "createdAt": "2026-01-25T10:05:00.000Z",
+    "sourceRef": {
+      "volume": "",
+      "page": "",
+      "lineFrom": 0,
+      "lineTo": 0
+    }
   },
   {
     "id": "train-003",
@@ -45,7 +57,13 @@
     "explanation": "جبل شمس هو أعلى قمة في عُمان بارتفاع يصل إلى حوالي 3,009 متر فوق سطح البحر.",
     "difficulty": "medium",
     "isActive": true,
-    "createdAt": "2026-01-25T10:10:00.000Z"
+    "createdAt": "2026-01-25T10:10:00.000Z",
+    "sourceRef": {
+      "volume": "",
+      "page": "",
+      "lineFrom": 0,
+      "lineTo": 0
+    }
   },
   {
     "id": "train-004",
@@ -58,7 +76,13 @@
     "explanation": "موقع البحرين الأثري يقع في مملكة البحرين وليس في عُمان. عُمان لديها مواقع أثرية أخرى مثل قلعة بهلا وأفلاج عُمان.",
     "difficulty": "medium",
     "isActive": true,
-    "createdAt": "2026-01-25T10:15:00.000Z"
+    "createdAt": "2026-01-25T10:15:00.000Z",
+    "sourceRef": {
+      "volume": "",
+      "page": "",
+      "lineFrom": 0,
+      "lineTo": 0
+    }
   },
   {
     "id": "train-005",
@@ -77,7 +101,13 @@
     "explanation": "الريال العُماني (OMR) هو العملة الرسمية لسلطنة عُمان، ويعتبر من أقوى العملات في العالم.",
     "difficulty": "easy",
     "isActive": true,
-    "createdAt": "2026-01-25T10:20:00.000Z"
+    "createdAt": "2026-01-25T10:20:00.000Z",
+    "sourceRef": {
+      "volume": "",
+      "page": "",
+      "lineFrom": 0,
+      "lineTo": 0
+    }
   },
   {
     "id": "train-006",
@@ -94,6 +124,65 @@
     "explanation": "موسم الخريف في ظفار يحدث خلال فصل الصيف (يونيو - سبتمبر) بسبب الرياح الموسمية الجنوبية الغربية.",
     "difficulty": "medium",
     "isActive": true,
-    "createdAt": "2026-01-25T10:25:00.000Z"
+    "createdAt": "2026-01-25T10:25:00.000Z",
+    "sourceRef": {
+      "volume": "",
+      "page": "",
+      "lineFrom": 0,
+      "lineTo": 0
+    }
+  },
+  {
+    "id": "ce06caa3-1385-410a-9e1c-d6e37e66d582",
+    "competitionId": "a3d59ac8-79b4-430f-8348-f46e23d36ee0",
+    "type": "text",
+    "title": "جغرافي",
+    "body": "اين تقع مسقط بالنسبة لعمان",
+    "correctAnswer": "true",
+    "isActive": true,
+    "createdAt": "2026-01-26T17:26:58.817Z",
+    "sourceRef": {
+      "volume": "",
+      "page": "",
+      "lineFrom": 0,
+      "lineTo": 0
+    }
+  },
+  {
+    "id": "50b5d5b9-ca6b-4d82-afaa-36e55ee36f3c",
+    "competitionId": "a3d59ac8-79b4-430f-8348-f46e23d36ee0",
+    "type": "true_false",
+    "title": "عمان",
+    "body": "عمان",
+    "correctAnswer": true,
+    "isActive": true,
+    "createdAt": "2026-01-26T17:27:11.181Z",
+    "sourceRef": {
+      "volume": "",
+      "page": "",
+      "lineFrom": 0,
+      "lineTo": 0
+    }
+  },
+  {
+    "id": "4fa6a61b-d160-4173-9750-cbbcf69693ad",
+    "competitionId": "a3d59ac8-79b4-430f-8348-f46e23d36ee0",
+    "type": "mcq",
+    "title": "لما احمد ذكي",
+    "body": "لما احمد ذكي",
+    "options": [
+      "ذ",
+      "ض",
+      "ض"
+    ],
+    "correctAnswer": "true",
+    "isActive": true,
+    "createdAt": "2026-01-26T17:27:29.808Z",
+    "sourceRef": {
+      "volume": "",
+      "page": "",
+      "lineFrom": 0,
+      "lineTo": 0
+    }
   }
 ]

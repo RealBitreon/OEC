@@ -34,7 +34,13 @@ export interface Question {
   title: string
   body: string
   options?: string[]
-  correctAnswer: any
+  correctAnswer: any // For MCQ: number (index), for true_false: boolean, for text: string[]
+  sourceRef: {
+    volume: string
+    page: string
+    lineFrom: number
+    lineTo: number
+  }
   isActive: boolean
   isTraining?: boolean
   createdAt: string
@@ -44,7 +50,12 @@ export interface Submission {
   id: string
   competitionId: string
   questionId: string
-  studentUsername: string
+  // Legacy field for backwards compatibility
+  studentUsername?: string
+  // New fields for non-login student flow
+  participantId?: string
+  participantName?: string
+  participantClass?: string
   answer: any
   source: {
     volume: string
@@ -63,10 +74,14 @@ export interface Submission {
 
 export interface Winner {
   competitionId: string
+  competitionSlug?: string
+  competitionTitle?: string
   winnerUsername: string
   runAt: string
   wheelRunId?: string
   notes?: string
+  isPublic?: boolean
+  displayName?: string
 }
 
 export interface WheelRun {
@@ -119,5 +134,14 @@ export interface Ticket {
   questionId: string
   count: number
   reason: string
+  createdAt: string
+}
+
+export interface Participant {
+  id: string
+  competitionId: string
+  name: string
+  class: string
+  studentNumber?: string
   createdAt: string
 }

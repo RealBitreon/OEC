@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { SessionPayload } from '@/lib/auth/types'
 import type { Competition, Question } from '@/lib/store/types'
 import { createQuestion, updateQuestion, deleteQuestion } from '../actions'
+import QuestionFormModal from './QuestionFormModal'
 
 interface QuestionsTabProps {
   session: SessionPayload
@@ -13,7 +14,8 @@ interface QuestionsTabProps {
 }
 
 export default function QuestionsTab({ session, competitions, questions, setQuestions }: QuestionsTabProps) {
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
   const [selectedCompetition, setSelectedCompetition] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
@@ -27,49 +29,46 @@ export default function QuestionsTab({ session, competitions, questions, setQues
     setTimeout(() => setToast(null), 3000)
   }
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const handleSubmit = async (data: any, isDraft: boolean) => {
     setLoading(true)
-
-    const formData = new FormData(e.currentTarget)
-    const type = formData.get('type') as 'text' | 'true_false' | 'mcq'
-    
-    const data: any = {
-      competitionId: displayCompetitionId,
-      type,
-      title: formData.get('title') as string,
-      body: formData.get('body') as string,
-      correctAnswer: formData.get('correctAnswer') as string
-    }
-
-    if (type === 'mcq') {
-      data.options = [
-        formData.get('option1'),
-        formData.get('option2'),
-        formData.get('option3'),
-        formData.get('option4')
-      ].filter(Boolean)
-    }
-
-    if (type === 'true_false') {
-      data.correctAnswer = formData.get('correctAnswer') === 'true'
-    }
-
     try {
-      const result = await createQuestion(data)
-      if (result.success) {
-        setQuestions(result.questions!)
-        setShowCreateModal(false)
-        showToast('تم إنشاء السؤال بنجاح', 'success')
-        e.currentTarget.reset()
+      if (editingQuestion) {
+        // Update existing question
+        const result = await updateQuestion(editingQuestion.id, {
+          ...data,
+          isActive: !isDraft
+        })
+        if (result.success) {
+          setQuestions(result.questions!)
+          showToast('تم تحديث السؤال بنجاح', 'success')
+        } else {
+          showToast(result.error || 'حدث خطأ', 'error')
+        }
       } else {
-        showToast(result.error || 'حدث خطأ', 'error')
+        // Create new question
+        const result = await createQuestion({
+          ...data,
+          isActive: !isDraft
+        })
+        if (result.success) {
+          setQuestions(result.questions!)
+          showToast('تم إنشاء السؤال بنجاح', 'success')
+        } else {
+          showToast(result.error || 'حدث خطأ', 'error')
+        }
       }
+      setShowModal(false)
+      setEditingQuestion(null)
     } catch (error) {
-      showToast('حدث خطأ في الإنشاء', 'error')
+      showToast('حدث خطأ في الحفظ', 'error')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleEdit = (question: Question) => {
+    setEditingQuestion(question)
+    setShowModal(true)
   }
 
   const handleToggleActive = async (id: string, isActive: boolean) => {
@@ -89,8 +88,8 @@ export default function QuestionsTab({ session, competitions, questions, setQues
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('هل تريد حذف هذا السؤال؟')) return
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`هل تريد حذف السؤال "${title}"؟\n\nسيتم حذف السؤال ولن يظهر للطلاب.`)) return
 
     setLoading(true)
     try {
@@ -126,7 +125,10 @@ export default function QuestionsTab({ session, competitions, questions, setQues
           <p className="text-neutral-600">إدارة أسئلة المسابقة</p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => {
+            setEditingQuestion(null)
+            setShowModal(true)
+          }}
           className="bg-primary hover:bg-primary-dark text-white font-bold px-6 py-3 rounded-lg transition-all"
         >
           + إضافة سؤال
@@ -139,7 +141,10 @@ export default function QuestionsTab({ session, competitions, questions, setQues
           <h3 className="text-xl font-bold text-neutral-900 mb-2">لا توجد أسئلة بعد</h3>
           <p className="text-neutral-600 mb-4">ابدأ بإضافة أول سؤال</p>
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              setEditingQuestion(null)
+              setShowModal(true)
+            }}
             className="bg-primary hover:bg-primary-dark text-white font-bold px-6 py-3 rounded-lg transition-all"
           >
             إضافة سؤال
@@ -161,22 +166,41 @@ export default function QuestionsTab({ session, competitions, questions, setQues
                     }`}>
                       {q.type === 'text' ? 'نصي' : q.type === 'true_false' ? 'صح/خطأ' : 'اختيار متعدد'}
                     </span>
-                    {!q.isActive && (
+                    {q.isActive ? (
+                      <span className="px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">
+                        منشور
+                      </span>
+                    ) : (
                       <span className="px-2 py-1 rounded text-xs font-semibold bg-neutral-100 text-neutral-600">
-                        غير نشط
+                        مسودة
                       </span>
                     )}
                   </div>
                   <p className="text-neutral-700 mb-2">{q.body}</p>
+                  {q.sourceRef && (q.sourceRef.volume || q.sourceRef.page) && (
+                    <div className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded inline-block mb-2">
+                      📖 {q.sourceRef.volume} | ص {q.sourceRef.page}
+                      {q.sourceRef.lineFrom > 0 && ` | س ${q.sourceRef.lineFrom}-${q.sourceRef.lineTo}`}
+                    </div>
+                  )}
                   {q.options && (
                     <div className="text-sm text-neutral-600 space-y-1">
                       {q.options.map((opt, i) => (
-                        <div key={i}>• {opt}</div>
+                        <div key={i} className={i === q.correctAnswer ? 'font-semibold text-green-600' : ''}>
+                          • {opt} {i === q.correctAnswer && '✓'}
+                        </div>
                       ))}
                     </div>
                   )}
                 </div>
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(q)}
+                    disabled={loading}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
+                  >
+                    تعديل
+                  </button>
                   <button
                     onClick={() => handleToggleActive(q.id, q.isActive)}
                     disabled={loading}
@@ -184,10 +208,10 @@ export default function QuestionsTab({ session, competitions, questions, setQues
                       q.isActive ? 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200' : 'bg-green-600 text-white hover:bg-green-700'
                     }`}
                   >
-                    {q.isActive ? 'إلغاء التفعيل' : 'تفعيل'}
+                    {q.isActive ? 'إخفاء' : 'نشر'}
                   </button>
                   <button
-                    onClick={() => handleDelete(q.id)}
+                    onClick={() => handleDelete(q.id, q.title)}
                     disabled={loading}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
                   >
@@ -200,111 +224,17 @@ export default function QuestionsTab({ session, competitions, questions, setQues
         </div>
       )}
 
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-neutral-200">
-              <h2 className="text-2xl font-bold text-neutral-900">إضافة سؤال جديد</h2>
-            </div>
-            <form onSubmit={handleCreate} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-neutral-700 mb-2">نوع السؤال</label>
-                <select
-                  name="type"
-                  className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-                  onChange={(e) => {
-                    const form = e.currentTarget.form
-                    if (form) {
-                      const mcqOptions = form.querySelector('#mcq-options')
-                      const tfOptions = form.querySelector('#tf-options')
-                      const textAnswer = form.querySelector('#text-answer')
-                      
-                      if (mcqOptions && tfOptions && textAnswer) {
-                        mcqOptions.classList.add('hidden')
-                        tfOptions.classList.add('hidden')
-                        textAnswer.classList.add('hidden')
-                        
-                        if (e.target.value === 'mcq') mcqOptions.classList.remove('hidden')
-                        else if (e.target.value === 'true_false') tfOptions.classList.remove('hidden')
-                        else textAnswer.classList.remove('hidden')
-                      }
-                    }
-                  }}
-                >
-                  <option value="text">نصي</option>
-                  <option value="true_false">صح/خطأ</option>
-                  <option value="mcq">اختيار متعدد</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-neutral-700 mb-2">عنوان السؤال</label>
-                <input
-                  type="text"
-                  name="title"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-                  placeholder="ما هو..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-neutral-700 mb-2">نص السؤال</label>
-                <textarea
-                  name="body"
-                  required
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-                  placeholder="اكتب السؤال بالتفصيل..."
-                />
-              </div>
-
-              <div id="mcq-options" className="hidden space-y-2">
-                <label className="block text-sm font-semibold text-neutral-700 mb-2">الخيارات</label>
-                <input type="text" name="option1" placeholder="الخيار 1" className="w-full px-4 py-2 rounded-lg border border-neutral-200 outline-none" />
-                <input type="text" name="option2" placeholder="الخيار 2" className="w-full px-4 py-2 rounded-lg border border-neutral-200 outline-none" />
-                <input type="text" name="option3" placeholder="الخيار 3" className="w-full px-4 py-2 rounded-lg border border-neutral-200 outline-none" />
-                <input type="text" name="option4" placeholder="الخيار 4" className="w-full px-4 py-2 rounded-lg border border-neutral-200 outline-none" />
-              </div>
-
-              <div id="tf-options" className="hidden">
-                <label className="block text-sm font-semibold text-neutral-700 mb-2">الإجابة الصحيحة</label>
-                <select name="correctAnswer" className="w-full px-4 py-3 rounded-lg border border-neutral-200 outline-none">
-                  <option value="true">صح</option>
-                  <option value="false">خطأ</option>
-                </select>
-              </div>
-
-              <div id="text-answer">
-                <label className="block text-sm font-semibold text-neutral-700 mb-2">الإجابة الصحيحة</label>
-                <input
-                  type="text"
-                  name="correctAnswer"
-                  className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-                  placeholder="الإجابة النموذجية"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-lg transition-all disabled:opacity-50"
-                >
-                  {loading ? 'جاري الإضافة...' : 'إضافة السؤال'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-6 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-semibold rounded-lg transition-all"
-                >
-                  إلغاء
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {/* Question Form Modal */}
+      {showModal && (
+        <QuestionFormModal
+          onClose={() => {
+            setShowModal(false)
+            setEditingQuestion(null)
+          }}
+          onSubmit={handleSubmit}
+          competitionId={displayCompetitionId}
+          editingQuestion={editingQuestion}
+        />
       )}
 
       {toast && (

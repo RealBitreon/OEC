@@ -116,6 +116,13 @@ export async function createQuestion(data: {
   body: string
   options?: string[]
   correctAnswer: any
+  sourceRef: {
+    volume: string
+    page: string
+    lineFrom: number
+    lineTo: number
+  }
+  isActive?: boolean
 }) {
   try {
     const session = await requireSession()
@@ -123,15 +130,48 @@ export async function createQuestion(data: {
       return { success: false, error: 'غير مصرح' }
     }
     
+    // Validate source reference
+    if (!data.sourceRef.volume || !data.sourceRef.page) {
+      return { success: false, error: 'المرجع الرسمي مطلوب (المجلد والصفحة)' }
+    }
+
+    // Validate correct answer based on type
+    if (data.type === 'mcq') {
+      if (!data.options || data.options.length < 2) {
+        return { success: false, error: 'يجب إضافة خيارين على الأقل' }
+      }
+      if (typeof data.correctAnswer !== 'number' || data.correctAnswer < 0 || data.correctAnswer >= data.options.length) {
+        return { success: false, error: 'يجب اختيار إجابة صحيحة من الخيارات' }
+      }
+    } else if (data.type === 'true_false') {
+      if (typeof data.correctAnswer !== 'boolean') {
+        return { success: false, error: 'يجب اختيار صح أو خطأ' }
+      }
+    } else if (data.type === 'text') {
+      const variants = Array.isArray(data.correctAnswer) ? data.correctAnswer : [data.correctAnswer]
+      const validVariants = variants.filter((v: string) => v && v.trim())
+      if (validVariants.length === 0) {
+        return { success: false, error: 'يجب إضافة إجابة مقبولة واحدة على الأقل' }
+      }
+      // Normalize text answers
+      data.correctAnswer = validVariants.map((v: string) => v.trim())
+    }
+    
     const newQuestion: Question = {
       id: randomUUID(),
       competitionId: data.competitionId,
       type: data.type,
-      title: data.title,
-      body: data.body,
-      options: data.options,
+      title: data.title.trim(),
+      body: data.body.trim(),
+      options: data.options?.map(o => o.trim()),
       correctAnswer: data.correctAnswer,
-      isActive: true,
+      sourceRef: {
+        volume: data.sourceRef.volume.trim(),
+        page: data.sourceRef.page.trim(),
+        lineFrom: data.sourceRef.lineFrom || 0,
+        lineTo: data.sourceRef.lineTo || 0
+      },
+      isActive: data.isActive !== undefined ? data.isActive : true,
       createdAt: new Date().toISOString()
     }
 
@@ -307,8 +347,11 @@ export async function runWheel(competitionId: string) {
     // Calculate eligible students
     const studentScores = new Map<string, number>()
     competitionSubmissions.forEach(sub => {
-      const current = studentScores.get(sub.studentUsername) || 0
-      studentScores.set(sub.studentUsername, current + 1)
+      const username = sub.studentUsername || sub.participantId || ''
+      if (username) {
+        const current = studentScores.get(username) || 0
+        studentScores.set(username, current + 1)
+      }
     })
 
     // Get questions for all_correct mode

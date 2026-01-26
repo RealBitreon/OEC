@@ -2,6 +2,7 @@ import { promises as fs } from 'fs'
 import { join } from 'path'
 import bcrypt from 'bcryptjs'
 import type { User, UserRole } from './types'
+import { verifyRoleCode } from './roleCodes'
 
 const USERS_FILE = join(process.cwd(), 'data', 'users.json')
 let writeLock = Promise.resolve()
@@ -46,7 +47,7 @@ export async function findUser(username: string): Promise<User | null> {
 export async function createUser(
   username: string,
   password: string,
-  code?: string
+  code: string
 ): Promise<User> {
   // Validate username uniqueness
   const existing = await findUser(username)
@@ -54,17 +55,24 @@ export async function createUser(
     throw new Error('اسم المستخدم موجود بالفعل')
   }
 
+  // Validate username format
+  if (username.length < 3) {
+    throw new Error('اسم المستخدم يجب أن يكون 3 أحرف على الأقل')
+  }
+
   // Validate password strength
   if (password.length < 6) {
     throw new Error('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
   }
 
-  // Determine role from code
-  let role: UserRole = 'student'
-  if (code === 'CE@') {
-    role = 'ceo'
-  } else if (code === '$RC') {
-    role = 'lrc_manager'
+  // Verify role code (REQUIRED - no signup without code)
+  if (!code || code.trim().length < 12) {
+    throw new Error('رمز الدور مطلوب ويجب أن يكون 12 حرفاً على الأقل')
+  }
+
+  const role = await verifyRoleCode(code.trim())
+  if (!role) {
+    throw new Error('رمز الدور غير صحيح')
   }
 
   // Hash password
@@ -80,6 +88,8 @@ export async function createUser(
   const users = await readUsers()
   users.push(user)
   await writeUsers(users)
+
+  console.log(`✅ ${role.toUpperCase()} account created: ${username}`)
 
   return user
 }

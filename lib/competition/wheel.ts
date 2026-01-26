@@ -1,5 +1,3 @@
-'use server'
-
 import { competitionsRepo, ticketsRepo, wheelRepo, winnersRepo } from '@/lib/repos'
 import type { Competition, Ticket, WheelRun, Winner } from '@/lib/store/types'
 import { checkEligibility } from './tickets'

@@ -11,6 +11,12 @@ interface Question {
   correctAnswer?: string
   options?: string[]
   isActive: boolean
+  sourceRef?: {
+    volume: string
+    page: string
+    lineFrom: number
+    lineTo: number
+  }
 }
 
 interface Submission {
@@ -156,6 +162,18 @@ export default function QuestionsClient({
               </div>
 
               <p className="text-gray-700 mb-6 whitespace-pre-wrap">{question.body}</p>
+
+              {/* Official Source Reference */}
+              {question.sourceRef && (question.sourceRef.volume || question.sourceRef.page) && (
+                <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 mb-6">
+                  <h5 className="font-bold text-amber-900 text-sm mb-1">📖 المرجع الرسمي للموسوعة:</h5>
+                  <p className="text-amber-800 text-sm">
+                    {question.sourceRef.volume && `المجلد: ${question.sourceRef.volume}`}
+                    {question.sourceRef.page && ` | الصفحة: ${question.sourceRef.page}`}
+                    {question.sourceRef.lineFrom > 0 && ` | السطر: ${question.sourceRef.lineFrom} إلى ${question.sourceRef.lineTo}`}
+                  </p>
+                </div>
+              )}
 
               {isAnswered ? (
                 <div className="bg-gray-50 rounded-lg p-4">

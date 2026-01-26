@@ -1,8 +1,11 @@
 import Link from 'next/link'
+import { Header, Footer } from '@/components'
 
 export default function QuestionNotFound() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white flex items-center justify-center">
+    <>
+      <Header />
+      <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white flex items-center justify-center">
       <div className="section-container">
         <div className="max-w-2xl mx-auto text-center">
           <div className="bg-white rounded-2xl shadow-card p-12">
@@ -30,6 +33,8 @@ export default function QuestionNotFound() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+      <Footer />
+    </>
   )
 }

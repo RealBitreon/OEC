@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { Header, Footer } from '@/components'
 
 interface Question {
   id: string
@@ -12,6 +13,12 @@ interface Question {
   correctAnswer: any
   explanation?: string
   difficulty?: string
+  sourceRef?: {
+    volume: string
+    page: string
+    lineFrom: number
+    lineTo: number
+  }
 }
 
 interface Props {
@@ -85,9 +92,11 @@ export default function QuestionPracticeClient({ question, isLoggedIn, username 
   const typeBadge = getTypeBadge(question.type)
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
-      {/* Header */}
-      <section className="bg-gradient-to-l from-primary to-primary-dark text-white py-12">
+    <>
+      <Header />
+      <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
+        {/* Header */}
+        <section className="bg-gradient-to-l from-primary to-primary-dark text-white py-12">
         <div className="section-container">
           <div className="max-w-3xl mx-auto">
             <div className="flex items-center gap-3 mb-4">
@@ -119,6 +128,18 @@ export default function QuestionPracticeClient({ question, isLoggedIn, username 
                 {question.body}
               </p>
             </div>
+
+            {/* Official Source Reference */}
+            {question.sourceRef && (question.sourceRef.volume || question.sourceRef.page) && (
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 mb-6">
+                <h5 className="font-bold text-amber-900 text-sm mb-1">📖 المرجع الرسمي للموسوعة:</h5>
+                <p className="text-amber-800 text-sm">
+                  {question.sourceRef.volume && `المجلد: ${question.sourceRef.volume}`}
+                  {question.sourceRef.page && ` | الصفحة: ${question.sourceRef.page}`}
+                  {question.sourceRef.lineFrom > 0 && ` | السطر: ${question.sourceRef.lineFrom} إلى ${question.sourceRef.lineTo}`}
+                </p>
+              </div>
+            )}
 
             {/* Answer Form */}
             {!submitted ? (
@@ -279,6 +300,8 @@ export default function QuestionPracticeClient({ question, isLoggedIn, username 
           </div>
         </div>
       </section>
-    </div>
+      </div>
+      <Footer />
+    </>
   )
 }

@@ -1,5 +1,3 @@
-'use server'
-
 import { competitionsRepo, submissionsRepo, questionsRepo, ticketsRepo } from '@/lib/repos'
 import type { Competition, Submission, Ticket, Question } from '@/lib/store/types'
 import { nanoid } from 'nanoid'
@@ -59,10 +57,16 @@ export async function upsertTicketsForSubmission(submission: Submission): Promis
   if (submission.finalResult === 'correct') {
     const { count, reason } = computeTicketCount(competition, submission)
     
+    const username = submission.studentUsername || submission.participantId || ''
+    if (!username) {
+      console.warn('Submission has no username or participantId:', submission.id)
+      return
+    }
+    
     const newTicket: Ticket = {
       id: nanoid(),
       competitionId: submission.competitionId,
-      studentUsername: submission.studentUsername,
+      studentUsername: username,
       submissionId: submission.id,
       questionId: submission.questionId,
       count,
@@ -114,10 +118,16 @@ export async function recalculateTicketsForCompetition(competitionId: string): P
   for (const submission of competitionSubmissions) {
     const { count, reason } = computeTicketCount(competition, submission)
     
+    const username = submission.studentUsername || submission.participantId || ''
+    if (!username) {
+      console.warn('Submission has no username or participantId:', submission.id)
+      continue
+    }
+    
     newTickets.push({
       id: nanoid(),
       competitionId: submission.competitionId,
-      studentUsername: submission.studentUsername,
+      studentUsername: username,
       submissionId: submission.id,
       questionId: submission.questionId,
       count,
@@ -241,9 +251,12 @@ export async function getCompetitionTicketsSummary(competitionId: string): Promi
   }
   
   for (const submission of competitionSubmissions) {
-    const current = studentMap.get(submission.studentUsername) || { totalTickets: 0, correctAnswers: 0 }
+    const username = submission.studentUsername || submission.participantId || ''
+    if (!username) continue
+    
+    const current = studentMap.get(username) || { totalTickets: 0, correctAnswers: 0 }
     current.correctAnswers += 1
-    studentMap.set(submission.studentUsername, current)
+    studentMap.set(username, current)
   }
   
   return Array.from(studentMap.entries()).map(([studentUsername, data]) => ({

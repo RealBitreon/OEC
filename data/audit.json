@@ -1,1 +1,64 @@
-[]
+[
+  {
+    "id": "1b796677-7fd3-4637-ad35-d95785319f1c",
+    "action": "update_user_role",
+    "performedBy": "YoussefM. Sobh",
+    "details": {
+      "username": "YoussefM. Sobh",
+      "newRole": "lrc_manager"
+    },
+    "timestamp": "2026-01-26T17:23:28.548Z"
+  },
+  {
+    "id": "09bcdc76-deab-4f88-b499-3919d6c62349",
+    "action": "create_competition",
+    "performedBy": "YoussefM. Sobh",
+    "details": {
+      "competitionId": "a3d59ac8-79b4-430f-8348-f46e23d36ee0",
+      "title": "مسابقة الموسوعة العمانية -2026- شهر يناير"
+    },
+    "timestamp": "2026-01-26T17:25:36.072Z"
+  },
+  {
+    "id": "7a253abd-5bf3-44ac-bd4d-a9b0d28f64dc",
+    "action": "update_competition",
+    "performedBy": "YoussefM. Sobh",
+    "details": {
+      "competitionId": "a3d59ac8-79b4-430f-8348-f46e23d36ee0",
+      "updates": {
+        "status": "active"
+      }
+    },
+    "timestamp": "2026-01-26T17:26:06.756Z"
+  },
+  {
+    "id": "4ecca708-8447-4cc8-91a4-ed5f98591fef",
+    "action": "create_question",
+    "performedBy": "YoussefM. Sobh",
+    "details": {
+      "questionId": "ce06caa3-1385-410a-9e1c-d6e37e66d582",
+      "competitionId": "a3d59ac8-79b4-430f-8348-f46e23d36ee0"
+    },
+    "timestamp": "2026-01-26T17:26:58.831Z"
+  },
+  {
+    "id": "01a3529d-dd72-4375-9a18-2114d2381204",
+    "action": "create_question",
+    "performedBy": "YoussefM. Sobh",
+    "details": {
+      "questionId": "50b5d5b9-ca6b-4d82-afaa-36e55ee36f3c",
+      "competitionId": "a3d59ac8-79b4-430f-8348-f46e23d36ee0"
+    },
+    "timestamp": "2026-01-26T17:27:11.194Z"
+  },
+  {
+    "id": "9840a3c9-4baf-436d-bac7-7216e279287c",
+    "action": "create_question",
+    "performedBy": "YoussefM. Sobh",
+    "details": {
+      "questionId": "4fa6a61b-d160-4173-9750-cbbcf69693ad",
+      "competitionId": "a3d59ac8-79b4-430f-8348-f46e23d36ee0"
+    },
+    "timestamp": "2026-01-26T17:27:29.820Z"
+  }
+]

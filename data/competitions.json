@@ -1,1 +1,47 @@
-[]
+[
+  {
+    "id": "a3d59ac8-79b4-430f-8348-f46e23d36ee0",
+    "slug": "2026-01",
+    "title": "مسابقة الموسوعة العمانية -2026- شهر يناير",
+    "status": "active",
+    "startAt": "2026-01-26T00:00:00.000Z",
+    "endAt": "2026-01-31T00:00:00.000Z",
+    "wheelSpinAt": "2000-01-31T00:00:00.000Z",
+    "publishedAt": "2026-01-26T17:25:36.038Z",
+    "rules": {
+      "eligibility": {
+        "mode": "all_correct",
+        "minCorrect": 10
+      },
+      "tickets": {
+        "basePerCorrect": 1,
+        "earlyBonusMode": "tiers",
+        "tiers": [
+          {
+            "fromHours": 0,
+            "toHours": 24,
+            "bonus": 3
+          },
+          {
+            "fromHours": 24,
+            "toHours": 72,
+            "bonus": 2
+          },
+          {
+            "fromHours": 72,
+            "toHours": 120,
+            "bonus": 1
+          },
+          {
+            "fromHours": 120,
+            "toHours": 99999,
+            "bonus": 0
+          }
+        ],
+        "startReference": "competition_published_at"
+      }
+    },
+    "createdBy": "YoussefM. Sobh",
+    "createdAt": "2026-01-26T17:25:36.038Z"
+  }
+]

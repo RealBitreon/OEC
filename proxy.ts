@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Simple middleware - no auth required for public site
-export function middleware(request: NextRequest) {
+// Simple proxy - no auth required for public site
+export function proxy(request: NextRequest) {
   return NextResponse.next()
 }
 
