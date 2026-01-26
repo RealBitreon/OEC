@@ -1,0 +1,99 @@
+[
+  {
+    "id": "train-001",
+    "competitionId": null,
+    "isTraining": true,
+    "type": "true_false",
+    "title": "عُمان عضو في مجلس التعاون الخليجي",
+    "body": "هل عُمان عضو مؤسس في مجلس التعاون لدول الخليج العربية؟",
+    "correctAnswer": true,
+    "explanation": "نعم، عُمان من الدول المؤسسة لمجلس التعاون الخليجي الذي تأسس عام 1981م.",
+    "difficulty": "easy",
+    "isActive": true,
+    "createdAt": "2026-01-25T10:00:00.000Z"
+  },
+  {
+    "id": "train-002",
+    "competitionId": null,
+    "isTraining": true,
+    "type": "mcq",
+    "title": "عاصمة سلطنة عُمان",
+    "body": "ما هي عاصمة سلطنة عُمان؟",
+    "options": [
+      "مسقط",
+      "صلالة",
+      "نزوى",
+      "صحار"
+    ],
+    "correctAnswer": "مسقط",
+    "explanation": "مسقط هي العاصمة السياسية والإدارية لسلطنة عُمان.",
+    "difficulty": "easy",
+    "isActive": true,
+    "createdAt": "2026-01-25T10:05:00.000Z"
+  },
+  {
+    "id": "train-003",
+    "competitionId": null,
+    "isTraining": true,
+    "type": "text",
+    "title": "أعلى قمة جبلية في عُمان",
+    "body": "ما اسم أعلى قمة جبلية في سلطنة عُمان؟",
+    "correctAnswer": [
+      "جبل شمس",
+      "الجبل الأخضر"
+    ],
+    "explanation": "جبل شمس هو أعلى قمة في عُمان بارتفاع يصل إلى حوالي 3,009 متر فوق سطح البحر.",
+    "difficulty": "medium",
+    "isActive": true,
+    "createdAt": "2026-01-25T10:10:00.000Z"
+  },
+  {
+    "id": "train-004",
+    "competitionId": null,
+    "isTraining": true,
+    "type": "true_false",
+    "title": "موقع البحرين الأثري في عُمان",
+    "body": "هل يقع موقع البحرين الأثري في سلطنة عُمان؟",
+    "correctAnswer": false,
+    "explanation": "موقع البحرين الأثري يقع في مملكة البحرين وليس في عُمان. عُمان لديها مواقع أثرية أخرى مثل قلعة بهلا وأفلاج عُمان.",
+    "difficulty": "medium",
+    "isActive": true,
+    "createdAt": "2026-01-25T10:15:00.000Z"
+  },
+  {
+    "id": "train-005",
+    "competitionId": null,
+    "isTraining": true,
+    "type": "mcq",
+    "title": "العملة الرسمية لسلطنة عُمان",
+    "body": "ما هي العملة الرسمية المستخدمة في سلطنة عُمان؟",
+    "options": [
+      "الريال العُماني",
+      "الدينار الكويتي",
+      "الدرهم الإماراتي",
+      "الريال السعودي"
+    ],
+    "correctAnswer": "الريال العُماني",
+    "explanation": "الريال العُماني (OMR) هو العملة الرسمية لسلطنة عُمان، ويعتبر من أقوى العملات في العالم.",
+    "difficulty": "easy",
+    "isActive": true,
+    "createdAt": "2026-01-25T10:20:00.000Z"
+  },
+  {
+    "id": "train-006",
+    "competitionId": null,
+    "isTraining": true,
+    "type": "text",
+    "title": "محافظة ظفار",
+    "body": "في أي فصل من السنة يحدث موسم الخريف في محافظة ظفار؟",
+    "correctAnswer": [
+      "الصيف",
+      "فصل الصيف",
+      "في الصيف"
+    ],
+    "explanation": "موسم الخريف في ظفار يحدث خلال فصل الصيف (يونيو - سبتمبر) بسبب الرياح الموسمية الجنوبية الغربية.",
+    "difficulty": "medium",
+    "isActive": true,
+    "createdAt": "2026-01-25T10:25:00.000Z"
+  }
+]

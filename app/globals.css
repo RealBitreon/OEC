@@ -1,0 +1,159 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Design tokens matching reference */
+  --color-primary: #1a5f4f;
+  --color-primary-light: #2d7a67;
+  --color-primary-dark: #0f4438;
+  --color-secondary: #c4f542;
+  --color-secondary-light: #d4ff6b;
+  --color-secondary-dark: #a8d935;
+  
+  --radius-card: 16px;
+  --radius-button: 12px;
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --shadow-button: 0 2px 8px rgba(26, 95, 79, 0.2);
+  
+  --container-max: 1280px;
+  --spacing-section: 6rem;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  direction: rtl;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Cairo', 'Tajawal', system-ui, sans-serif;
+  background: #ffffff;
+  color: #212529;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Hide scrollbars globally */
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none;
+}
+
+body,
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Utility classes matching reference design */
+@layer components {
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-dark text-white font-semibold px-6 py-3 md:px-8 md:py-4 rounded-button shadow-button transition-all duration-300 hover:scale-105 hover:shadow-lg text-sm md:text-base;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary hover:bg-secondary-dark text-primary-dark font-semibold px-6 py-3 md:px-8 md:py-4 rounded-button transition-all duration-300 hover:scale-105 text-sm md:text-base;
+  }
+  
+  .btn-ghost {
+    @apply border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold px-6 py-3 md:px-8 md:py-4 rounded-button transition-all duration-300 text-sm md:text-base;
+  }
+  
+  .card {
+    @apply bg-white rounded-card shadow-card p-4 md:p-8 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1;
+  }
+  
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(196, 245, 66, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(196, 245, 66, 0.6);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out forwards;
+}
