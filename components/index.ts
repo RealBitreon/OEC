@@ -1,0 +1,12 @@
+// Component exports for easy importing
+export { default as Header } from './Header'
+export { default as Footer } from './Footer'
+export { default as Hero } from './Hero'
+export { default as HowItWorks } from './HowItWorks'
+export { default as RulesBanner } from './RulesBanner'
+export { default as LiveStats } from './LiveStats'
+export { default as QuestionsPreview } from './QuestionsPreview'
+export { default as WheelTeaser } from './WheelTeaser'
+export { default as ArchivedCompetitions } from './ArchivedCompetitions'
+export { default as AnnouncementBar } from './AnnouncementBar'
+export { default as ScrollToTop } from './ScrollToTop'
