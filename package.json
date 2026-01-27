@@ -15,7 +15,6 @@
     "clean": "taskkill /F /IM node.exe 2>nul & rmdir /s /q .next 2>nul & del tsconfig.tsbuildinfo 2>nul & echo Cache cleared"
   },
   "dependencies": {
-    "@supabase/auth-helpers-nextjs": "^0.8.7",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.39.3",
     "@types/react-google-recaptcha": "^2.1.9",
