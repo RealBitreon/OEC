@@ -247,11 +247,6 @@ export default function ContactPage() {
                       className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-primary focus:outline-none text-sm md:text-base transition-colors"
                     >
                       <option value="">اختر الصف</option>
-                      <option value="5">الصف الخامس</option>
-                      <option value="6">الصف السادس</option>
-                      <option value="7">الصف السابع</option>
-                      <option value="8">الصف الثامن</option>
-                      <option value="9">الصف التاسع</option>
                       <option value="10">الصف العاشر</option>
                       <option value="11">الصف الحادي عشر</option>
                       <option value="12">الصف الثاني عشر</option>

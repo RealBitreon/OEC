@@ -1,14 +1,7 @@
-export type UserRole = 'ceo' | 'lrc_manager' | 'student'
-
-export interface User {
-  username: string
-  passwordHash: string
-  role: UserRole
-  createdAt: string
-}
-
 export interface SessionPayload {
+  id: string
   username: string
-  role: UserRole
-  iat: number
+  email: string
+  role: 'student' | 'teacher' | 'manager' | 'ceo'
+  displayName?: string
 }

@@ -1,171 +1,109 @@
 import { redirect } from 'next/navigation'
-import { createUser } from '@/lib/auth/store'
-import { setSessionCookie, getSession } from '@/lib/auth/session'
-import { checkRateLimit, getProgressiveDelay } from '@/lib/auth/rateLimit'
-import { headers } from 'next/headers'
-import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import SignupForm from './SignupForm'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function SignupPage() {
-  // Redirect if already logged in
-  const session = await getSession()
-  if (session) {
+  const supabase = await createClient()
+  
+  // Check if user is already authenticated
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (user) {
     redirect('/dashboard')
   }
 
-  async function handleSignup(formData: FormData) {
-    'use server'
-    
-    const username = formData.get('username') as string
-    const password = formData.get('password') as string
-    const code = formData.get('code') as string
-    const honeypot = formData.get('website') as string
-    
-    // Honeypot check (bot trap)
-    if (honeypot) {
-      throw new Error('Invalid submission')
-    }
-    
-    if (!username || !password || !code) {
-      throw new Error('جميع الحقول مطلوبة')
-    }
-    
-    // Rate limiting
-    const headersList = await headers()
-    const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown'
-    const identifier = `${ip}:${username}`
-    
-    const rateLimit = checkRateLimit(identifier)
-    if (!rateLimit.allowed) {
-      throw new Error(`تم تجاوز عدد المحاولات. حاول مرة أخرى بعد ${rateLimit.retryAfter} ثانية`)
-    }
-    
-    try {
-      const user = await createUser(username.trim(), password, code.trim())
-      
-      await setSessionCookie({
-        username: user.username,
-        role: user.role,
-        iat: Date.now()
-      })
-      
-      redirect('/dashboard')
-    } catch (error: any) {
-      // Progressive delay on failed attempts
-      const attempts = 1 // Could track this better
-      const delay = getProgressiveDelay(attempts)
-      if (delay > 0) {
-        await new Promise(resolve => setTimeout(resolve, delay))
-      }
-      throw error
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-accent/5 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-neutral-100">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl font-bold text-white">م</span>
-            </div>
-            <h1 className="text-2xl font-bold text-neutral-900 mb-2">
-              إنشاء حساب جديد
-            </h1>
-            <p className="text-neutral-600">
-              انضم إلى مسابقة الموسوعة العُمانية
-            </p>
-          </div>
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4 py-12" dir="rtl">
+      {/* Animated Background */}
+      <div className="absolute inset-0 bg-gradient-to-bl from-emerald-50 via-green-50 to-teal-50">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-200/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-green-200/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-teal-200/20 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
 
-          {/* Form */}
-          <form action={handleSignup} className="space-y-5">
-            {/* Honeypot field (hidden from users, visible to bots) */}
-            <input
-              type="text"
-              name="website"
-              autoComplete="off"
-              tabIndex={-1}
-              style={{ position: 'absolute', left: '-9999px' }}
-              aria-hidden="true"
-            />
-            
-            <div>
-              <label htmlFor="username" className="block text-sm font-semibold text-neutral-700 mb-2">
-                اسم المستخدم
-              </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                required
-                minLength={3}
-                className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-right"
-                placeholder="أدخل اسم المستخدم"
-              />
-            </div>
+      {/* Content */}
+      <div className="relative w-full max-w-md z-10">
+        {/* Decorative Elements */}
+        <div className="absolute -top-4 -left-4 w-24 h-24 bg-gradient-to-bl from-emerald-400 to-green-500 rounded-full opacity-20 blur-2xl"></div>
+        <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-gradient-to-bl from-teal-400 to-emerald-500 rounded-full opacity-20 blur-2xl"></div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-neutral-700 mb-2">
-                كلمة المرور
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                required
-                minLength={6}
-                className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-right"
-                placeholder="6 أحرف على الأقل"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="code" className="block text-sm font-semibold text-neutral-700 mb-2">
-                رمز الدور <span className="text-red-600">*</span>
-              </label>
-              <input
-                type="text"
-                id="code"
-                name="code"
-                required
-                minLength={12}
-                className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-right font-mono"
-                placeholder="أدخل رمز الدور (12 حرفاً على الأقل)"
-                autoComplete="off"
-              />
-              <p className="text-xs text-neutral-500 mt-1">
-                رمز الدور مطلوب للتسجيل. احصل عليه من المشرف.
+        {/* Main Card */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-emerald-100/50 overflow-hidden">
+          {/* Header with Gradient */}
+          <div className="bg-gradient-to-l from-emerald-500 via-green-500 to-teal-500 p-8 text-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+            <div className="relative z-10">
+              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
+                إنشاء حساب جديد
+              </h1>
+              <p className="text-emerald-50 text-lg">
+                انضم إلينا الآن وابدأ رحلتك
               </p>
             </div>
-
-            <button
-              type="submit"
-              className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-lg transition-all duration-300 hover:scale-[1.02] shadow-button"
-            >
-              إنشاء الحساب
-            </button>
-          </form>
-
-          {/* Footer */}
-          <div className="mt-6 text-center">
-            <p className="text-neutral-600">
-              لديك حساب بالفعل؟{' '}
-              <Link href="/login" className="text-primary font-semibold hover:underline">
-                تسجيل الدخول
-              </Link>
-            </p>
+            {/* Decorative Wave */}
+            <div className="absolute bottom-0 left-0 right-0">
+              <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="w-full h-8 fill-white/80">
+                <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"></path>
+              </svg>
+            </div>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-neutral-100">
-            <Link
-              href="/"
-              className="text-sm text-neutral-500 hover:text-primary transition-colors flex items-center justify-center gap-2"
-            >
-              <span>←</span>
-              العودة للرئيسية
-            </Link>
+          {/* Form Container */}
+          <div className="p-8">
+            <SignupForm />
+
+            {/* Login Link */}
+            <div className="mt-8 text-center">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-emerald-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-neutral-500">أو</span>
+                </div>
+              </div>
+              <p className="text-sm text-neutral-600 mt-6 flex items-center justify-center gap-2">
+                <a 
+                  href="/login" 
+                  className="text-emerald-600 hover:text-emerald-700 font-bold transition-all duration-200 hover:underline decoration-2 underline-offset-2 flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                  </svg>
+                  <span>تسجيل الدخول</span>
+                </a>
+                <span>لديك حساب بالفعل؟</span>
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* Footer Note */}
+        <div className="mt-8 text-center">
+          <p className="text-sm text-neutral-600 bg-white/60 backdrop-blur-sm rounded-full px-6 py-3 inline-block shadow-sm">
+            بإنشاء حساب، أنت توافق على{' '}
+            <a href="/terms" className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline">
+              الشروط والأحكام
+            </a>
+            {' '}و{' '}
+            <a href="/privacy" className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline">
+              سياسة الخصوصية
+            </a>
+          </p>
+        </div>
+
+        {/* Floating Particles */}
+        <div className="absolute top-10 left-10 w-2 h-2 bg-emerald-400 rounded-full animate-ping"></div>
+        <div className="absolute bottom-20 right-10 w-2 h-2 bg-green-400 rounded-full animate-ping delay-300"></div>
+        <div className="absolute top-1/3 right-5 w-1.5 h-1.5 bg-teal-400 rounded-full animate-ping delay-700"></div>
       </div>
     </div>
   )

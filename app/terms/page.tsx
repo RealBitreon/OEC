@@ -1,6 +1,3 @@
-'use client'
-
-import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -28,12 +25,7 @@ export default function TermsPage() {
             العودة للرئيسية
           </Link>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
-          >
+          <div className="text-center">
             <div className="text-6xl md:text-8xl mb-4 md:mb-6">📜</div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 md:mb-4">
               الشروط والأحكام
@@ -41,7 +33,7 @@ export default function TermsPage() {
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 max-w-3xl mx-auto px-4">
               القواعد الأساسية للمشاركة في المسابقة
             </p>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -50,23 +42,14 @@ export default function TermsPage() {
         <div className="section-container">
           <div className="max-w-4xl mx-auto">
             {/* Last Updated */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 md:p-6 mb-8 md:mb-12"
-            >
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 md:p-6 mb-8 md:mb-12">
               <p className="text-sm md:text-base text-blue-800">
                 <strong>آخر تحديث:</strong> يناير 2026
               </p>
-            </motion.div>
+            </div>
 
             {/* Introduction */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="card mb-6 md:mb-8"
-            >
+            <div className="card mb-6 md:mb-8">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-4 md:mb-6">
                 مرحباً عزيزي الطالب! 👋
               </h2>
@@ -76,17 +59,12 @@ export default function TermsPage() {
               <p className="text-sm sm:text-base md:text-lg text-neutral-700 leading-relaxed">
                 بمشاركتك في المسابقة، أنت توافق على هذه الشروط والأحكام.
               </p>
-            </motion.div>
+            </div>
 
             {/* Sections */}
             <div className="space-y-6 md:space-y-8">
               {/* Section 1 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="card"
-              >
+              <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
                   <span className="text-3xl md:text-4xl">✅</span>
                   <div className="flex-1">
@@ -112,15 +90,10 @@ export default function TermsPage() {
                     </ul>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Section 2 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="card"
-              >
+              <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
                   <span className="text-3xl md:text-4xl">👥</span>
                   <div className="flex-1">
@@ -137,7 +110,7 @@ export default function TermsPage() {
                       </li>
                       <li className="flex items-start gap-2 md:gap-3">
                         <span className="text-secondary text-lg md:text-xl flex-shrink-0 mt-0.5">●</span>
-                        <span className="text-sm md:text-base text-neutral-700">من الصف الخامس إلى الصف الثاني عشر</span>
+                        <span className="text-sm md:text-base text-neutral-700">من الصف العاشر إلى الصف الثاني عشر</span>
                       </li>
                       <li className="flex items-start gap-2 md:gap-3">
                         <span className="text-secondary text-lg md:text-xl flex-shrink-0 mt-0.5">●</span>
@@ -146,15 +119,10 @@ export default function TermsPage() {
                     </ul>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Section 3 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="card"
-              >
+              <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
                   <span className="text-3xl md:text-4xl">📝</span>
                   <div className="flex-1">
@@ -188,15 +156,10 @@ export default function TermsPage() {
                     </ul>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Section 4 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="card"
-              >
+              <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
                   <span className="text-3xl md:text-4xl">🎫</span>
                   <div className="flex-1">
@@ -226,15 +189,10 @@ export default function TermsPage() {
                     </ul>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Section 5 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="card"
-              >
+              <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
                   <span className="text-3xl md:text-4xl">🏆</span>
                   <div className="flex-1">
@@ -264,15 +222,10 @@ export default function TermsPage() {
                     </ul>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Section 6 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-                className="card"
-              >
+              <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
                   <span className="text-3xl md:text-4xl">⚠️</span>
                   <div className="flex-1">
@@ -306,15 +259,10 @@ export default function TermsPage() {
                     </ul>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Section 7 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-                className="card"
-              >
+              <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
                   <span className="text-3xl md:text-4xl">🔄</span>
                   <div className="flex-1">
@@ -344,15 +292,10 @@ export default function TermsPage() {
                     </ul>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Section 8 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 }}
-                className="card"
-              >
+              <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
                   <span className="text-3xl md:text-4xl">⚖️</span>
                   <div className="flex-1">
@@ -378,15 +321,10 @@ export default function TermsPage() {
                     </ul>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Section 9 */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1 }}
-                className="card"
-              >
+              <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
                   <span className="text-3xl md:text-4xl">📞</span>
                   <div className="flex-1">
@@ -398,16 +336,11 @@ export default function TermsPage() {
                     </p>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
 
             {/* Agreement Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.1 }}
-              className="mt-8 md:mt-12"
-            >
+            <div className="mt-8 md:mt-12">
               <div className="card bg-gradient-to-br from-green-50 to-primary/5 border-2 border-green-200">
                 <div className="text-center">
                   <div className="text-5xl md:text-6xl mb-4 md:mb-6">✅</div>
@@ -427,7 +360,7 @@ export default function TermsPage() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>

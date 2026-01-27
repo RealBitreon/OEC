@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import { getSession } from '@/lib/auth/session'
 import { ToastProvider } from '@/components/ui'
 import './globals.css'
 
@@ -21,6 +20,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
+  themeColor: '#10b981',
 }
 
 export default async function RootLayout({
@@ -28,17 +28,17 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await getSession()
-  
   return (
     <html lang="ar" dir="rtl">
-      <body className="overflow-x-hidden">
-        <ToastProvider>
-          <div data-session={session ? JSON.stringify(session) : null}>
+        <head>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        </head>
+        <body className="overflow-x-hidden antialiased">
+          <ToastProvider>
             {children}
-          </div>
-        </ToastProvider>
-      </body>
-    </html>
+          </ToastProvider>
+        </body>
+      </html>
   )
 }

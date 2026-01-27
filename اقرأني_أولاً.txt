@@ -1,0 +1,58 @@
+═══════════════════════════════════════════════════════════
+🔧 إصلاح مشكلة التسجيل - ابدأ هنا
+SIGNUP ERROR FIX - START HERE
+═══════════════════════════════════════════════════════════
+
+📋 المشكلة / PROBLEM:
+   "حدث خطأ أثناء إنشاء الحساب. حاول مرة أخرى."
+   "An error occurred while creating the account. Try again."
+
+✅ الحل السريع / QUICK FIX:
+
+   1️⃣ افتح Supabase SQL Editor
+      Open: https://app.supabase.com → SQL Editor
+
+   2️⃣ نفذ ملف / Run file:
+      📄 fix_signup_complete.sql
+      (انسخ كل المحتوى والصقه واضغط Run)
+      (Copy all content, paste, and click Run)
+
+   3️⃣ أعد تشغيل التطبيق / Restart app:
+      npm run dev
+
+═══════════════════════════════════════════════════════════
+
+📚 الملفات المهمة / IMPORTANT FILES:
+
+   🇸🇦 عربي:
+      • تعليمات_سريعة.md ← ابدأ هنا (سريع)
+      • حل_مشكلة_التسجيل.md ← شرح كامل
+
+   🇬🇧 English:
+      • SIGNUP_ERROR_FIX.md ← Complete guide
+
+   🗄️ قاعدة البيانات / Database:
+      • fix_signup_complete.sql ← نفذ هذا في Supabase
+
+═══════════════════════════════════════════════════════════
+
+🎯 ماذا تم إصلاحه / WHAT WAS FIXED:
+
+   ✅ سياسات RLS في قاعدة البيانات
+      RLS policies in database
+   
+   ✅ معالجة الأخطاء في الكود
+      Error handling in code
+   
+   ✅ رسائل خطأ واضحة
+      Clear error messages
+
+═══════════════════════════════════════════════════════════
+
+⏱️ الوقت المتوقع / ESTIMATED TIME: 5 دقائق / 5 minutes
+
+🆘 تحتاج مساعدة؟ / NEED HELP?
+   اقرأ: حل_مشكلة_التسجيل.md (شرح مفصل)
+   Read: SIGNUP_ERROR_FIX.md (detailed guide)
+
+═══════════════════════════════════════════════════════════

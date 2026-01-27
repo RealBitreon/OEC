@@ -11,10 +11,7 @@ import WheelTeaser from '@/components/WheelTeaser'
 import ArchivedCompetitions from '@/components/ArchivedCompetitions'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
-
-interface Competition {
-  slug: string
-}
+import type { Competition } from '@/lib/store/types'
 
 export default function HomeClient({ activeCompetition }: { activeCompetition: Competition | null }) {
   const [isLocked, setIsLocked] = useState(false)

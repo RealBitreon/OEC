@@ -1,10 +1,16 @@
 import Link from 'next/link'
+import CompetitionCountdown from './home/CompetitionCountdown'
 
 interface Competition {
   slug: string
+  title: string
+  endAt: string
+  startAt: string
 }
 
 export default function Hero({ activeCompetition }: { activeCompetition: Competition | null }) {
+  // Check if competition has ended
+  const isEnded = activeCompetition ? new Date(activeCompetition.endAt).getTime() < Date.now() : false
   return (
     <section className="relative min-h-[90vh] md:min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary-dark via-primary to-primary-light pt-32 md:pt-36 pb-16 md:pb-0">
       {/* Background Pattern */}
@@ -39,38 +45,124 @@ export default function Hero({ activeCompetition }: { activeCompetition: Competi
                 <path d="M2 17L12 22L22 17M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2"/>
               </svg>
               <span className="text-white/90 text-sm md:text-base font-semibold">
-                للصفوف 5-12 • مدرسة الإمام المهنا • مسقط
+                للصفوف 10-12 • مدرسة الإمام المهنا • مسقط
               </span>
             </div>
           </div>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center mb-8 md:mb-16 animate-fade-in-up px-4" style={{ animationDelay: '0.4s' }}>
-            {activeCompetition ? (
-              <Link
-                href={`/competition/${activeCompetition.slug}`}
-                className="bg-secondary hover:bg-secondary-dark text-primary-dark font-bold px-6 py-3 md:px-10 md:py-5 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 shadow-lg inline-block"
-              >
-                ابدأ المشاركة
-              </Link>
-            ) : (
-              <Link
-                href="/questions"
-                className="bg-secondary hover:bg-secondary-dark text-primary-dark font-bold px-6 py-3 md:px-10 md:py-5 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 shadow-lg inline-block"
-              >
-                تصفح الأسئلة
-              </Link>
-            )}
-            <Link
-              href="/rules"
-              className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-bold px-6 py-3 md:px-10 md:py-5 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 inline-block"
-            >
-              اقرأ القواعد
-            </Link>
-          </div>
+          {/* Active Competition Section */}
+          {activeCompetition && !isEnded ? (
+            <>
+              {/* Primary CTA */}
+              <div className="mb-8 md:mb-12 animate-fade-in-up px-4" style={{ animationDelay: '0.4s' }}>
+                <Link
+                  href={`/competition/${activeCompetition.slug}/participate`}
+                  className="inline-block bg-secondary hover:bg-secondary-dark text-primary-dark font-bold px-8 py-4 md:px-12 md:py-6 rounded-button text-lg md:text-2xl transition-all duration-300 hover:scale-105 shadow-lg"
+                >
+                  انضم للمسابقة الآن
+                </Link>
+                <p className="text-white/80 text-sm md:text-base mt-3 font-medium">
+                  المسابقة النشطة: {activeCompetition.title}
+                </p>
+              </div>
+
+              {/* Countdown Timer */}
+              <div className="max-w-2xl mx-auto mb-8 md:mb-12 px-4">
+                <CompetitionCountdown endAt={activeCompetition.endAt} />
+              </div>
+
+              {/* Secondary Actions */}
+              <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center mb-8 md:mb-16 animate-fade-in-up px-4" style={{ animationDelay: '0.6s' }}>
+                <Link
+                  href={`/competition/${activeCompetition.slug}/participate`}
+                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-bold px-6 py-3 md:px-8 md:py-4 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 inline-block"
+                >
+                  شارك
+                </Link>
+                <Link
+                  href="/wheel"
+                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-bold px-6 py-3 md:px-8 md:py-4 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 inline-block"
+                >
+                  شاهد عجلة الحظ
+                </Link>
+                <Link
+                  href="/rules"
+                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-bold px-6 py-3 md:px-8 md:py-4 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 inline-block"
+                >
+                  اقرأ القواعد
+                </Link>
+              </div>
+            </>
+          ) : activeCompetition && isEnded ? (
+            <>
+              {/* Competition Ended State */}
+              <div className="mb-8 md:mb-12 animate-fade-in-up px-4" style={{ animationDelay: '0.4s' }}>
+                <div className="inline-block bg-white/10 backdrop-blur-md rounded-card p-6 md:p-8 border border-white/20">
+                  <div className="text-3xl md:text-4xl font-bold text-white mb-2">
+                    انتهت المسابقة
+                  </div>
+                  <p className="text-white/70 text-base md:text-lg">
+                    {activeCompetition.title}
+                  </p>
+                </div>
+              </div>
+
+              {/* Secondary Actions */}
+              <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center mb-8 md:mb-16 animate-fade-in-up px-4" style={{ animationDelay: '0.5s' }}>
+                <Link
+                  href="/wheel"
+                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-bold px-6 py-3 md:px-8 md:py-4 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 inline-block"
+                >
+                  شاهد عجلة الحظ
+                </Link>
+                <Link
+                  href="/rules"
+                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-bold px-6 py-3 md:px-8 md:py-4 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 inline-block"
+                >
+                  اقرأ القواعد
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* No Active Competition - Empty State */}
+              <div className="mb-8 md:mb-12 animate-fade-in-up px-4" style={{ animationDelay: '0.4s' }}>
+                <div className="inline-block bg-white/10 backdrop-blur-md rounded-card p-6 md:p-8 border border-white/20 max-w-2xl">
+                  <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
+                    لا توجد مسابقة نشطة حالياً
+                  </h3>
+                  <p className="text-white/80 text-base md:text-lg">
+                    تابعنا قريباً للإعلان عن مسابقة جديدة.
+                  </p>
+                </div>
+              </div>
+
+              {/* Alternative Actions */}
+              <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center mb-8 md:mb-16 animate-fade-in-up px-4" style={{ animationDelay: '0.5s' }}>
+                <Link
+                  href="/login"
+                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-bold px-6 py-3 md:px-10 md:py-5 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 inline-block"
+                >
+                  تسجيل الدخول
+                </Link>
+                <Link
+                  href="/questions"
+                  className="bg-secondary hover:bg-secondary-dark text-primary-dark font-bold px-6 py-3 md:px-10 md:py-5 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 shadow-lg inline-block"
+                >
+                  تدرّب على الأسئلة
+                </Link>
+                <Link
+                  href="/rules"
+                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-bold px-6 py-3 md:px-10 md:py-5 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 inline-block"
+                >
+                  اقرأ القواعد
+                </Link>
+              </div>
+            </>
+          )}
 
           {/* Info Card */}
-          <div className="inline-block bg-white/10 backdrop-blur-md rounded-card p-4 md:p-8 border border-white/20 animate-fade-in-up mx-4" style={{ animationDelay: '0.6s' }}>
+          <div className="inline-block bg-white/10 backdrop-blur-md rounded-card p-4 md:p-8 border border-white/20 animate-fade-in-up mx-4" style={{ animationDelay: '0.7s' }}>
             <p className="text-white/90 text-base md:text-lg font-medium mb-2">
               🎉 مسابقة داخلية للتميز والإبداع
             </p>

@@ -3,22 +3,10 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import AnnouncementBar from './AnnouncementBar'
-import type { SessionPayload } from '@/lib/auth/types'
 
 export default function HeaderClient() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [announcementVisible, setAnnouncementVisible] = useState(true)
-  const [session, setSession] = useState<SessionPayload | null>(null)
-
-  useEffect(() => {
-    // Read session from data attribute set by layout
-    const sessionData = document.querySelector('[data-session]')?.getAttribute('data-session')
-    if (sessionData && sessionData !== 'null') {
-      try {
-        setSession(JSON.parse(sessionData))
-      } catch {}
-    }
-  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -84,31 +72,14 @@ export default function HeaderClient() {
             </Link>
           </nav>
 
-          {/* Auth Buttons - Left side for RTL */}
+          {/* Right side - empty for now, can add contact or help link later */}
           <div className="flex items-center gap-3">
-            {session ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="text-neutral-700 font-medium hover:text-primary transition-colors px-4 py-2"
-                >
-                  لوحة التحكم
-                </Link>
-                <Link
-                  href="/logout"
-                  className="bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-semibold px-5 py-2.5 rounded-button transition-all duration-300"
-                >
-                  تسجيل الخروج
-                </Link>
-              </>
-            ) : (
-              <Link
-                href="/login"
-                className="bg-primary hover:bg-primary-dark text-white font-semibold px-5 py-2.5 rounded-button transition-all duration-300 hover:scale-105 shadow-button"
-              >
-                تسجيل الدخول
-              </Link>
-            )}
+            <Link
+              href="/contact"
+              className="text-neutral-700 font-medium hover:text-primary transition-colors px-4 py-2"
+            >
+              اتصل بنا
+            </Link>
           </div>
         </div>
       </div>

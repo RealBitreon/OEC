@@ -20,6 +20,12 @@ export default function WheelPage() {
     try {
       // Fetch active competition
       const compRes = await fetch('/api/competitions/active')
+      
+      if (!compRes.ok) {
+        console.warn('API endpoint not available yet')
+        return
+      }
+      
       const compData = await compRes.json()
       
       if (compData.competition) {
@@ -27,10 +33,13 @@ export default function WheelPage() {
         
         // Fetch wheel run
         const wheelRes = await fetch(`/api/wheel/public?competitionId=${compData.competition.id}`)
-        const wheelData = await wheelRes.json()
         
-        if (wheelData.wheelRun) {
-          setWheelRun(wheelData.wheelRun)
+        if (wheelRes.ok) {
+          const wheelData = await wheelRes.json()
+          
+          if (wheelData.wheelRun) {
+            setWheelRun(wheelData.wheelRun)
+          }
         }
       }
     } catch (error) {

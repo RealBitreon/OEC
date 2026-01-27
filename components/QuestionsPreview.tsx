@@ -5,19 +5,19 @@ import Link from 'next/link'
 export default function QuestionsPreview() {
   const demoQuestions = [
     {
-      id: '1',
+      id: 'demo-1',
       title_ar: 'ما هي عاصمة سلطنة عُمان؟',
       category: 'جغرافيا',
       difficulty: 'سهل'
     },
     {
-      id: '2',
+      id: 'demo-2',
       title_ar: 'من هو مؤسس الدولة البوسعيدية؟',
       category: 'تاريخ',
       difficulty: 'متوسط'
     },
     {
-      id: '3',
+      id: 'demo-3',
       title_ar: 'ما هي أهم الصناعات التقليدية في عُمان؟',
       category: 'ثقافة',
       difficulty: 'متوسط'
@@ -47,9 +47,10 @@ export default function QuestionsPreview() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {demoQuestions.map((question, index) => (
-            <div
+            <Link
               key={question.id}
-              className="card group cursor-pointer"
+              href={`/questions/${question.id}`}
+              className="card group cursor-pointer block"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               {/* Category Badge */}
@@ -77,13 +78,10 @@ export default function QuestionsPreview() {
               </div>
 
               {/* CTA */}
-              <Link
-                href="/questions"
-                className="block w-full text-center bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-button transition-all duration-300 group-hover:scale-105"
-              >
-                تصفح الأسئلة
-              </Link>
-            </div>
+              <span className="block w-full text-center bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-button transition-all duration-300 group-hover:scale-105">
+                عرض السؤال
+              </span>
+            </Link>
           ))}
         </div>
 

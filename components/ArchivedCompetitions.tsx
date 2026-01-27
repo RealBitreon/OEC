@@ -21,6 +21,20 @@ export default function ArchivedCompetitions() {
         fetch('/api/winners')
       ])
       
+      if (!compRes.ok || !winnersRes.ok) {
+        console.warn('API endpoints not available yet')
+        return
+      }
+      
+      // Check content type before parsing
+      const compContentType = compRes.headers.get('content-type')
+      const winnersContentType = winnersRes.headers.get('content-type')
+      
+      if (!compContentType?.includes('application/json') || !winnersContentType?.includes('application/json')) {
+        console.warn('API endpoints returned non-JSON response')
+        return
+      }
+      
       const compData = await compRes.json()
       const winnersData = await winnersRes.json()
       
@@ -89,7 +103,7 @@ export default function ArchivedCompetitions() {
                       {winner && (
                         <div className="bg-green-50 rounded-lg p-3 border border-green-200">
                           <div className="text-xs text-green-600 mb-1">الفائز</div>
-                          <div className="font-bold text-green-700">{winner.winnerUsername}</div>
+                          <div className="font-bold text-green-700">{winner.displayName}</div>
                         </div>
                       )}
                     </div>

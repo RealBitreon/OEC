@@ -14,9 +14,10 @@
  */
 
 import HomeClient from './HomeClient'
-import { getActiveCompetition } from '@/lib/store/helpers'
+import { competitionsRepo } from '@/lib/repos'
 
 export default async function Home() {
-  const activeCompetition = await getActiveCompetition()
+  const activeCompetition = await competitionsRepo.getActive()
+  
   return <HomeClient activeCompetition={activeCompetition} />
 }

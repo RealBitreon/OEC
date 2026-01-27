@@ -1,20 +1,26 @@
-/**
- * Repository interfaces for data access layer
- * These interfaces abstract the underlying data store (JSON, Supabase, etc.)
- */
+// Repository interfaces for data access layer
 
-import type { 
-  Competition, 
-  Question, 
-  Submission, 
-  Ticket, 
-  WheelRun, 
-  Winner, 
-  AuditLog 
+import type {
+  User,
+  Competition,
+  Question,
+  Submission,
+  Ticket,
+  WheelRun,
+  Winner,
+  AuditLog,
+  Participant,
+  TrainingSubmission,
 } from '@/lib/store/types'
-import type { User } from '@/lib/auth/types'
 
-// Competitions Repository
+export interface IUsersRepo {
+  getById(id: string): Promise<User | null>
+  getByUsername(username: string): Promise<User | null>
+  create(data: User): Promise<User>
+  update(id: string, patch: Partial<User>): Promise<User>
+  listAll(): Promise<User[]>
+}
+
 export interface ICompetitionsRepo {
   getActive(): Promise<Competition | null>
   getBySlug(slug: string): Promise<Competition | null>
@@ -26,79 +32,61 @@ export interface ICompetitionsRepo {
   archiveActive(): Promise<void>
 }
 
-// Questions Repository
 export interface IQuestionsRepo {
+  getById(id: string): Promise<Question | null>
   listByCompetition(competitionId: string): Promise<Question[]>
   listTraining(): Promise<Question[]>
-  listActive(): Promise<Question[]>
-  getById(id: string): Promise<Question | null>
+  listAll(): Promise<Question[]>
   create(data: Question): Promise<Question>
   update(id: string, patch: Partial<Question>): Promise<Question>
   delete(id: string): Promise<void>
+  moveToTraining(competitionId: string): Promise<void>
 }
 
-// Submissions Repository
 export interface ISubmissionsRepo {
-  list(filters?: {
-    competitionId?: string
-    studentUsername?: string
-    questionId?: string
-    finalResult?: 'correct' | 'incorrect' | 'pending'
-  }): Promise<Submission[]>
   getById(id: string): Promise<Submission | null>
+  listByUser(userId: string): Promise<Submission[]>
+  listByCompetition(competitionId: string): Promise<Submission[]>
   create(data: Submission): Promise<Submission>
   update(id: string, patch: Partial<Submission>): Promise<Submission>
-  countCorrectByStudent(competitionId: string, studentUsername: string): Promise<number>
-}
-
-// Tickets Repository
-export interface ITicketsRepo {
-  listByCompetition(competitionId: string): Promise<Ticket[]>
-  listByStudent(competitionId: string, studentUsername: string): Promise<Ticket[]>
-  getTotalsByStudent(competitionId: string): Promise<Map<string, number>>
-  getById(id: string): Promise<Ticket | null>
-  create(data: Ticket): Promise<Ticket>
-  deleteBySubmission(submissionId: string): Promise<void>
   deleteByCompetition(competitionId: string): Promise<void>
-  bulkCreate(tickets: Ticket[]): Promise<void>
 }
 
-// Wheel Repository
+export interface ITicketsRepo {
+  listByUser(userId: string, competitionId: string): Promise<Ticket[]>
+  listByCompetition(competitionId: string): Promise<Ticket[]>
+  create(data: Ticket): Promise<Ticket>
+  update(id: string, patch: Partial<Ticket>): Promise<Ticket>
+  delete(id: string): Promise<void>
+  deleteByCompetition(competitionId: string): Promise<void>
+  recalculate(competitionId: string): Promise<void>
+}
+
 export interface IWheelRepo {
-  getRunByCompetition(competitionId: string): Promise<WheelRun | null>
-  getRunById(id: string): Promise<WheelRun | null>
-  listRuns(filters?: { competitionId?: string; status?: string }): Promise<WheelRun[]>
+  getByCompetition(competitionId: string): Promise<WheelRun | null>
   create(data: WheelRun): Promise<WheelRun>
-  update(id: string, patch: Partial<WheelRun>): Promise<WheelRun>
+  deleteByCompetition(competitionId: string): Promise<void>
 }
 
-// Winners Repository
 export interface IWinnersRepo {
   getByCompetition(competitionId: string): Promise<Winner | null>
-  listAll(): Promise<Winner[]>
   create(data: Winner): Promise<Winner>
+  update(id: string, patch: Partial<Winner>): Promise<Winner>
 }
 
-// Users Repository
-export interface IUsersRepo {
-  findByUsername(username: string): Promise<User | null>
-  listAll(): Promise<User[]>
-  create(data: User): Promise<User>
-  updateRole(username: string, role: 'ceo' | 'lrc_manager' | 'student'): Promise<User>
-}
-
-// Audit Repository
 export interface IAuditRepo {
-  list(filters?: {
-    action?: string
-    performedBy?: string
-    limit?: number
-  }): Promise<AuditLog[]>
-  append(entry: Omit<AuditLog, 'id' | 'timestamp'>): Promise<AuditLog>
+  create(data: Omit<AuditLog, 'id' | 'createdAt'>): Promise<AuditLog>
+  listByUser(userId: string): Promise<AuditLog[]>
+  listAll(limit?: number): Promise<AuditLog[]>
 }
 
-// Training Submissions Repository
+export interface IParticipantsRepo {
+  getById(id: string): Promise<Participant | null>
+  listByCompetition(competitionId: string): Promise<Participant[]>
+  create(data: Participant): Promise<Participant>
+}
+
 export interface ITrainingSubmissionsRepo {
-  list(filters?: { studentUsername?: string }): Promise<any[]>
-  create(data: any): Promise<any>
+  listByUser(userId: string): Promise<TrainingSubmission[]>
+  create(data: TrainingSubmission): Promise<TrainingSubmission>
 }

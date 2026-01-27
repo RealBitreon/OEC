@@ -1,18 +1,27 @@
-import { notFound } from 'next/navigation'
-import { readCompetitions } from '@/lib/store/readWrite'
-import { getWheelRunForCompetition } from '@/lib/competition/wheel'
-import type { Competition } from '@/lib/store/types'
-import WheelPageClient from './WheelPageClient'
+import Header from '@/components/Header'
+import Footer from '@/components/Footer'
 
-export default async function CompetitionWheelPage({ params }: { params: { slug: string } }) {
-  const competitions = await readCompetitions() as Competition[]
-  const competition = competitions.find((c: Competition) => c.slug === params.slug)
-  
-  if (!competition) {
-    notFound()
-  }
-  
-  const wheelRun = await getWheelRunForCompetition(competition.id)
-  
-  return <WheelPageClient competition={competition} wheelRun={wheelRun} />
+export default async function CompetitionWheelPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+
+  return (
+    <main className="min-h-screen flex flex-col">
+      <Header />
+      <div className="flex-1 container mx-auto px-4 py-16">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-4xl font-bold text-primary mb-4">عجلة السحب: {slug}</h1>
+          <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+            <div className="w-20 h-20 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-4xl">🎡</span>
+            </div>
+            <h2 className="text-2xl font-bold text-neutral-800 mb-4">قريباً</h2>
+            <p className="text-neutral-600">
+              صفحة عجلة السحب للمسابقة قيد التطوير. سيتم إضافتها قريباً.
+            </p>
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </main>
+  )
 }
