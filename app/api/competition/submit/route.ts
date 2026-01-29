@@ -40,18 +40,21 @@ export async function POST(request: NextRequest) {
 
     // Calculate tickets based on competition rules
     let ticketsEarned = 0
-    const rules = competition.rules || { eligibilityMode: 'all_correct', ticketsPerCorrect: 1 }
+    const rules = competition.rules || { 
+      eligibilityMode: 'all_correct', 
+      ticketsConfig: { baseTickets: 1, earlyBonusTiers: [] } 
+    }
     
     if (rules.eligibilityMode === 'all_correct') {
       if (score === totalQuestions) {
-        ticketsEarned = rules.ticketsPerCorrect || 1
+        ticketsEarned = rules.ticketsConfig.baseTickets
       }
     } else if (rules.eligibilityMode === 'min_correct') {
       if (score >= (rules.minCorrectAnswers || 0)) {
-        ticketsEarned = (rules.ticketsPerCorrect || 1) * score
+        ticketsEarned = rules.ticketsConfig.baseTickets
       }
     } else {
-      ticketsEarned = (rules.ticketsPerCorrect || 1) * score
+      ticketsEarned = rules.ticketsConfig.baseTickets
     }
 
     // Create submission
