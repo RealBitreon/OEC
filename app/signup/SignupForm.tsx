@@ -146,7 +146,7 @@ export default function SignupForm() {
       {/* Role Code Field */}
       <div className="relative" suppressHydrationWarning>
         <label htmlFor="roleCode" className="block text-sm font-bold text-neutral-700 mb-2 text-right flex items-center justify-end gap-2">
-          <span>رمز الدور</span>
+          <span>رمز الدور (مطلوب)</span>
           <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
           </svg>
@@ -158,7 +158,8 @@ export default function SignupForm() {
             type="text"
             value={formData.roleCode}
             onChange={handleChange}
-            placeholder="أدخل رمز الدور (اختياري)"
+            placeholder="أدخل رمز الدور"
+            required
             disabled={loading}
             className="w-full px-5 py-4 rounded-xl border-2 border-emerald-200 bg-gradient-to-bl from-white to-emerald-50/30 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 disabled:bg-neutral-100 disabled:cursor-not-allowed transition-all duration-300 text-right text-lg font-medium shadow-sm hover:shadow-md hover:border-emerald-300"
             dir="rtl"
@@ -173,7 +174,7 @@ export default function SignupForm() {
           </div>
         </div>
         <p className="mt-2 text-xs text-neutral-500 text-right flex items-center justify-end gap-1">
-          <span>رمز خاص للمعلمين والمشرفين (اتركه فارغاً إذا كنت طالباً)</span>
+          <span>رمز خاص للمديرين والمشرفين فقط. يرجى الحصول على الرمز من المسؤول.</span>
           <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -184,7 +185,7 @@ export default function SignupForm() {
       <div className="pt-4">
         <button
           type="submit"
-          disabled={loading || !formData.username || !formData.password}
+          disabled={loading || !formData.username || !formData.password || !formData.roleCode}
           className="w-full relative overflow-hidden bg-gradient-to-l from-emerald-500 via-green-500 to-teal-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
         >
           <div className="absolute inset-0 bg-gradient-to-l from-emerald-600 via-green-600 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>

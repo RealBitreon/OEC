@@ -54,3 +54,6 @@ logs
 # Database dumps
 *.sql.backup
 schema_dump_*.sql
+
+# JSON Data Files (auth & app data)
+/data/*.json

@@ -11,9 +11,14 @@ import WheelTeaser from '@/components/WheelTeaser'
 import ArchivedCompetitions from '@/components/ArchivedCompetitions'
 import Footer from '@/components/Footer'
 import ScrollToTop from '@/components/ScrollToTop'
-import type { Competition } from '@/lib/store/types'
+import type { Competition, Question } from '@/lib/store/types'
 
-export default function HomeClient({ activeCompetition }: { activeCompetition: Competition | null }) {
+interface HomeClientProps {
+  activeCompetition: Competition | null
+  questions: Question[]
+}
+
+export default function HomeClient({ activeCompetition, questions }: HomeClientProps) {
   const [isLocked, setIsLocked] = useState(false)
 
   useEffect(() => {
@@ -27,13 +32,11 @@ export default function HomeClient({ activeCompetition }: { activeCompetition: C
     (window as any).WLock = () => {
       setIsLocked(true)
       localStorage.setItem('pageLocked', 'true')
-      console.log('✅ Page locked')
     }
     
     (window as any).WUnlock = () => {
       setIsLocked(false)
       localStorage.setItem('pageLocked', 'false')
-      console.log('✅ Page unlocked')
     }
   }, [])
 
@@ -45,7 +48,7 @@ export default function HomeClient({ activeCompetition }: { activeCompetition: C
         <HowItWorks />
         <RulesBanner />
         <LiveStats />
-        <QuestionsPreview />
+        <QuestionsPreview questions={questions} />
         <WheelTeaser />
         <ArchivedCompetitions />
         <Footer />

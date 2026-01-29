@@ -1,6 +1,6 @@
-import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { BackButton } from '@/components'
 
 export default function NotFound() {
   return (
@@ -11,9 +11,11 @@ export default function NotFound() {
           <h1 className="text-9xl font-bold text-primary mb-4">404</h1>
           <h2 className="text-3xl font-bold text-neutral-800 mb-4">الصفحة غير موجودة</h2>
           <p className="text-neutral-600 mb-8">عذراً، الصفحة التي تبحث عنها غير موجودة</p>
-          <Link href="/" className="btn-primary inline-block">
-            العودة للرئيسية
-          </Link>
+          <BackButton 
+            fallbackUrl="/"
+            label="العودة للرئيسية"
+            variant="primary"
+          />
         </div>
       </div>
       <Footer />

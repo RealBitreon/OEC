@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { BackButton } from '@/components'
 
 export default function TermsPage() {
   return (
@@ -15,15 +16,13 @@ export default function TermsPage() {
         </div>
 
         <div className="section-container relative z-10">
-          <Link 
-            href="/" 
-            className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors text-sm font-medium mb-4 md:mb-6"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            العودة للرئيسية
-          </Link>
+          <div className="mb-4 md:mb-6">
+            <BackButton 
+              fallbackUrl="/"
+              label="العودة للرئيسية"
+              className="text-white/80 hover:text-white text-sm font-medium"
+            />
+          </div>
 
           <div className="text-center">
             <div className="text-6xl md:text-8xl mb-4 md:mb-6">📜</div>

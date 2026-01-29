@@ -72,13 +72,13 @@ export default function HeaderClient() {
             </Link>
           </nav>
 
-          {/* Right side - empty for now, can add contact or help link later */}
+          {/* Login Button */}
           <div className="flex items-center gap-3">
             <Link
-              href="/contact"
-              className="text-neutral-700 font-medium hover:text-primary transition-colors px-4 py-2"
+              href="/login"
+              className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-sm hover:shadow-md"
             >
-              اتصل بنا
+              تسجيل الدخول
             </Link>
           </div>
         </div>

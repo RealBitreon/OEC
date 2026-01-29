@@ -1,5 +1,6 @@
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { BackButton } from '@/components'
 
 export default async function CompetitionWheelPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -9,6 +10,10 @@ export default async function CompetitionWheelPage({ params }: { params: Promise
       <Header />
       <div className="flex-1 container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
+          <div className="mb-6">
+            <BackButton fallbackUrl={`/competition/${slug}`} label="العودة للمسابقة" />
+          </div>
+          
           <h1 className="text-4xl font-bold text-primary mb-4">عجلة السحب: {slug}</h1>
           <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
             <div className="w-20 h-20 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-4">

@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import { questionsRepo } from '@/lib/repos'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { BackButton } from '@/components'
 import QuestionForm from './QuestionForm'
 
 export default async function QuestionDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,15 +22,10 @@ export default async function QuestionDetailPage({ params }: { params: Promise<{
         <div className="max-w-4xl mx-auto">
           {/* Breadcrumb */}
           <div className="mb-6">
-            <Link 
-              href="/questions"
-              className="inline-flex items-center gap-2 text-primary hover:text-primary-dark transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span>العودة إلى قائمة الأسئلة</span>
-            </Link>
+            <BackButton 
+              fallbackUrl="/questions"
+              label="العودة إلى قائمة الأسئلة"
+            />
           </div>
 
           {/* Page Header */}
@@ -43,6 +38,8 @@ export default async function QuestionDetailPage({ params }: { params: Promise<{
                 {question.type === 'mcq' && 'اختيار من متعدد'}
                 {question.type === 'true_false' && 'صح أو خطأ'}
                 {question.type === 'text' && 'إجابة نصية'}
+                {question.type === 'fill_blank' && 'أكمل الفراغ'}
+                {question.type === 'essay' && 'مقالي'}
               </span>
             </div>
             <p className="text-neutral-600 mb-3">
@@ -56,9 +53,9 @@ export default async function QuestionDetailPage({ params }: { params: Promise<{
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <h3 className="font-bold text-amber-900 mb-1">ملاحظة هامة للمسابقة الفعلية</h3>
+                  <h3 className="font-bold text-amber-900 mb-1">ملاحظة هامة</h3>
                   <p className="text-amber-800 text-sm leading-relaxed">
-                    في المسابقة الفعلية، سيُطلب منك تحديد <strong>رقم المجلد</strong> و<strong>رقم الصفحة</strong> و<strong>رقم السطر</strong> من الموسوعة العُمانية كجزء من إجابتك. تأكد من الرجوع إلى المصدر الأصلي وتوثيق إجابتك بدقة.
+                    يجب تحديد <strong>الدليل من المصدر</strong> بدقة: <strong>المجلد</strong> و<strong>الصفحة</strong> و<strong>السطر</strong> من الموسوعة العُمانية. الإجابات الصحيحة تدخلك في عجلة الحظ للفوز بالجوائز!
                   </p>
                 </div>
               </div>

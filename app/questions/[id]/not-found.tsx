@@ -1,6 +1,6 @@
-import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { BackButton } from '@/components'
 
 export default function QuestionNotFound() {
   return (
@@ -17,12 +17,11 @@ export default function QuestionNotFound() {
           <p className="text-neutral-600 text-lg mb-8">
             عذراً، السؤال الذي تبحث عنه غير موجود أو غير متاح للتدريب.
           </p>
-          <Link
-            href="/questions"
-            className="inline-block bg-primary hover:bg-primary-dark text-white font-bold py-4 px-8 rounded-button transition-all duration-200"
-          >
-            العودة إلى قائمة الأسئلة
-          </Link>
+          <BackButton 
+            fallbackUrl="/questions"
+            label="العودة إلى قائمة الأسئلة"
+            variant="primary"
+          />
         </div>
       </div>
       <Footer />

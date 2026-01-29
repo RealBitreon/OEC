@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import LoginForm from './LoginForm'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -23,6 +24,17 @@ export default async function LoginPage() {
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-green-200/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-teal-200/20 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
+
+      {/* Back to Home Button */}
+      <Link 
+        href="/"
+        className="absolute top-6 right-6 z-20 inline-flex items-center gap-2 text-emerald-700 hover:text-emerald-800 transition-colors bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm hover:shadow-md"
+      >
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        <span className="font-medium">العودة للرئيسية</span>
+      </Link>
 
       {/* Content */}
       <div className="relative w-full max-w-md z-10">

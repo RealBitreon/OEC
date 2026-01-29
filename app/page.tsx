@@ -14,10 +14,25 @@
  */
 
 import HomeClient from './HomeClient'
-import { competitionsRepo } from '@/lib/repos'
+import { competitionsRepo, questionsRepo } from '@/lib/repos'
+import type { Question } from '@/lib/store/types'
 
 export default async function Home() {
-  const activeCompetition = await competitionsRepo.getActive()
+  let activeCompetition = null
+  let questionsData: Question[] = []
+
+  try {
+    activeCompetition = await competitionsRepo.getActive()
+  } catch (error) {
+    console.error('Error fetching active competition:', error)
+  }
+
+  try {
+    questionsData = await questionsRepo.listTraining()
+  } catch (error) {
+    console.error('Error fetching training questions:', error)
+    // Continue with empty questions array
+  }
   
-  return <HomeClient activeCompetition={activeCompetition} />
+  return <HomeClient activeCompetition={activeCompetition} questions={questionsData} />
 }
