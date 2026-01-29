@@ -3,17 +3,12 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { BackButton } from '@/components'
 import ParticipationForm from './ParticipationForm'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import { competitionsRepo, questionsRepo } from '@/lib/repos'
 
 async function getCompetitionData(slug: string) {
   try {
-    const competitionsPath = join(process.cwd(), 'data', 'competitions.json')
-    const questionsPath = join(process.cwd(), 'data', 'questions.json')
-    
-    const competitions = JSON.parse(readFileSync(competitionsPath, 'utf-8'))
-    const allQuestions = JSON.parse(readFileSync(questionsPath, 'utf-8'))
-    
+    // Get competition by slug
+    const competitions = await competitionsRepo.listAll()
     const competition = competitions.find((c: any) => c.slug === slug && c.status === 'active')
     
     if (!competition) {
@@ -21,11 +16,21 @@ async function getCompetitionData(slug: string) {
     }
     
     // Get active questions for this competition
-    const questions = allQuestions.filter((q: any) => 
-      q.competition_id === competition.id && 
-      q.is_active !== false &&
-      q.is_training === false
+    const allQuestions = await questionsRepo.listAll()
+    const repoQuestions = allQuestions.filter((q: any) => 
+      q.competitionId === competition.id && 
+      q.isActive !== false &&
+      q.isTraining === false
     )
+    
+    // Transform questions to match ParticipationForm expected format
+    const questions = repoQuestions.map(q => ({
+      id: q.id,
+      type: q.type as 'mcq' | 'true_false' | 'text',
+      question_text: q.questionText,
+      options: q.options,
+      correct_answer: q.correctAnswer,
+    }))
     
     return { competition, questions }
   } catch (error) {

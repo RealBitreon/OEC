@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseSession } from '@/lib/auth/supabase'
 import { questionsRepo, trainingSubmissionsRepo } from '@/lib/repos'
 
 export async function POST(request: NextRequest) {

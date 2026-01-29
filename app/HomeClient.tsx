@@ -22,6 +22,8 @@ export default function HomeClient({ activeCompetition, questions }: HomeClientP
   const [isLocked, setIsLocked] = useState(false)
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    
     // Check localStorage for lock status
     const lockStatus = localStorage.getItem('pageLocked')
     if (lockStatus === 'true') {

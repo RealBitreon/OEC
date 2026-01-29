@@ -1,7 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { signup } from '@/lib/auth/supabase-auth-v2'
+import { signup } from '@/lib/auth/supabase-auth'
 
 type SignupResult = {
   error?: string

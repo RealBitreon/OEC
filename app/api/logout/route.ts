@@ -1,4 +1,4 @@
-import { logout } from '@/lib/auth/supabase-auth-v2'
+import { logout } from '@/lib/auth/supabase-auth'
 import { NextResponse } from 'next/server'
 
 export async function POST() {

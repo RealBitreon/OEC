@@ -1,117 +1,116 @@
-import { cookies } from 'next/headers'
-import crypto from 'crypto'
-import { usersRepo } from '@/lib/repos'
+import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/server'
 
 export interface User {
   id: string
+  authId: string
   username: string
-  role: 'CEO' | 'LRC_MANAGER' | 'VIEWER'
+  email?: string
+  role: 'CEO' | 'LRC_MANAGER'
   createdAt: string
 }
 
-export interface Session {
-  id: string
-  userId: string
-  expiresAt: string
-}
+// ============================================================================
+// Authentication Functions
+// ============================================================================
 
-// Hash password using SHA-256
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password).digest('hex')
-}
-
-// Create session
-async function createSession(userId: string): Promise<Session> {
-  const supabase = createServiceClient()
-  const sessionId = crypto.randomUUID()
-  const expiresAt = new Date()
-  expiresAt.setDate(expiresAt.getDate() + 7) // 7 days
-
-  const { data, error } = await supabase
-    .from('sessions')
-    .insert({
-      id: sessionId,
-      user_id: userId,
-      expires_at: expiresAt.toISOString(),
-    })
-    .select()
-    .single()
-
-  if (error) throw new Error('Failed to create session')
-
-  return {
-    id: data.id,
-    userId: data.user_id,
-    expiresAt: data.expires_at,
-  }
-}
-
-// Get session
-async function getSession(sessionId: string): Promise<Session | null> {
-  const supabase = createServiceClient()
-  const { data, error } = await supabase
-    .from('sessions')
-    .select('*')
-    .eq('id', sessionId)
-    .single()
-
-  if (error || !data) return null
-
-  // Check if expired
-  if (new Date(data.expires_at) < new Date()) {
-    await supabase.from('sessions').delete().eq('id', sessionId)
-    return null
-  }
-
-  return {
-    id: data.id,
-    userId: data.user_id,
-    expiresAt: data.expires_at,
-  }
-}
-
-// Delete session
-async function deleteSession(sessionId: string): Promise<void> {
-  const supabase = createServiceClient()
-  await supabase.from('sessions').delete().eq('id', sessionId)
-}
-
-// Login
-export async function login(username: string, password: string): Promise<{ success: boolean; error?: string }> {
+/**
+ * Sign up a new user with Supabase Auth (username-based)
+ * Email is auto-generated as username@local.app for Supabase Auth compatibility
+ * Role code is REQUIRED - no signup without valid role code
+ */
+export async function signup(
+  username: string,
+  password: string,
+  roleCode: string
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const user = await usersRepo.getByUsername(username)
-    
-    if (!user) {
-      return { success: false, error: 'Invalid credentials' }
+    // Validate role code is provided
+    if (!roleCode) {
+      return { success: false, error: 'Role code is required' }
     }
 
-    const hashedPassword = hashPassword(password)
+    // Determine role based on role code
+    let role: 'CEO' | 'LRC_MANAGER' | 'VIEWER'
     
-    // Get user with password from database
-    const supabase = createServiceClient()
-    const { data: dbUser } = await supabase
+    if (roleCode === process.env.CEO_ROLE_CODE) {
+      role = 'CEO'
+    } else if (roleCode === process.env.MANAGER_ROLE_CODE) {
+      role = 'LRC_MANAGER'
+    } else {
+      return { success: false, error: 'Invalid role code' }
+    }
+
+    const supabase = await createClient()
+
+    // Check if username already exists
+    const serviceSupabase = createServiceClient()
+    const { data: existingUser } = await serviceSupabase
       .from('users')
-      .select('password')
-      .eq('id', user.id)
+      .select('username')
+      .eq('username', username)
       .single()
 
-    if (!dbUser || dbUser.password !== hashedPassword) {
-      return { success: false, error: 'Invalid credentials' }
+    if (existingUser) {
+      return { success: false, error: 'Username already exists' }
     }
 
-    // Create session
-    const session = await createSession(user.id)
+    // Create email from username for Supabase Auth (required by Supabase)
+    // Format: username@local.app
+    const email = `${username}@local.app`
 
-    // Set cookie
-    const cookieStore = await cookies()
-    cookieStore.set('session', session.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
+    // Sign up with Supabase Auth using service client to bypass email confirmation
+    const { data, error } = await serviceSupabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true, // Auto-confirm email
+      user_metadata: {
+        username,
+        role,
+      },
     })
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    if (!data.user) {
+      return { success: false, error: 'Failed to create user' }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Signup error:', error)
+    return { success: false, error: 'Signup failed' }
+  }
+}
+
+/**
+ * Login with username and password
+ * Converts username to email format for Supabase Auth
+ */
+export async function login(
+  username: string,
+  password: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    // Convert username to email format
+    const email = `${username}@local.app`
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      return { success: false, error: 'Invalid username or password' }
+    }
+
+    if (!data.session) {
+      return { success: false, error: 'Failed to create session' }
+    }
 
     return { success: true }
   } catch (error) {
@@ -120,44 +119,47 @@ export async function login(username: string, password: string): Promise<{ succe
   }
 }
 
-// Logout
+/**
+ * Logout current user
+ */
 export async function logout(): Promise<void> {
-  const cookieStore = await cookies()
-  const sessionId = cookieStore.get('session')?.value
-
-  if (sessionId) {
-    await deleteSession(sessionId)
-  }
-
-  cookieStore.delete('session')
+  const supabase = await createClient()
+  await supabase.auth.signOut()
 }
 
-// Get current user
+/**
+ * Get current authenticated user with profile data
+ */
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const cookieStore = await cookies()
-    const sessionId = cookieStore.get('session')?.value
+    const supabase = await createClient()
 
-    if (!sessionId) {
+    // Get auth user
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !authUser) {
       return null
     }
 
-    const session = await getSession(sessionId)
-    if (!session) {
-      cookieStore.delete('session')
-      return null
-    }
+    // Get profile data from users table
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('auth_id', authUser.id)
+      .single()
 
-    const user = await usersRepo.getById(session.userId)
-    if (!user) {
+    if (profileError || !profile) {
+      console.error('Profile not found for auth user:', authUser.id)
       return null
     }
 
     return {
-      id: user.id,
-      username: user.username,
-      role: user.role as 'CEO' | 'LRC_MANAGER' | 'VIEWER',
-      createdAt: user.createdAt,
+      id: profile.id,
+      authId: profile.auth_id,
+      username: profile.username,
+      email: profile.email || undefined,
+      role: profile.role as 'CEO' | 'LRC_MANAGER',
+      createdAt: profile.created_at,
     }
   } catch (error) {
     console.error('Get current user error:', error)
@@ -165,7 +167,9 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 }
 
-// Require auth
+/**
+ * Require authentication - throws if not authenticated
+ */
 export async function requireAuth(): Promise<User> {
   const user = await getCurrentUser()
   if (!user) {
@@ -174,50 +178,152 @@ export async function requireAuth(): Promise<User> {
   return user
 }
 
-// Signup
-export async function signup(username: string, password: string, role: 'CEO' | 'LRC_MANAGER' | 'VIEWER' = 'VIEWER'): Promise<{ success: boolean; error?: string }> {
-  try {
-    // Check if user exists
-    const existingUser = await usersRepo.getByUsername(username)
-    if (existingUser) {
-      return { success: false, error: 'Username already exists' }
-    }
+/**
+ * Check if current user has admin role (CEO or LRC_MANAGER)
+ */
+export async function isAdmin(): Promise<boolean> {
+  const user = await getCurrentUser()
+  return user ? ['CEO', 'LRC_MANAGER'].includes(user.role) : false
+}
 
-    // Create user
-    const hashedPassword = hashPassword(password)
+/**
+ * Check if current user is CEO
+ */
+export async function isCEO(): Promise<boolean> {
+  const user = await getCurrentUser()
+  return user?.role === 'CEO'
+}
+
+/**
+ * Require admin role - throws if not admin
+ */
+export async function requireAdmin(): Promise<User> {
+  const user = await requireAuth()
+  if (!['CEO', 'LRC_MANAGER'].includes(user.role)) {
+    throw new Error('Forbidden: Admin access required')
+  }
+  return user
+}
+
+/**
+ * Require CEO role - throws if not CEO
+ */
+export async function requireCEO(): Promise<User> {
+  const user = await requireAuth()
+  if (user.role !== 'CEO') {
+    throw new Error('Forbidden: CEO access required')
+  }
+  return user
+}
+
+// ============================================================================
+// Admin Functions (using service role)
+// ============================================================================
+
+/**
+ * Update user role (CEO only)
+ */
+export async function updateUserRole(
+  userId: string,
+  newRole: 'CEO' | 'LRC_MANAGER'
+): Promise<{ success: boolean; error?: string }> {
+  try {
     const supabase = createServiceClient()
-    
-    const { data, error } = await supabase
+
+    // Get user's auth_id
+    const { data: user } = await supabase
       .from('users')
-      .insert({
-        id: crypto.randomUUID(),
-        username,
-        password: hashedPassword,
-        role,
-      })
-      .select()
+      .select('auth_id')
+      .eq('id', userId)
       .single()
 
-    if (error) {
-      return { success: false, error: 'Failed to create user' }
+    if (!user) {
+      return { success: false, error: 'User not found' }
     }
 
-    // Create session
-    const session = await createSession(data.id)
+    // Update role in users table
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ role: newRole })
+      .eq('id', userId)
 
-    // Set cookie
-    const cookieStore = await cookies()
-    cookieStore.set('session', session.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
-    })
+    if (updateError) {
+      return { success: false, error: updateError.message }
+    }
+
+    // Update role in auth metadata
+    const { error: metaError } = await supabase.auth.admin.updateUserById(
+      user.auth_id,
+      {
+        user_metadata: { role: newRole }
+      }
+    )
+
+    if (metaError) {
+      console.error('Failed to update auth metadata:', metaError)
+    }
 
     return { success: true }
   } catch (error) {
-    console.error('Signup error:', error)
-    return { success: false, error: 'Signup failed' }
+    console.error('Update user role error:', error)
+    return { success: false, error: 'Failed to update role' }
+  }
+}
+
+/**
+ * Get all users (admin only)
+ */
+export async function getAllUsers(): Promise<User[]> {
+  const supabase = createServiceClient()
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Get all users error:', error)
+    return []
+  }
+
+  return data.map(user => ({
+    id: user.id,
+    authId: user.auth_id,
+    username: user.username,
+    email: user.email || undefined,
+    role: user.role as 'CEO' | 'LRC_MANAGER',
+    createdAt: user.created_at,
+  }))
+}
+
+/**
+ * Delete user (CEO only)
+ */
+export async function deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = createServiceClient()
+
+    // Get user's auth_id
+    const { data: user } = await supabase
+      .from('users')
+      .select('auth_id')
+      .eq('id', userId)
+      .single()
+
+    if (!user) {
+      return { success: false, error: 'User not found' }
+    }
+
+    // Delete from auth (will cascade to users table)
+    const { error } = await supabase.auth.admin.deleteUser(user.auth_id)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Delete user error:', error)
+    return { success: false, error: 'Failed to delete user' }
   }
 }
