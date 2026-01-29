@@ -3,6 +3,27 @@
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
 import { questionsRepo, competitionsRepo } from '@/lib/repos'
+import type { Question as RepoQuestion } from '@/lib/store/types'
+import type { Question as DashboardQuestion } from '../core/types'
+
+// Transform repo format to dashboard format
+function toDashboardFormat(q: RepoQuestion): DashboardQuestion {
+  return {
+    id: q.id,
+    competition_id: q.competitionId,
+    is_training: q.isTraining,
+    type: q.type as DashboardQuestion['type'],
+    question_text: q.questionText,
+    options: q.options || null,
+    correct_answer: q.correctAnswer || null,
+    volume: q.sourceRef.volume,
+    page: q.sourceRef.page,
+    line_from: q.sourceRef.lineFrom,
+    line_to: q.sourceRef.lineTo,
+    is_active: q.isActive,
+    created_at: q.createdAt,
+  }
+}
 
 export interface QuestionFormData {
   competition_id: string | null
@@ -58,7 +79,7 @@ export async function getQuestions(filters: QuestionFilters = {}, page = 1, limi
   const paginatedQuestions = questions.slice(start, end)
 
   return {
-    questions: paginatedQuestions,
+    questions: paginatedQuestions.map(toDashboardFormat),
     total: questions.length,
     page,
     limit,

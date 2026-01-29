@@ -13,18 +13,26 @@ interface OverviewProps {
 }
 
 interface Stats {
-  activeCompetition: {
-    title: string
-    status: string
-    participantsCount: number
-  } | null
+  totalCompetitions: number
   totalQuestions: number
   totalSubmissions: number
-  totalTickets: number
-  recentActivity: Array<{
+  activeCompetition: {
     id: string
-    action: string
-    timestamp: string
+    title: string
+    slug: string
+    totalQuestions: number
+    totalSubmissions: number
+    pendingSubmissions: number
+    approvedSubmissions: number
+    startAt: string
+    endAt: string
+  } | null
+  recentSubmissions: Array<{
+    id: string
+    participantName: string
+    competitionId: string
+    submittedAt: string
+    status: string
   }>
 }
 
@@ -125,47 +133,44 @@ export default function Overview({ profile }: OverviewProps) {
           </div>
         </div>
 
-        {/* Total Tickets */}
+        {/* Total Competitions */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-neutral-200">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl">🎫</span>
+              <span className="text-2xl">🏆</span>
             </div>
             <div>
-              <p className="text-sm text-neutral-600">إجمالي التذاكر</p>
+              <p className="text-sm text-neutral-600">إجمالي المسابقات</p>
               <p className="text-2xl font-bold text-neutral-900">
-                {stats?.totalTickets || 0}
+                {stats?.totalCompetitions || 0}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      {profile.role !== 'STUDENT' && (
+      {/* Recent Submissions */}
+      {stats?.recentSubmissions && stats.recentSubmissions.length > 0 && (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-neutral-200">
           <h2 className="text-xl font-bold text-neutral-900 mb-4">
-            النشاط الأخير
+            الإجابات الأخيرة
           </h2>
-          {stats?.recentActivity && stats.recentActivity.length > 0 ? (
-            <div className="space-y-3">
-              {stats.recentActivity.map(activity => (
-                <div
-                  key={activity.id}
-                  className="flex items-center justify-between py-3 border-b border-neutral-100 last:border-0"
-                >
-                  <p className="text-sm text-neutral-700">{activity.action}</p>
-                  <p className="text-xs text-neutral-500">
-                    {new Date(activity.timestamp).toLocaleString('ar-SA')}
-                  </p>
+          <div className="space-y-3">
+            {stats.recentSubmissions.map(submission => (
+              <div
+                key={submission.id}
+                className="flex items-center justify-between py-3 border-b border-neutral-100 last:border-0"
+              >
+                <div>
+                  <p className="text-sm font-medium text-neutral-700">{submission.participantName}</p>
+                  <p className="text-xs text-neutral-500">{submission.status}</p>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-neutral-500 text-center py-8">
-              لا يوجد نشاط حديث
-            </p>
-          )}
+                <p className="text-xs text-neutral-500">
+                  {new Date(submission.submittedAt).toLocaleString('ar-SA')}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

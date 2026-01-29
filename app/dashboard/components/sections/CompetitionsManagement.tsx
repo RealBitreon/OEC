@@ -192,6 +192,7 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    status: 'draft' as 'draft' | 'active' | 'archived',
     start_at: '',
     end_at: '',
     wheel_at: '',
@@ -221,6 +222,7 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
       setFormData({
         title: '',
         description: '',
+        status: 'draft',
         start_at: today.toISOString().split('T')[0],
         end_at: endDate.toISOString().split('T')[0],
         wheel_at: wheelDate.toISOString().split('T')[0],
@@ -243,6 +245,7 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
         setFormData({
           title: competition.title,
           description: competition.description,
+          status: competition.status,
           start_at: competition.start_at.split('T')[0],
           end_at: competition.end_at.split('T')[0],
           wheel_at: competition.wheel_at.split('T')[0],

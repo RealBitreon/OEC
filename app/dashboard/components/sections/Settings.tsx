@@ -18,10 +18,8 @@ interface SettingsProps {
 export default function Settings({ profile }: SettingsProps) {
   const isCEO = profile.role === 'CEO'
   const isLRCManager = profile.role === 'LRC_MANAGER'
-  const isStudent = profile.role === 'STUDENT'
   
   // CEO and LRC Manager: Only Security and Themes
-  // Students: Full access
   const [activeTab, setActiveTab] = useState<TabType>('security')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -79,8 +77,6 @@ export default function Settings({ profile }: SettingsProps) {
 
         {/* Tab Content */}
         <div className="p-6">
-          {activeTab === 'profile' && isStudent && <ProfileSettings profile={profile} onSave={showMessage} saving={saving} setSaving={setSaving} />}
-          {activeTab === 'notifications' && isStudent && <NotificationsTab profile={profile} onSave={showMessage} saving={saving} setSaving={setSaving} />}
           {activeTab === 'security' && <SecurityTab profile={profile} onSave={showMessage} saving={saving} setSaving={setSaving} />}
           {activeTab === 'appearance' && <AppearanceTab profile={profile} onSave={showMessage} saving={saving} setSaving={setSaving} />}
         </div>

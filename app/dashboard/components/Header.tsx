@@ -38,7 +38,6 @@ export default function Header({ profile, onMenuClick }: HeaderProps) {
             px-3 py-1 rounded-full text-xs font-medium
             ${profile.role === 'CEO' ? 'bg-purple-100 text-purple-700' : ''}
             ${profile.role === 'LRC_MANAGER' ? 'bg-blue-100 text-blue-700' : ''}
-            ${profile.role === 'STUDENT' ? 'bg-green-100 text-green-700' : ''}
           `}>
             {getRoleLabel(profile.role)}
           </div>
@@ -63,7 +62,6 @@ function getRoleLabel(role: string): string {
   const labels: Record<string, string> = {
     CEO: 'المدير التنفيذي',
     LRC_MANAGER: 'مدير المسابقة',
-    STUDENT: 'طالب',
   }
   return labels[role] || role
 }

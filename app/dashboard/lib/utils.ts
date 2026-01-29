@@ -9,10 +9,9 @@ export type UserProfile = User
  * Note: This is for UI filtering only, NOT for security
  */
 export const hasRole = (userRole: UserProfile['role'], requiredRole: UserProfile['role']): boolean => {
-  const hierarchy: Record<UserProfile['role'], number> = {
+  const hierarchy: Record<UserRole, number> = {
     'CEO': 3,
     'LRC_MANAGER': 2,
-    'STUDENT': 1
   }
   
   return hierarchy[userRole] >= hierarchy[requiredRole]
