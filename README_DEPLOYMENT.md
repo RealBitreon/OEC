@@ -29,7 +29,8 @@
 
 ## 🚀 Deploy Now (3 Commands)
 
-```bash
+### Windows PowerShell
+```powershell
 # 1. Verify everything is ready
 npm run verify
 
@@ -38,6 +39,12 @@ npm run build
 
 # 3. Deploy to Vercel
 vercel --prod
+```
+
+### Linux/Mac or Windows CMD
+```bash
+# One command
+npm run verify && npm run build && vercel --prod
 ```
 
 ---

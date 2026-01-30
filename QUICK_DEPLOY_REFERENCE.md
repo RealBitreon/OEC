@@ -100,8 +100,16 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY=6Lxxx...
 
 ---
 
-## ✨ One-Liner Deploy
+## ✨ Deploy Commands
 
+### Windows PowerShell (Your System)
+```powershell
+npm run verify
+npm run build
+vercel --prod
+```
+
+### Linux/Mac/CMD
 ```bash
 npm run verify && npm run build && vercel --prod
 ```
