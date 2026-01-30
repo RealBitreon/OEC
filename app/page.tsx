@@ -17,11 +17,20 @@ import HomeClient from './HomeClient'
 import { competitionsRepo, questionsRepo } from '@/lib/repos'
 import type { Question } from '@/lib/store/types'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function Home() {
   let activeCompetition = null
   let questionsData: Question[] = []
 
   try {
+    // Check if environment variables are set
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('Supabase environment variables not configured')
+      return <HomeClient activeCompetition={null} questions={[]} />
+    }
+
     activeCompetition = await competitionsRepo.getActive()
   } catch (error) {
     console.error('Error fetching active competition:', error)
