@@ -1,11 +1,7 @@
 -- ============================================
 -- ADD IS_WINNER COLUMN TO SUBMISSIONS TABLE
 -- ============================================
--- This is OPTIONAL - only run if you want to track winners
--- directly in the submissions table instead of using wheel_winners
---
--- Current fix uses wheel_winners table instead
--- Run this only if you prefer the is_winner approach
+-- Run this to enable winner tracking in submissions table
 -- ============================================
 
 -- Add is_winner column to submissions table
@@ -19,14 +15,6 @@ WHERE is_winner = true;
 
 -- Add comment
 COMMENT ON COLUMN submissions.is_winner IS 'Indicates if this submission won a prize in the wheel spin';
-
--- Optional: Update existing wheel winners to set is_winner = true
--- Only run this if you have data in wheel_winners table
-UPDATE submissions s
-SET is_winner = true
-FROM wheel_winners ww
-WHERE s.id = ww.submission_id
-  AND s.is_winner = false;
 
 -- Verify the changes
 SELECT 

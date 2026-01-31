@@ -5,24 +5,25 @@ export async function GET() {
   try {
     const supabase = await createClient();
     
-    // Get winners from wheel_winners table
+    // Get winners from submissions with is_winner = true
     const { data: winners, error } = await supabase
-      .from('wheel_winners')
+      .from('submissions')
       .select(`
         *,
         competition:competitions(id, title, slug, status),
         user:users(id, username)
       `)
+      .eq('is_winner', true)
       .order('created_at', { ascending: false })
       .limit(10);
 
     if (error) {
       console.error('Winners fetch error:', error);
-      // If wheel_winners table doesn't exist yet, return empty array gracefully
-      if (error.code === '42P01') {
+      // If is_winner column doesn't exist yet, return empty array gracefully
+      if (error.code === '42703') {
         return NextResponse.json({ 
           winners: [],
-          message: 'Winners feature not yet configured'
+          message: 'Winners feature not yet configured. Run add_is_winner_column.sql migration.'
         });
       }
       return NextResponse.json(
