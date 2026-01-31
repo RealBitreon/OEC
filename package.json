@@ -12,7 +12,8 @@
     "start": "next start",
     "lint": "next lint",
     "verify": "node verify-deployment.js",
-    "predeploy": "npm run verify && npm run build",
+    "verify-build": "node verify-build.js",
+    "predeploy": "npm run verify-build && npm run build",
     "clean": "taskkill /F /IM node.exe 2>nul & rmdir /s /q .next 2>nul & del tsconfig.tsbuildinfo 2>nul & echo Cache cleared"
   },
   "dependencies": {

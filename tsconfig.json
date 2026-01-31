@@ -28,7 +28,7 @@
         "./*"
       ]
     },
-    "forceConsistentCasingInFileNames": false,
+    "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false
   },
