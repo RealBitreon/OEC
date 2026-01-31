@@ -13,16 +13,22 @@ export async function GET() {
         submissions:submissions(count)
       `)
       .eq('status', 'archived')
-      .order('end_date', { ascending: false });
+      .order('end_at', { ascending: false }); // Fixed: end_date → end_at
 
     if (error) {
       console.error('Archived competitions fetch error:', error);
-      return NextResponse.json({ competitions: [] }, { status: 200 });
+      return NextResponse.json(
+        { error: error.message, competitions: [] },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ competitions: competitions || [] });
   } catch (error) {
     console.error('Archived competitions error:', error);
-    return NextResponse.json({ competitions: [] }, { status: 200 });
+    return NextResponse.json(
+      { error: 'Failed to fetch archived competitions', competitions: [] },
+      { status: 500 }
+    );
   }
 }

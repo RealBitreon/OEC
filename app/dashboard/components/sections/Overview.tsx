@@ -40,18 +40,23 @@ interface Stats {
 export default function Overview({ profile }: OverviewProps) {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
     
     const fetchStats = async () => {
       try {
+        setError(null)
         const data = await getOverviewStats()
         if (mounted) {
           setStats(data)
         }
       } catch (error) {
         console.error('Failed to load stats:', error)
+        if (mounted) {
+          setError(error instanceof Error ? error.message : 'فشل تحميل الإحصائيات')
+        }
       } finally {
         if (mounted) {
           setLoading(false)
@@ -79,6 +84,40 @@ export default function Overview({ profile }: OverviewProps) {
               <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4" />
             </div>
           ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">نظرة عامة</h1>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <Icons.alert className="w-6 h-6 text-red-600 dark:text-red-400" />
+            <h2 className="text-lg font-semibold text-red-900 dark:text-red-100">
+              خطأ في تحميل البيانات
+            </h2>
+          </div>
+          <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!stats) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">نظرة عامة</h1>
+        <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl p-6 text-center">
+          <p className="text-neutral-600 dark:text-neutral-400">لا توجد بيانات متاحة</p>
         </div>
       </div>
     )
