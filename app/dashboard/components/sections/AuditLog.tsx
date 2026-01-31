@@ -50,7 +50,36 @@ export default function AuditLog({ profile }: { profile: User }) {
   const [totalPages, setTotalPages] = useState(1)
 
   useEffect(() => {
-    loadData()
+    let mounted = true
+    
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        const [logsData, statsData, actionsData] = await Promise.all([
+          getAuditLogs(filters, page),
+          getAuditStats(),
+          getUniqueActions()
+        ])
+        if (mounted) {
+          setLogs(logsData.logs)
+          setTotalPages(logsData.pages)
+          setStats(statsData)
+          setActions(actionsData)
+        }
+      } catch (error) {
+        console.error('Failed to load audit logs:', error)
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+    
+    fetchData()
+    
+    return () => {
+      mounted = false
+    }
   }, [filters, page])
 
   const loadData = async () => {

@@ -33,7 +33,34 @@ export default function UsersManagement({ profile }: { profile: User }) {
   const [totalPages, setTotalPages] = useState(1)
 
   useEffect(() => {
-    loadData()
+    let mounted = true
+    
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        const [usersData, statsData] = await Promise.all([
+          getUsers(filters, page),
+          getUserStats()
+        ])
+        if (mounted) {
+          setUsers(usersData.users)
+          setTotalPages(usersData.pages)
+          setStats(statsData)
+        }
+      } catch (error) {
+        console.error('Failed to load users:', error)
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+    
+    fetchData()
+    
+    return () => {
+      mounted = false
+    }
   }, [filters, page])
 
   const loadData = async () => {

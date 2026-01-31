@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { BackButton } from '@/components'
+import Icons from '@/components/icons'
 
 export default function PrivacyPage() {
   return (
@@ -33,7 +34,7 @@ export default function PrivacyPage() {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <div className="text-6xl md:text-8xl mb-4 md:mb-6">🔒</div>
+            <div className="md:text-8xl mb-4 md:mb-6"><Icons.lock className="w-16 h-16" /></div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 md:mb-4">
               سياسة الخصوصية
             </h1>
@@ -87,7 +88,7 @@ export default function PrivacyPage() {
                 className="card"
               >
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
-                  <span className="text-3xl md:text-4xl">📝</span>
+                  <Icons.file className="w-8 h-8 md:text-4xl" />
                   <div className="flex-1">
                     <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-3 md:mb-4">
                       1. ما هي المعلومات التي نجمعها؟
@@ -125,7 +126,7 @@ export default function PrivacyPage() {
                 className="card"
               >
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
-                  <span className="text-3xl md:text-4xl">🎯</span>
+                  <Icons.target className="w-8 h-8 md:text-4xl" />
                   <div className="flex-1">
                     <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-3 md:mb-4">
                       2. لماذا نحتاج هذه المعلومات؟
@@ -239,7 +240,7 @@ export default function PrivacyPage() {
                 className="card"
               >
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
-                  <span className="text-3xl md:text-4xl">✅</span>
+                  <Icons.check className="w-8 h-8 md:text-4xl" />
                   <div className="flex-1">
                     <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-3 md:mb-4">
                       5. حقوقك
@@ -299,7 +300,7 @@ export default function PrivacyPage() {
             >
               <div className="card bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-primary/20">
                 <div className="text-center">
-                  <div className="text-5xl md:text-6xl mb-4 md:mb-6">📞</div>
+                  <div className="md:text-6xl mb-4 md:mb-6"><Icons.phone className="w-12 h-12" /></div>
                   <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 md:mb-4">
                     هل لديك أسئلة؟
                   </h3>

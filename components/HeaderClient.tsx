@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import AnnouncementBar from './AnnouncementBar'
+import { config } from '@/lib/config/site'
 
 export default function HeaderClient() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -33,8 +34,8 @@ export default function HeaderClient() {
               <span className="text-2xl font-bold text-white">م</span>
             </div>
             <div className="hidden md:block">
-              <div className="text-lg font-bold text-primary">الموسوعة العُمانية</div>
-              <div className="text-xs text-neutral-600">مسابقة البحث والتوثيق</div>
+              <div className="text-lg font-bold text-primary">{config.site.title}</div>
+              <div className="text-xs text-neutral-600">{config.school.shortName}</div>
             </div>
           </Link>
 

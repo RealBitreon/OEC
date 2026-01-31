@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { User } from '../../core/types'
 import { getCompetitions } from '../../actions/competitions'
 import { getEligibleStudents, lockSnapshot, runDraw, getWheelStatus, publishResults, resetWheel } from '../../actions/wheel'
+import { Icons } from '@/components/icons'
 
-export default function WheelManagement({ profile }: { profile: User }) {
+export default function WheelManagement({ profile, competitionId }: { profile: User, competitionId?: string }) {
   const [competitions, setCompetitions] = useState<any[]>([])
   const [selectedCompetition, setSelectedCompetition] = useState<string>('')
   const [eligible, setEligible] = useState<any[]>([])
@@ -13,14 +14,68 @@ export default function WheelManagement({ profile }: { profile: User }) {
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [showPublishModal, setShowPublishModal] = useState(false)
+  const [showTestWheel, setShowTestWheel] = useState(false)
+  const [numberOfWinners, setNumberOfWinners] = useState(1)
 
   useEffect(() => {
-    loadCompetitions()
+    let mounted = true
+    
+    const fetchCompetitions = async () => {
+      try {
+        const data = await getCompetitions()
+        const activeOrRecent = data.filter(c => c.status === 'active' || c.status === 'archived')
+        if (mounted) {
+          setCompetitions(activeOrRecent)
+          if (activeOrRecent.length > 0) {
+            setSelectedCompetition(activeOrRecent[0].id)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load competitions:', error)
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+    
+    fetchCompetitions()
+    
+    return () => {
+      mounted = false
+    }
   }, [])
 
   useEffect(() => {
-    if (selectedCompetition) {
-      loadWheelData()
+    let mounted = true
+    
+    const fetchWheelData = async () => {
+      if (!selectedCompetition) return
+      
+      setLoading(true)
+      try {
+        const [eligibleData, statusData] = await Promise.all([
+          getEligibleStudents(selectedCompetition),
+          getWheelStatus(selectedCompetition)
+        ])
+        
+        if (mounted) {
+          setEligible(eligibleData)
+          setWheelStatus(statusData)
+        }
+      } catch (error) {
+        console.error('Failed to load wheel data:', error)
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+    
+    fetchWheelData()
+    
+    return () => {
+      mounted = false
     }
   }, [selectedCompetition])
 
@@ -140,22 +195,56 @@ export default function WheelManagement({ profile }: { profile: User }) {
         <h1 className="text-3xl font-bold text-neutral-900">إدارة عجلة الحظ</h1>
       </div>
 
-      {/* Competition Selector */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-neutral-200">
-        <label className="block text-sm font-medium text-neutral-900 mb-2">
-          اختر المسابقة
-        </label>
-        <select
-          value={selectedCompetition}
-          onChange={e => setSelectedCompetition(e.target.value)}
-          className="w-full md:w-96 px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        >
-          {competitions.map(comp => (
-            <option key={comp.id} value={comp.id}>
-              {comp.title} ({comp.status === 'active' ? 'نشطة' : 'مؤرشفة'})
-            </option>
-          ))}
-        </select>
+      {/* Competition Selector & Settings */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-neutral-200 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-neutral-900 mb-2">
+            اختر المسابقة
+          </label>
+          <select
+            value={selectedCompetition}
+            onChange={e => setSelectedCompetition(e.target.value)}
+            className="w-full md:w-96 px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            {competitions.map(comp => (
+              <option key={comp.id} value={comp.id}>
+                {comp.title} ({comp.status === 'active' ? 'نشطة' : 'مؤرشفة'})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-6 pt-4 border-t border-neutral-200">
+          <div>
+            <label className="block text-sm font-medium text-neutral-900 mb-2">
+              عدد الفائزين
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="10"
+              value={numberOfWinners}
+              onChange={e => setNumberOfWinners(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+              className="w-32 px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-neutral-600 mt-1">
+              سيتم تدوير العجلة {numberOfWinners} {numberOfWinners === 1 ? 'مرة' : 'مرات'}
+            </p>
+          </div>
+
+          <div className="flex-1">
+            <button
+              onClick={() => setShowTestWheel(true)}
+              disabled={eligible.length === 0}
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              🧪 تجربة العجلة
+            </button>
+            <p className="text-xs text-neutral-600 mt-1">
+              اختبر العجلة بدون حفظ النتائج
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Status Overview */}
@@ -348,6 +437,159 @@ export default function WheelManagement({ profile }: { profile: User }) {
           }}
         />
       )}
+
+      {/* Test Wheel Modal */}
+      {showTestWheel && (
+        <TestWheelModal
+          eligible={eligible}
+          totalTickets={totalTickets}
+          numberOfWinners={numberOfWinners}
+          onClose={() => setShowTestWheel(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+function TestWheelModal({ eligible, totalTickets, numberOfWinners, onClose }: any) {
+  const [testing, setTesting] = useState(false)
+  const [results, setResults] = useState<any[]>([])
+  const [currentSpin, setCurrentSpin] = useState(0)
+
+  const runTest = async () => {
+    setTesting(true)
+    setResults([])
+    setCurrentSpin(0)
+
+    const testResults: any[] = []
+    const remainingStudents = [...eligible]
+
+    for (let i = 0; i < numberOfWinners; i++) {
+      setCurrentSpin(i + 1)
+      
+      // Simulate spinning delay
+      await new Promise(resolve => setTimeout(resolve, 1500))
+
+      // Weighted random selection
+      const totalRemainingTickets = remainingStudents.reduce((sum, s) => sum + s.totalTickets, 0)
+      const random = Math.random() * totalRemainingTickets
+      let cumulative = 0
+      let winner = remainingStudents[0]
+
+      for (const student of remainingStudents) {
+        cumulative += student.totalTickets
+        if (random <= cumulative) {
+          winner = student
+          break
+        }
+      }
+
+      testResults.push({
+        spin: i + 1,
+        winner: winner.user.display_name || winner.user.username,
+        tickets: winner.totalTickets,
+        probability: ((winner.totalTickets / totalRemainingTickets) * 100).toFixed(2)
+      })
+
+      // Remove winner from remaining students for next spin
+      const winnerIndex = remainingStudents.findIndex(s => s.user.id === winner.user.id)
+      if (winnerIndex > -1) {
+        remainingStudents.splice(winnerIndex, 1)
+      }
+    }
+
+    setResults(testResults)
+    setTesting(false)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between sticky top-0 bg-white">
+          <h2 className="text-xl font-bold text-neutral-900">🧪 تجربة العجلة</h2>
+          <button
+            onClick={onClose}
+            disabled={testing}
+            className="p-2 text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors disabled:opacity-50"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+            <p className="text-sm text-purple-800">
+              <strong>ملاحظة:</strong> هذا اختبار فقط. لن يتم حفظ النتائج ولن تؤثر على السحب الفعلي.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-neutral-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-neutral-900">{eligible.length}</div>
+              <div className="text-sm text-neutral-600">طلاب مؤهلون</div>
+            </div>
+            <div className="bg-neutral-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-neutral-900">{totalTickets}</div>
+              <div className="text-sm text-neutral-600">إجمالي التذاكر</div>
+            </div>
+            <div className="bg-neutral-50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-neutral-900">{numberOfWinners}</div>
+              <div className="text-sm text-neutral-600">عدد الفائزين</div>
+            </div>
+          </div>
+
+          {testing && (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin text-6xl mb-4">🎡</div>
+              <div className="text-lg font-medium text-neutral-900">
+                جاري التدوير... ({currentSpin} / {numberOfWinners})
+              </div>
+            </div>
+          )}
+
+          {results.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="font-bold text-neutral-900">نتائج الاختبار:</h3>
+              {results.map((result, index) => (
+                <div key={index} className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">
+                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🏆'}
+                      </span>
+                      <div>
+                        <div className="font-bold text-neutral-900">
+                          الفائز #{result.spin}: {result.winner}
+                        </div>
+                        <div className="text-sm text-neutral-600">
+                          {result.tickets} تذكرة • احتمالية {result.probability}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 pt-4">
+            <button
+              onClick={runTest}
+              disabled={testing}
+              className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50"
+            >
+              {testing ? 'جاري الاختبار...' : results.length > 0 ? '🔄 إعادة الاختبار' : '▶️ بدء الاختبار'}
+            </button>
+            <button
+              onClick={onClose}
+              disabled={testing}
+              className="px-6 py-3 text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors disabled:opacity-50"
+            >
+              إغلاق
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -475,7 +717,7 @@ function PublishModal({ wheelStatus, competitionId, onClose }: any) {
               </div>
             ) : (
               <div className="text-center py-4">
-                <div className="text-4xl mb-2">🔒</div>
+                <div className="mb-2"><Icons.lock className="w-10 h-10" /></div>
                 <div className="text-neutral-600">النتيجة غير منشورة</div>
               </div>
             )}

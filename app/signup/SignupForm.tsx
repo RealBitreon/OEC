@@ -27,19 +27,28 @@ export default function SignupForm() {
     setError('')
     setLoading(true)
 
-    const formDataObj = new FormData()
-    formDataObj.append('username', formData.username)
-    formDataObj.append('password', formData.password)
-    formDataObj.append('roleCode', formData.roleCode)
+    try {
+      const formDataObj = new FormData()
+      formDataObj.append('username', formData.username)
+      formDataObj.append('password', formData.password)
+      formDataObj.append('roleCode', formData.roleCode)
 
-    const result = await signupAction(formDataObj)
+      const result = await signupAction(formDataObj)
 
-    if (result?.error) {
-      setError(result.error)
+      if (result?.error) {
+        setError(result.error)
+        setLoading(false)
+      }
+      // If no error, the redirect will happen automatically
+    } catch (error: any) {
+      // Ignore NEXT_REDIRECT errors - they're expected behavior
+      if (error?.message?.includes('NEXT_REDIRECT')) {
+        return
+      }
+      // Handle other errors
+      setError('حدث خطأ غير متوقع')
       setLoading(false)
     }
-    // If no error, the redirect will happen automatically
-    // No need to handle success case as redirect() will take over
   }
 
   return (

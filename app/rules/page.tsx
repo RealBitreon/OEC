@@ -5,6 +5,8 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { BackButton } from '@/components'
+import StartCompetitionButton from '@/components/StartCompetitionButton'
+import Icons from '@/components/icons'
 
 export default function RulesPage() {
   const rules = [
@@ -220,7 +222,7 @@ export default function RulesPage() {
             className="bg-white rounded-xl p-4 md:p-6 shadow-lg border-2 border-secondary"
           >
             <div className="flex items-start gap-3 md:gap-4">
-              <div className="text-3xl md:text-4xl">⚠️</div>
+              <div className="md:text-4xl"><Icons.warning className="w-8 h-8" /></div>
               <div className="flex-1">
                 <h3 className="text-lg md:text-xl font-bold text-primary mb-2">مهم جداً!</h3>
                 <p className="text-sm md:text-base text-neutral-700 leading-relaxed">
@@ -267,14 +269,14 @@ export default function RulesPage() {
                 {rule.example.correct && (
                   <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl p-4 md:p-6 mb-4 md:mb-6 border-2 border-green-200">
                     <h3 className="text-base md:text-lg font-bold text-green-800 mb-3 md:mb-4 flex items-center gap-2">
-                      <span className="text-xl md:text-2xl">💡</span>
+                      <Icons.lightbulb className="w-5 h-5 text-xl md:" />
                       مثال توضيحي:
                     </h3>
                     
                     <div className="space-y-3 md:space-y-4">
                       <div className="bg-white rounded-lg p-3 md:p-4 border-2 border-green-300">
                         <div className="flex items-start gap-2 md:gap-3">
-                          <span className="text-xl md:text-2xl flex-shrink-0">✅</span>
+                          <Icons.check className="w-5 h-5 text-xl md: flex-shrink-0" />
                           <div className="flex-1">
                             <p className="font-semibold text-green-800 text-xs md:text-sm mb-1">صحيح:</p>
                             <p className="text-sm md:text-base text-neutral-800 whitespace-pre-line">
@@ -287,7 +289,7 @@ export default function RulesPage() {
                       {rule.example.wrong && (
                         <div className="bg-white rounded-lg p-3 md:p-4 border-2 border-red-300">
                           <div className="flex items-start gap-2 md:gap-3">
-                            <span className="text-xl md:text-2xl flex-shrink-0">❌</span>
+                            <Icons.cross className="w-5 h-5 text-xl md: flex-shrink-0" />
                             <div className="flex-1">
                               <p className="font-semibold text-red-800 text-xs md:text-sm mb-1">خطأ:</p>
                               <p className="text-sm md:text-base text-neutral-800 whitespace-pre-line">
@@ -304,7 +306,7 @@ export default function RulesPage() {
                 {/* Details List */}
                 <div className="bg-neutral-50 rounded-xl p-4 md:p-6">
                   <h3 className="text-base md:text-lg font-bold text-neutral-800 mb-3 md:mb-4 flex items-center gap-2">
-                    <span className="text-xl md:text-2xl">📌</span>
+                    <Icons.pin className="w-5 h-5 text-xl md:" />
                     تفاصيل مهمة:
                   </h3>
                   <ul className="space-y-2 md:space-y-3">
@@ -338,9 +340,7 @@ export default function RulesPage() {
                 الآن بعد أن فهمت القواعد، حان وقت البدء! ابحث، وثّق، واجمع أكبر عدد من التذاكر.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/questions" className="btn-primary">
-                  ابدأ الإجابة على الأسئلة
-                </Link>
+                <StartCompetitionButton className="btn-primary" />
                 <Link href="/participate" className="btn-ghost">
                   سجل مشاركتك
                 </Link>
@@ -357,7 +357,7 @@ export default function RulesPage() {
           >
             <div className="inline-block bg-blue-50 border-2 border-blue-200 rounded-xl p-4 md:p-6">
               <div className="flex items-center justify-center gap-2 md:gap-3 text-blue-800">
-                <span className="text-2xl md:text-3xl">💬</span>
+                <Icons.message className="w-6 h-6 md:text-3xl" />
                 <p className="text-sm md:text-base font-medium">
                   هل لديك سؤال؟ تواصل مع معلمك في مركز مصادر التعلم
                 </p>

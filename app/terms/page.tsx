@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { BackButton } from '@/components'
+import Icons from '@/components/icons'
 
 export default function TermsPage() {
   return (
@@ -65,7 +66,7 @@ export default function TermsPage() {
               {/* Section 1 */}
               <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
-                  <span className="text-3xl md:text-4xl">✅</span>
+                  <Icons.check className="w-8 h-8 md:text-4xl" />
                   <div className="flex-1">
                     <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-3 md:mb-4">
                       1. قبول الشروط
@@ -123,7 +124,7 @@ export default function TermsPage() {
               {/* Section 3 */}
               <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
-                  <span className="text-3xl md:text-4xl">📝</span>
+                  <Icons.file className="w-8 h-8 md:text-4xl" />
                   <div className="flex-1">
                     <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-3 md:mb-4">
                       3. قواعد المشاركة
@@ -193,7 +194,7 @@ export default function TermsPage() {
               {/* Section 5 */}
               <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
-                  <span className="text-3xl md:text-4xl">🏆</span>
+                  <Icons.trophy className="w-8 h-8 md:text-4xl" />
                   <div className="flex-1">
                     <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-3 md:mb-4">
                       5. الجوائز
@@ -226,7 +227,7 @@ export default function TermsPage() {
               {/* Section 6 */}
               <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
-                  <span className="text-3xl md:text-4xl">⚠️</span>
+                  <Icons.warning className="w-8 h-8 md:text-4xl" />
                   <div className="flex-1">
                     <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-3 md:mb-4">
                       6. السلوك غير المقبول
@@ -296,7 +297,7 @@ export default function TermsPage() {
               {/* Section 8 */}
               <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
-                  <span className="text-3xl md:text-4xl">⚖️</span>
+                  <Icons.scale className="w-8 h-8 md:text-4xl" />
                   <div className="flex-1">
                     <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-3 md:mb-4">
                       8. المسؤولية
@@ -325,7 +326,7 @@ export default function TermsPage() {
               {/* Section 9 */}
               <div className="card">
                 <div className="flex items-start gap-3 md:gap-4 mb-4">
-                  <span className="text-3xl md:text-4xl">📞</span>
+                  <Icons.phone className="w-8 h-8 md:text-4xl" />
                   <div className="flex-1">
                     <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-3 md:mb-4">
                       9. الاتصال
@@ -342,7 +343,7 @@ export default function TermsPage() {
             <div className="mt-8 md:mt-12">
               <div className="card bg-gradient-to-br from-green-50 to-primary/5 border-2 border-green-200">
                 <div className="text-center">
-                  <div className="text-5xl md:text-6xl mb-4 md:mb-6">✅</div>
+                  <div className="md:text-6xl mb-4 md:mb-6"><Icons.check className="w-12 h-12" /></div>
                   <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 md:mb-4">
                     هل توافق على الشروط؟
                   </h3>

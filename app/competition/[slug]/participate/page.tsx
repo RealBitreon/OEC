@@ -4,6 +4,7 @@ import Footer from '@/components/Footer'
 import { BackButton } from '@/components'
 import ParticipationForm from './ParticipationForm'
 import { competitionsRepo, questionsRepo } from '@/lib/repos'
+import Icons from '@/components/icons'
 
 async function getCompetitionData(slug: string) {
   try {
@@ -30,6 +31,7 @@ async function getCompetitionData(slug: string) {
       question_text: q.questionText,
       options: q.options,
       correct_answer: q.correctAnswer,
+      source_ref: q.sourceRef,
     }))
     
     return { competition, questions }
@@ -63,7 +65,7 @@ export default async function CompetitionParticipatePage({ params }: { params: P
           {questions.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
               <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-4xl">⚠️</span>
+                <Icons.warning className="w-10 h-10 " />
               </div>
               <h2 className="text-2xl font-bold text-neutral-800 mb-4">لا توجد أسئلة</h2>
               <p className="text-neutral-600">

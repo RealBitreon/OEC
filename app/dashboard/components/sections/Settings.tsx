@@ -1,13 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { User } from '../../core/types'
 import { 
   updateUserProfile,
   changePassword,
-  updateNotificationSettings
+  updateNotificationSettings,
+  getNotificationSettings,
+  getUserPreferences
 } from '../../actions/settings'
 import { useTheme } from '@/lib/theme/ThemeProvider'
+import { Icons } from '@/components/icons'
 
 type TabType = 'profile' | 'system' | 'notifications' | 'security' | 'appearance'
 
@@ -18,9 +21,11 @@ interface SettingsProps {
 export default function Settings({ profile }: SettingsProps) {
   const isCEO = profile.role === 'CEO'
   const isLRCManager = profile.role === 'LRC_MANAGER'
+  const isStudent = !isCEO && !isLRCManager
   
   // CEO and LRC Manager: Only Security and Themes
-  const [activeTab, setActiveTab] = useState<TabType>('security')
+  // Students: All tabs
+  const [activeTab, setActiveTab] = useState<TabType>(isStudent ? 'profile' : 'security')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
@@ -77,6 +82,8 @@ export default function Settings({ profile }: SettingsProps) {
 
         {/* Tab Content */}
         <div className="p-6">
+          {activeTab === 'profile' && <ProfileSettings profile={profile} onSave={showMessage} saving={saving} setSaving={setSaving} />}
+          {activeTab === 'notifications' && <NotificationsTab profile={profile} onSave={showMessage} saving={saving} setSaving={setSaving} />}
           {activeTab === 'security' && <SecurityTab profile={profile} onSave={showMessage} saving={saving} setSaving={setSaving} />}
           {activeTab === 'appearance' && <AppearanceTab profile={profile} onSave={showMessage} saving={saving} setSaving={setSaving} />}
         </div>
@@ -102,14 +109,49 @@ function TabButton({ active, onClick, icon, label }: { active: boolean, onClick:
 // Profile Settings
 function ProfileSettings({ profile, onSave, saving, setSaving }: any) {
   const [formData, setFormData] = useState({
-    display_name: profile.username,
-    email: '',
-    phone: '',
-    bio: ''
+    display_name: profile.display_name || profile.username,
+    email: profile.email || '',
+    phone: profile.phone || '',
+    bio: profile.bio || ''
   })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const validateEmail = (email: string) => {
+    if (!email) return true // Email is optional
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
+  const validatePhone = (phone: string) => {
+    if (!phone) return true // Phone is optional
+    const phoneRegex = /^(\+966|0)?5[0-9]{8}$/
+    return phoneRegex.test(phone.replace(/\s/g, ''))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate form
+    const newErrors: Record<string, string> = {}
+    
+    if (!formData.display_name.trim()) {
+      newErrors.display_name = 'الاسم الكامل مطلوب'
+    }
+    
+    if (formData.email && !validateEmail(formData.email)) {
+      newErrors.email = 'البريد الإلكتروني غير صحيح'
+    }
+    
+    if (formData.phone && !validatePhone(formData.phone)) {
+      newErrors.phone = 'رقم الهاتف غير صحيح (مثال: 0512345678)'
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+    
+    setErrors({})
     setSaving(true)
     try {
       await updateUserProfile(profile.id, formData)
@@ -128,7 +170,7 @@ function ProfileSettings({ profile, onSave, saving, setSaving }: any) {
         
         <div className="flex items-center gap-6 mb-6">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-            <span className="text-3xl font-bold text-white">{profile.username.charAt(0).toUpperCase()}</span>
+            <span className="text-3xl font-bold text-white">{(formData.display_name || profile.username).charAt(0).toUpperCase()}</span>
           </div>
           <div>
             <button type="button" className="px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
@@ -148,19 +190,25 @@ function ProfileSettings({ profile, onSave, saving, setSaving }: any) {
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">الاسم الكامل</label>
             <input type="text" value={formData.display_name} onChange={e => setFormData({ ...formData, display_name: e.target.value })} 
-              className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="أدخل اسمك الكامل" />
+              className={`w-full px-4 py-2 border ${errors.display_name ? 'border-red-500' : 'border-neutral-300 dark:border-neutral-600'} dark:bg-neutral-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`} 
+              placeholder="أدخل اسمك الكامل" />
+            {errors.display_name && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.display_name}</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">البريد الإلكتروني</label>
             <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} 
-              className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="example@email.com" />
+              className={`w-full px-4 py-2 border ${errors.email ? 'border-red-500' : 'border-neutral-300 dark:border-neutral-600'} dark:bg-neutral-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`} 
+              placeholder="example@email.com" />
+            {errors.email && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.email}</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">رقم الهاتف</label>
             <input type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} 
-              className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+966 5X XXX XXXX" />
+              className={`w-full px-4 py-2 border ${errors.phone ? 'border-red-500' : 'border-neutral-300 dark:border-neutral-600'} dark:bg-neutral-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`} 
+              placeholder="+966 5X XXX XXXX" />
+            {errors.phone && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.phone}</p>}
           </div>
         </div>
 
@@ -173,7 +221,12 @@ function ProfileSettings({ profile, onSave, saving, setSaving }: any) {
       </div>
 
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-        <button type="button" className="px-6 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">إلغاء</button>
+        <button type="button" onClick={() => setFormData({
+          display_name: profile.display_name || profile.username,
+          email: profile.email || '',
+          phone: profile.phone || '',
+          bio: profile.bio || ''
+        })} className="px-6 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors">إلغاء</button>
         <button type="submit" disabled={saving} className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50">
           {saving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
         </button>
@@ -193,6 +246,22 @@ function NotificationsTab({ profile, onSave, saving, setSaving }: any) {
     wheel_notifications: true,
     weekly_digest: false
   })
+  const [loading, setLoading] = useState(true)
+
+  // Load notification settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const userSettings = await getNotificationSettings(profile.id)
+        setSettings(userSettings)
+      } catch (error) {
+        console.error('Failed to load notification settings:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadSettings()
+  }, [profile.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -205,6 +274,14 @@ function NotificationsTab({ profile, onSave, saving, setSaving }: any) {
     } finally {
       setSaving(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
   }
 
   return (
@@ -250,7 +327,7 @@ function SecurityTab({ profile, onSave, saving, setSaving }: any) {
   })
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak')
 
-  const checkPasswordStrength = (password: string) => {
+  const checkPasswordStrength = (password: string): 'weak' | 'medium' | 'strong' => {
     if (password.length < 8) return 'weak'
     
     let strength = 0
@@ -405,7 +482,7 @@ function SecurityTab({ profile, onSave, saving, setSaving }: any) {
         <div className="space-y-3">
           <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-700/50 rounded-lg border border-neutral-200 dark:border-neutral-600">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">💻</span>
+              <Icons.code className="w-6 h-6 " />
               <div>
                 <p className="font-medium text-neutral-900 dark:text-white">الجلسة الحالية</p>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">Windows • Chrome • {new Date().toLocaleDateString('ar-SA')}</p>
@@ -450,6 +527,25 @@ function AppearanceTab({ profile, onSave, saving, setSaving }: any) {
   const [language, setLanguage] = useState('ar')
   const [fontSize, setFontSize] = useState('medium')
   const [compactMode, setCompactMode] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  // Load user preferences on mount
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const prefs = await getUserPreferences(profile.id)
+        setTheme(prefs.theme as 'light' | 'dark' | 'auto')
+        setLanguage(prefs.language)
+        setFontSize(prefs.fontSize)
+        setCompactMode(prefs.compactMode)
+      } catch (error) {
+        console.error('Failed to load preferences:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadPreferences()
+  }, [profile.id])
 
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'auto') => {
     setTheme(newTheme)
@@ -461,10 +557,11 @@ function AppearanceTab({ profile, onSave, saving, setSaving }: any) {
     setSaving(true)
     try {
       await updateUserProfile(profile.id, {
-        display_name: profile.username,
+        display_name: profile.display_name || profile.username,
         theme,
         language,
-        fontSize
+        fontSize,
+        compact_mode: compactMode
       } as any)
       onSave('success', 'تم حفظ إعدادات المظهر بنجاح')
     } catch (error: any) {
@@ -472,6 +569,14 @@ function AppearanceTab({ profile, onSave, saving, setSaving }: any) {
     } finally {
       setSaving(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
   }
 
   return (
@@ -509,114 +614,10 @@ function AppearanceTab({ profile, onSave, saving, setSaving }: any) {
             </div>
           </div>
 
-          {/* Language Selection */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">اللغة</label>
-            <select 
-              value={language} 
-              onChange={e => setLanguage(e.target.value)}
-              className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-neutral-700 dark:text-white"
-            >
-              <option value="ar">العربية 🇸🇦</option>
-              <option value="en">English 🇺🇸</option>
-            </select>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">اختر لغة واجهة المستخدم</p>
-          </div>
-
-          {/* Font Size Selection */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">حجم الخط</label>
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => setFontSize('small')}
-                className={`p-3 rounded-lg border-2 transition-all text-center ${
-                  fontSize === 'small' 
-                    ? 'border-blue-600 bg-blue-50' 
-                    : 'border-neutral-200 hover:border-neutral-300'
-                }`}
-              >
-                <span className="block text-sm mb-1">صغير</span>
-                <span className="text-xs text-neutral-600">Aa</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFontSize('medium')}
-                className={`p-3 rounded-lg border-2 transition-all text-center ${
-                  fontSize === 'medium' 
-                    ? 'border-blue-600 bg-blue-50' 
-                    : 'border-neutral-200 hover:border-neutral-300'
-                }`}
-              >
-                <span className="block text-base mb-1">متوسط</span>
-                <span className="text-sm text-neutral-600">Aa</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFontSize('large')}
-                className={`p-3 rounded-lg border-2 transition-all text-center ${
-                  fontSize === 'large' 
-                    ? 'border-blue-600 bg-blue-50' 
-                    : 'border-neutral-200 hover:border-neutral-300'
-                }`}
-              >
-                <span className="block text-lg mb-1">كبير</span>
-                <span className="text-base text-neutral-600">Aa</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Display Options */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">خيارات العرض</label>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-700/50 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
-                <div>
-                  <p className="font-medium text-neutral-900 dark:text-white">الوضع المضغوط</p>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">تقليل المسافات بين العناصر</p>
-                </div>
-                <button 
-                  type="button" 
-                  onClick={() => setCompactMode(!compactMode)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    compactMode ? 'bg-blue-600' : 'bg-neutral-300'
-                  }`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    compactMode ? 'translate-x-6' : 'translate-x-1'
-                  }`} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Preview */}
           <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">معاينة</label>
-            <div className={`p-4 rounded-lg border-2 ${
-              actualTheme === 'dark' 
-                ? 'bg-neutral-800 border-neutral-700' 
-                : 'bg-white border-neutral-200'
-            }`}>
-              <div className={`space-y-2 ${
-                actualTheme === 'dark' ? 'text-white' : 'text-neutral-900'
-              }`}>
-                <h3 className={`font-bold ${
-                  fontSize === 'small' ? 'text-base' :
-                  fontSize === 'medium' ? 'text-lg' :
-                  'text-xl'
-                }`}>
-                  عنوان تجريبي
-                </h3>
-                <p className={`${
-                  fontSize === 'small' ? 'text-xs' :
-                  fontSize === 'medium' ? 'text-sm' :
-                  'text-base'
-                } ${actualTheme === 'dark' ? 'text-neutral-300' : 'text-neutral-600'}`}>
-                  هذا نص تجريبي لمعاينة الإعدادات المختارة. يمكنك رؤية كيف ستظهر الواجهة بالإعدادات الحالية.
-                </p>
-              </div>
-            </div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              تم حفظ إعدادات المظهر بنجاح
+            </p>
           </div>
         </div>
       </div>
@@ -626,9 +627,6 @@ function AppearanceTab({ profile, onSave, saving, setSaving }: any) {
           type="button" 
           onClick={() => { 
             handleThemeChange('light')
-            setLanguage('ar')
-            setFontSize('medium')
-            setCompactMode(false)
           }}
           className="px-6 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
         >

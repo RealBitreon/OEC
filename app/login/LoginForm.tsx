@@ -17,18 +17,27 @@ export default function LoginForm() {
     setError('')
     setLoading(true)
 
-    const formData = new FormData()
-    formData.append('username', username)
-    formData.append('password', password)
+    try {
+      const formData = new FormData()
+      formData.append('username', username)
+      formData.append('password', password)
 
-    const result = await loginAction(formData)
+      const result = await loginAction(formData)
 
-    if (result?.error) {
-      setError(result.error)
+      if (result?.error) {
+        setError(result.error)
+        setLoading(false)
+      }
+      // If no error, the redirect will happen automatically
+    } catch (error: any) {
+      // Ignore NEXT_REDIRECT errors - they're expected behavior
+      if (error?.message?.includes('NEXT_REDIRECT')) {
+        return
+      }
+      // Handle other errors
+      setError('حدث خطأ غير متوقع')
       setLoading(false)
     }
-    // If no error, the redirect will happen automatically
-    // No need to handle success case as redirect() will take over
   }
 
   const togglePasswordVisibility = () => {

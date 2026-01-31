@@ -21,11 +21,11 @@ export async function getUserProfile(): Promise<User | null> {
     return null
   }
 
-  // Fetch profile from database
+  // Fetch profile from users table (consistent with session API)
   const { data: profile, error: profileError } = await supabase
-    .from('profiles')
+    .from('users')
     .select('id, username, role, created_at')
-    .eq('id', authUser.id)
+    .eq('auth_id', authUser.id)
     .single()
   
   if (profileError || !profile) {
@@ -54,9 +54,9 @@ export async function revalidateRole(userId: string): Promise<User | null> {
   const supabase = await createClient()
   
   const { data: profile, error } = await supabase
-    .from('profiles')
+    .from('users')
     .select('id, username, role, created_at')
-    .eq('id', userId)
+    .eq('auth_id', userId)
     .single()
   
   if (error || !profile) {

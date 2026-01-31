@@ -4,16 +4,19 @@ import { competitionsRepo } from '@/lib/repos'
 export async function GET() {
   try {
     const competition = await competitionsRepo.getActive()
-    
+
     if (!competition) {
-      return NextResponse.json({ competition: null })
+      return NextResponse.json(
+        { competition: null, message: 'No active competition' },
+        { status: 200 }
+      )
     }
 
     return NextResponse.json({ competition })
   } catch (error) {
     console.error('Error fetching active competition:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch active competition' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

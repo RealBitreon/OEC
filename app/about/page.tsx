@@ -17,6 +17,8 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { BackButton } from '@/components'
+import { config } from '@/lib/config/site'
+import Icons from '@/components/icons'
 
 export default function AboutPage() {
   const goals = [
@@ -63,18 +65,8 @@ export default function AboutPage() {
 
   const team = [
     {
-      name: 'الأستاذ مبارك',
-      role: 'مسؤول مصادر التعلم',
-      icon: (
-        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-          <path d="M2 17L12 22L22 17M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-        </svg>
-      )
-    },
-    {
-      name: 'مدير المدرسة',
-      role: 'الإشراف العام',
+      name: config.school.principal,
+      role: 'مدير المدرسة',
       icon: (
         <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
@@ -82,7 +74,7 @@ export default function AboutPage() {
       )
     },
     {
-      name: 'وليد الغافري',
+      name: config.school.assistantPrincipal,
       role: 'مساعد المدير',
       icon: (
         <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -90,21 +82,20 @@ export default function AboutPage() {
           <path d="M6 21V19C6 16.7909 7.79086 15 10 15H14C16.2091 15 18 16.7909 18 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
         </svg>
       )
+    },
+    {
+      name: config.school.lrcTeacher,
+      role: 'أستاذ مصادر التعلم',
+      icon: (
+        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+          <path d="M2 17L12 22L22 17M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+        </svg>
+      )
     }
   ]
 
-  const supervisors = [
-    {
-      name: 'الأستاذ محمد السيد',
-      role: 'معلم التقنية',
-      subject: 'الإشراف التقني'
-    },
-    {
-      name: 'الأستاذ أيوب البريكي',
-      role: 'معلم التقنية',
-      subject: 'الإشراف التقني'
-    }
-  ]
+
 
   return (
     <main className="min-h-screen bg-neutral-50">
@@ -173,7 +164,7 @@ export default function AboutPage() {
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
                 <path d="M2 17L12 22L22 17M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
               </svg>
-              <span className="font-bold text-primary text-lg">مدرسة الإمام المهنا</span>
+              <span className="font-bold text-primary text-lg">{config.school.shortName}</span>
             </div>
 
             <h2 className="text-4xl font-bold text-primary mb-6">
@@ -181,7 +172,7 @@ export default function AboutPage() {
             </h2>
             
             <p className="text-xl text-neutral-700 leading-relaxed mb-4">
-              مسابقة الموسوعة العُمانية هي مبادرة تعليمية داخل <span className="font-bold text-primary">مدرسة الإمام المهنا</span> في <span className="font-bold">مسقط، سلطنة عُمان</span>، تهدف إلى تطوير مهارات البحث العلمي والتوثيق الدقيق لدى الطلاب.
+              {config.site.description} - مبادرة تعليمية داخل <span className="font-bold text-primary">{config.school.name}</span>، تهدف إلى تطوير مهارات البحث العلمي والتوثيق الدقيق لدى الطلاب.
             </p>
 
             <div className="inline-flex items-center gap-2 text-neutral-600 mt-4">
@@ -189,7 +180,7 @@ export default function AboutPage() {
                 <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z" stroke="currentColor" strokeWidth="2"/>
                 <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="2"/>
               </svg>
-              <span className="font-semibold">مسقط، سلطنة عُمان</span>
+              <span className="font-semibold">{config.school.address}</span>
             </div>
           </motion.div>
         </div>
@@ -273,110 +264,46 @@ export default function AboutPage() {
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* Technical Supervision Section */}
-      <section className="py-16 bg-gradient-to-br from-primary/5 to-secondary/5">
-        <div className="section-container">
+          {/* Developer Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-12"
+            className="max-w-2xl mx-auto"
           >
-            <h2 className="text-4xl font-bold text-primary mb-4">الإشراف التقني</h2>
-            <p className="text-xl text-neutral-600">
-              معلمو التقنية المشرفون على المسابقة
-            </p>
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-neutral-800 mb-2">تطوير المنصة</h3>
+              <p className="text-neutral-600">طالب متميز من مدرستنا</p>
+            </div>
+            
+            <motion.div
+              whileHover={{ y: -8, scale: 1.02 }}
+              className="card text-center bg-gradient-to-br from-secondary/10 via-secondary/5 to-primary/10 border-2 border-secondary/30 shadow-lg"
+            >
+              <div className="w-24 h-24 bg-gradient-to-br from-secondary to-secondary-dark rounded-full flex items-center justify-center mx-auto mb-4 text-white shadow-xl">
+                <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 3L4 7L8 11M16 3L20 7L16 11M12 3V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="12" cy="17" r="2" fill="currentColor"/>
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-secondary mb-2">
+                {config.developer.name}
+              </h3>
+              <p className="text-lg text-neutral-700 font-medium mb-3">
+                الصف {config.developer.grade}
+              </p>
+              <p className="text-neutral-600 mb-4">
+                {config.developer.school}
+              </p>
+              <div className="inline-flex items-center gap-2 bg-secondary/10 px-4 py-2 rounded-full">
+                <svg className="w-5 h-5 text-secondary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9.75 17L9 20L12 18L15 20L14.25 17M3 13H21M5 17H19C20.1046 17 21 16.1046 21 15V5C21 3.89543 20.1046 3 19 3H5C3.89543 3 3 3.89543 3 5V15C3 16.1046 3.89543 17 5 17Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span className="text-sm font-semibold text-secondary">مطور المنصة</span>
+              </div>
+            </motion.div>
           </motion.div>
-
-          <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
-            {supervisors.map((supervisor, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="card relative overflow-hidden group cursor-pointer bg-gradient-to-br from-white to-secondary/10 border-2 border-secondary/30"
-              >
-                {/* Animated Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-secondary/0 to-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                
-                {/* Sparkles Effect */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  {[...Array(10)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute w-1 h-1 bg-primary rounded-full"
-                      style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`
-                      }}
-                      animate={{
-                        scale: [0, 1, 0],
-                        opacity: [0, 1, 0]
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: Math.random() * 2
-                      }}
-                    />
-                  ))}
-                </div>
-
-                <div className="relative z-10 text-center">
-                  {/* Icon */}
-                  <div className="w-20 h-20 bg-gradient-to-br from-secondary to-secondary-dark rounded-full flex items-center justify-center mx-auto mb-4 text-primary-dark group-hover:scale-110 transition-transform">
-                    <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
-                      <path d="M8 10H16M8 14H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                  </div>
-                  
-                  {/* Name */}
-                  <h3 className="text-2xl font-bold text-primary mb-2">
-                    {supervisor.name}
-                  </h3>
-                  
-                  {/* Role */}
-                  <p className="text-neutral-600 font-medium mb-1">
-                    {supervisor.role}
-                  </p>
-                  
-                  <p className="text-neutral-500 text-sm mb-4">
-                    {supervisor.subject}
-                  </p>
-
-                  {/* Hover Info */}
-                  <motion.div
-                    className="opacity-0 group-hover:opacity-100 transition-all duration-500 mt-4 pt-4 border-t-2 border-secondary/20"
-                  >
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center justify-center gap-2">
-                        <svg className="w-4 h-4 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2"/>
-                          <path d="M2 17L12 22L22 17M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2"/>
-                        </svg>
-                        <span className="text-neutral-700">مدرسة الإمام المهنا</span>
-                      </div>
-
-                      <div className="flex items-center justify-center gap-2">
-                        <svg className="w-4 h-4 text-primary flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                          <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                        </svg>
-                        <span className="text-neutral-700">الإشراف على المسابقة والموقع</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 

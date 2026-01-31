@@ -5,6 +5,8 @@
 // ============================================
 
 import { useEffect, useState } from 'react'
+import { Icons } from '@/components/icons'
+import { useRouter } from 'next/navigation'
 import { User, Competition } from '../../core/types'
 import { getCompetitions, createCompetition, updateCompetition, deleteCompetition, activateCompetition } from '../../actions/competitions'
 
@@ -13,16 +15,39 @@ interface CompetitionsManagementProps {
 }
 
 export default function CompetitionsManagement({ profile }: CompetitionsManagementProps) {
+  const router = useRouter()
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
   useEffect(() => {
-    loadCompetitions()
+    let mounted = true
+    
+    const fetchCompetitions = async () => {
+      try {
+        const data = await getCompetitions()
+        if (mounted) {
+          setCompetitions(data)
+        }
+      } catch (error) {
+        console.error('Failed to load competitions:', error)
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+    
+    fetchCompetitions()
+    
+    return () => {
+      mounted = false
+    }
   }, [])
 
   const loadCompetitions = async () => {
+    setLoading(true)
     try {
       const data = await getCompetitions()
       setCompetitions(data)
@@ -68,10 +93,10 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-neutral-900">إدارة المسابقات</h1>
-        <div className="bg-white rounded-xl p-6 shadow-sm animate-pulse">
-          <div className="h-8 bg-neutral-200 rounded w-1/2 mb-4" />
-          <div className="h-4 bg-neutral-200 rounded w-3/4" />
+        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">إدارة المسابقات</h1>
+        <div className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm animate-pulse">
+          <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2 mb-4" />
+          <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4" />
         </div>
       </div>
     )
@@ -94,7 +119,7 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-neutral-900">إدارة المسابقات</h1>
+        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">إدارة المسابقات</h1>
         <button
           onClick={handleCreate}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -105,14 +130,14 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
 
       {/* Competitions List */}
       {competitions.length === 0 ? (
-        <div className="bg-white rounded-xl p-12 shadow-sm border border-neutral-200 text-center">
-          <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-4xl">🏆</span>
+        <div className="bg-white dark:bg-neutral-800 rounded-xl p-12 shadow-sm border border-neutral-200 dark:border-neutral-700 text-center">
+          <div className="w-20 h-20 bg-neutral-100 dark:bg-neutral-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Icons.trophy className="w-10 h-10 " />
           </div>
-          <h2 className="text-xl font-bold text-neutral-900 mb-2">
+          <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
             لا توجد مسابقات
           </h2>
-          <p className="text-neutral-600 mb-6">
+          <p className="text-neutral-600 dark:text-neutral-400 mb-6">
             ابدأ بإنشاء مسابقة جديدة
           </p>
           <button
@@ -127,12 +152,12 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
           {competitions.map(competition => (
             <div
               key={competition.id}
-              className="bg-white rounded-xl p-6 shadow-sm border border-neutral-200"
+              className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm border border-neutral-200 dark:border-neutral-700"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-bold text-neutral-900">
+                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white">
                       {competition.title}
                     </h3>
                     <span className={`
@@ -144,10 +169,10 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
                       {getStatusLabel(competition.status)}
                     </span>
                   </div>
-                  <p className="text-neutral-600 mb-4">
+                  <p className="text-neutral-600 dark:text-neutral-400 mb-4">
                     {competition.description}
                   </p>
-                  <div className="flex items-center gap-6 text-sm text-neutral-600">
+                  <div className="flex items-center gap-6 text-sm text-neutral-600 dark:text-neutral-400">
                     <span>📅 {new Date(competition.start_at).toLocaleDateString('ar-SA')}</span>
                     <span>→</span>
                     <span>📅 {new Date(competition.end_at).toLocaleDateString('ar-SA')}</span>
@@ -158,15 +183,21 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
 
               <div className="flex items-center gap-3">
                 <button
+                  onClick={() => router.push(`/dashboard/competitions/${competition.id}`)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                >
+                  عرض المسابقة
+                </button>
+                <button
                   onClick={() => handleEdit(competition.id)}
-                  className="px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                 >
                   تعديل
                 </button>
                 {competition.status === 'draft' && (
                   <button
                     onClick={() => handleActivate(competition.id)}
-                    className="px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
                   >
                     تفعيل
                   </button>
@@ -174,7 +205,7 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
                 {profile.role === 'CEO' && (
                   <button
                     onClick={() => handleDelete(competition.id)}
-                    className="px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                   >
                     حذف
                   </button>
@@ -189,23 +220,48 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
 }
 
 function CompetitionForm({ competitionId, onClose }: { competitionId: string | null, onClose: () => void }) {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    status: 'draft' as 'draft' | 'active' | 'archived',
-    start_at: '',
-    end_at: '',
-    wheel_at: '',
-    rules: {
-      eligibilityMode: 'all_correct' as 'all_correct' | 'min_correct' | 'per_correct',
-      minCorrectAnswers: 5,
-      ticketsPerCorrect: 1,
-      earlyBonusTiers: [] as Array<{ cutoffDate: string; bonusTickets: number }>,
+  // FIXED: Add localStorage persistence to prevent data loss
+  const DRAFT_KEY = `draft:competition:${competitionId || 'new'}`
+  
+  const [formData, setFormData] = useState(() => {
+    // Try to restore from localStorage first (only for new competitions)
+    if (!competitionId && typeof window !== 'undefined') {
+      const saved = localStorage.getItem(DRAFT_KEY)
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          console.error('Failed to parse saved draft:', e)
+        }
+      }
+    }
+    
+    // Default values
+    return {
+      title: '',
+      description: '',
+      status: 'draft' as 'draft' | 'active' | 'archived',
+      start_at: '',
+      end_at: '',
+      wheel_at: '',
+      rules: {
+        eligibilityMode: 'all_correct' as 'all_correct' | 'min_correct' | 'per_correct',
+        minCorrectAnswers: 5,
+        ticketsPerCorrect: 1,
+        earlyBonusTiers: [] as Array<{ cutoffDate: string; bonusTickets: number }>,
+      }
     }
   })
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(!!competitionId)
   const [showRulesConfig, setShowRulesConfig] = useState(false)
+
+  // FIXED: Auto-save draft to localStorage on every change (only for new competitions)
+  useEffect(() => {
+    if (!competitionId && typeof window !== 'undefined') {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formData))
+    }
+  }, [formData, DRAFT_KEY, competitionId])
 
   useEffect(() => {
     if (competitionId) {
@@ -292,9 +348,14 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
       } else {
         await createCompetition(formData)
       }
+      
+      // FIXED: Clear draft from localStorage after successful save
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(DRAFT_KEY)
+      }
+      
       onClose()
     } catch (error: any) {
-      console.error('Save error:', error)
       alert(error?.message || 'فشل حفظ المسابقة')
     } finally {
       setSaving(false)
@@ -304,10 +365,10 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-neutral-900">جاري التحميل...</h1>
-        <div className="bg-white rounded-xl p-6 shadow-sm animate-pulse">
-          <div className="h-8 bg-neutral-200 rounded w-1/2 mb-4" />
-          <div className="h-4 bg-neutral-200 rounded w-3/4" />
+        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">جاري التحميل...</h1>
+        <div className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm animate-pulse">
+          <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2 mb-4" />
+          <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4" />
         </div>
       </div>
     )
@@ -316,20 +377,20 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-neutral-900">
+        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
           {competitionId ? 'تعديل المسابقة' : 'إنشاء مسابقة جديدة'}
         </h1>
         <button
           onClick={onClose}
-          className="px-4 py-2 text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
+          className="px-4 py-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
         >
           إلغاء
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 shadow-sm border border-neutral-200 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm border border-neutral-200 dark:border-neutral-700 space-y-6">
         <div>
-          <label className="block text-sm font-medium text-neutral-900 mb-2">
+          <label className="block text-sm font-medium text-neutral-900 dark:text-white mb-2">
             عنوان المسابقة *
           </label>
           <input
@@ -337,13 +398,13 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
             required
             value={formData.title}
             onChange={e => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="مثال: مسابقة القرآن الكريم - رمضان 1446"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-900 mb-2">
+          <label className="block text-sm font-medium text-neutral-900 dark:text-white mb-2">
             الوصف *
           </label>
           <textarea
@@ -351,7 +412,7 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
             value={formData.description}
             onChange={e => setFormData({ ...formData, description: e.target.value })}
             rows={4}
-            className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="وصف المسابقة وشروطها..."
           />
         </div>

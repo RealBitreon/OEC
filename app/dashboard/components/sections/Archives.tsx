@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import { Icons } from '@/components/icons'
 import { User, Competition } from '../../core/types'
 import { getCompetitions } from '../../actions/competitions'
 
@@ -13,7 +14,30 @@ export default function Archives({ profile }: { profile: User }) {
   const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null)
 
   useEffect(() => {
-    loadCompetitions()
+    let mounted = true
+    
+    const fetchCompetitions = async () => {
+      try {
+        const data = await getCompetitions()
+        // Filter only archived competitions
+        const archived = data.filter((c) => c.status === 'archived')
+        if (mounted) {
+          setCompetitions(archived)
+        }
+      } catch (error) {
+        console.error('Failed to load archived competitions:', error)
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+    
+    fetchCompetitions()
+    
+    return () => {
+      mounted = false
+    }
   }, [])
 
   const loadCompetitions = async () => {
@@ -184,7 +208,7 @@ function CompetitionCard({ competition, onClick }: { competition: Competition; o
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
         <h3 className="text-xl font-bold mb-2">{competition.title}</h3>
         <div className="flex items-center gap-2 text-blue-100 text-sm">
-          <span>📅</span>
+          <span><Icons.calendar className="w-6 h-6" /></span>
           <span>{new Date(competition.end_at).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long' })}</span>
         </div>
       </div>

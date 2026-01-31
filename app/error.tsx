@@ -11,8 +11,17 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
+    // Don't log NEXT_REDIRECT errors - they're expected behavior
+    if (error.message?.includes('NEXT_REDIRECT')) {
+      return
+    }
     console.error('Application error:', error)
   }, [error])
+
+  // If this is a redirect error, don't show error UI
+  if (error.message?.includes('NEXT_REDIRECT')) {
+    return null
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">

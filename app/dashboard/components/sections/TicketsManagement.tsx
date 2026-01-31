@@ -15,12 +15,59 @@ export default function TicketsManagement({ profile }: { profile: User }) {
   const [selectedUser, setSelectedUser] = useState<any>(null)
 
   useEffect(() => {
-    loadCompetitions()
+    let mounted = true
+    
+    const fetchCompetitions = async () => {
+      try {
+        const data = await getCompetitions()
+        const activeOrRecent = data.filter(c => c.status === 'active' || c.status === 'archived')
+        if (mounted) {
+          setCompetitions(activeOrRecent)
+          if (activeOrRecent.length > 0) {
+            setSelectedCompetition(activeOrRecent[0].id)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load competitions:', error)
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+    
+    fetchCompetitions()
+    
+    return () => {
+      mounted = false
+    }
   }, [])
 
   useEffect(() => {
-    if (selectedCompetition) {
-      loadTicketsSummary()
+    let mounted = true
+    
+    const fetchTicketsSummary = async () => {
+      if (!selectedCompetition) return
+      
+      setLoading(true)
+      try {
+        const data = await getTicketsSummary(selectedCompetition)
+        if (mounted) {
+          setSummary(data)
+        }
+      } catch (error) {
+        console.error('Failed to load tickets:', error)
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+    
+    fetchTicketsSummary()
+    
+    return () => {
+      mounted = false
     }
   }, [selectedCompetition])
 

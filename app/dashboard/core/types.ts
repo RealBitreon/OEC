@@ -21,6 +21,7 @@ export interface Competition {
   start_at: string
   end_at: string
   wheel_at: string
+  max_attempts?: number
   rules: CompetitionRules
   created_by: string
   created_at: string
@@ -37,11 +38,13 @@ export interface CompetitionRules {
 }
 
 export type QuestionType = 'mcq' | 'true_false' | 'text'
+export type QuestionStatus = 'DRAFT' | 'PUBLISHED'
 
 export interface Question {
   id: string
   competition_id: string | null
   is_training: boolean
+  status: QuestionStatus
   type: QuestionType
   question_text: string
   options: string[] | null
@@ -100,12 +103,9 @@ export interface AuditLog {
 
 export type DashboardSection = 
   | 'overview'
-  | 'current-competition'
   | 'competitions'
-  | 'questions'
-  | 'submissions'
-  | 'tickets'
-  | 'wheel'
+  | 'training-questions'
+  | 'question-bank'
   | 'archives'
   | 'users'
   | 'audit'

@@ -63,7 +63,10 @@ export default async function QuestionDetailPage({ params }: { params: Promise<{
           </div>
 
           {/* Question Form */}
-          <QuestionForm question={question} />
+          <QuestionForm question={{
+            ...question,
+            correctAnswer: question.correctAnswer
+          }} />
         </div>
       </div>
       <Footer />

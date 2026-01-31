@@ -6,8 +6,8 @@ import { cookies } from 'next/headers'
 
 export interface SubmissionFilters {
   competition_id?: string
-  user_id?: string
-  status?: 'needs_review' | 'reviewed' | 'no_correct_answer'
+  participant_name?: string
+  status?: 'pending' | 'under_review' | 'approved' | 'rejected'
   search?: string
 }
 
@@ -18,8 +18,6 @@ export async function getSubmissions(filters: SubmissionFilters = {}, page = 1, 
     .from('submissions')
     .select(`
       *,
-      user:student_participants!submissions_user_id_fkey(id, username, display_name),
-      question:questions(id, question_text, correct_answer, type, source_ref),
       competition:competitions(id, title)
     `, { count: 'exact' })
     .order('submitted_at', { ascending: false })
@@ -28,14 +26,16 @@ export async function getSubmissions(filters: SubmissionFilters = {}, page = 1, 
     query = query.eq('competition_id', filters.competition_id)
   }
   
-  if (filters.user_id) {
-    query = query.eq('user_id', filters.user_id)
+  if (filters.participant_name) {
+    query = query.eq('participant_name', filters.participant_name)
   }
   
-  if (filters.status === 'needs_review') {
-    query = query.is('final_result', null)
-  } else if (filters.status === 'reviewed') {
-    query = query.not('final_result', 'is', null)
+  if (filters.status) {
+    query = query.eq('status', filters.status)
+  }
+  
+  if (filters.search) {
+    query = query.or(`participant_name.ilike.%${filters.search}%,participant_email.ilike.%${filters.search}%`)
   }
   
   const from = (page - 1) * limit
@@ -48,23 +48,17 @@ export async function getSubmissions(filters: SubmissionFilters = {}, page = 1, 
     return { submissions: [], total: 0, pages: 0 }
   }
   
-  // Filter submissions with no correct answer if requested
-  let filteredData = data || []
-  if (filters.status === 'no_correct_answer') {
-    filteredData = filteredData.filter(s => !s.question?.correct_answer)
-  }
-  
   return {
-    submissions: filteredData,
-    total: filters.status === 'no_correct_answer' ? filteredData.length : (count || 0),
-    pages: Math.ceil((filters.status === 'no_correct_answer' ? filteredData.length : (count || 0)) / limit)
+    submissions: data || [],
+    total: count || 0,
+    pages: Math.ceil((count || 0) / limit)
   }
 }
 
 export async function reviewSubmission(
   submissionId: string,
-  finalResult: 'correct' | 'incorrect',
-  reason?: string
+  status: 'approved' | 'rejected',
+  notes?: string
 ) {
   const supabase = await createClient()
   const cookieStore = await cookies()
@@ -88,7 +82,7 @@ export async function reviewSubmission(
   // Get submission details
   const { data: submission, error: fetchError } = await supabase
     .from('submissions')
-    .select('*, question:questions(correct_answer)')
+    .select('*')
     .eq('id', submissionId)
     .single()
   
@@ -100,9 +94,10 @@ export async function reviewSubmission(
   const { error } = await supabase
     .from('submissions')
     .update({
-      final_result: finalResult,
+      status,
       reviewed_at: new Date().toISOString(),
-      reviewed_by: userId
+      reviewed_by: userId,
+      review_notes: notes || null
     })
     .eq('id', submissionId)
   
@@ -110,17 +105,14 @@ export async function reviewSubmission(
     throw new Error(error.message)
   }
   
-  // Recalculate tickets for this user in this competition
-  await recalculateUserTickets(submission.user_id, submission.competition_id)
-  
   // Log audit
   await supabase.from('audit_logs').insert({
     user_id: userId,
     action: 'submission_reviewed',
     details: { 
       submission_id: submissionId, 
-      final_result: finalResult,
-      reason: reason || null
+      status,
+      notes: notes || null
     }
   })
   
@@ -129,7 +121,7 @@ export async function reviewSubmission(
 
 export async function bulkReview(
   submissionIds: string[],
-  finalResult: 'correct' | 'incorrect'
+  status: 'approved' | 'rejected'
 ) {
   const supabase = await createClient()
   const cookieStore = await cookies()
@@ -150,17 +142,11 @@ export async function bulkReview(
     throw new Error('غير مصرح - يتطلب صلاحيات مدير')
   }
   
-  // Get all submissions to recalculate tickets
-  const { data: submissions } = await supabase
-    .from('submissions')
-    .select('user_id, competition_id')
-    .in('id', submissionIds)
-  
   // Update all submissions
   const { error } = await supabase
     .from('submissions')
     .update({
-      final_result: finalResult,
+      status,
       reviewed_at: new Date().toISOString(),
       reviewed_by: userId
     })
@@ -170,91 +156,17 @@ export async function bulkReview(
     throw new Error(error.message)
   }
   
-  // Recalculate tickets for affected users
-  if (submissions) {
-    const userCompetitions = new Set(
-      submissions.map(s => `${s.user_id}:${s.competition_id}`)
-    )
-    
-    for (const uc of userCompetitions) {
-      const [user_id, competition_id] = uc.split(':')
-      await recalculateUserTickets(user_id, competition_id)
-    }
-  }
-  
   // Log audit
   await supabase.from('audit_logs').insert({
     user_id: userId,
     action: 'bulk_review',
     details: { 
       count: submissionIds.length,
-      final_result: finalResult
+      status
     }
   })
   
   revalidatePath('/dashboard')
-}
-
-async function recalculateUserTickets(userId: string, competitionId: string) {
-  const supabase = await createClient()
-  
-  // Get competition rules
-  const { data: competition } = await supabase
-    .from('competitions')
-    .select('rules')
-    .eq('id', competitionId)
-    .single()
-  
-  if (!competition) return
-  
-  // Get all reviewed submissions for this user
-  const { data: submissions } = await supabase
-    .from('submissions')
-    .select('final_result')
-    .eq('user_id', userId)
-    .eq('competition_id', competitionId)
-    .not('final_result', 'is', null)
-  
-  if (!submissions) return
-  
-  const correctCount = submissions.filter(s => s.final_result === 'correct').length
-  const rules = competition.rules as any
-  
-  let ticketCount = 0
-  
-  // Calculate tickets based on rules
-  if (rules.eligibilityMode === 'all_correct') {
-    const totalQuestions = submissions.length
-    if (correctCount === totalQuestions && totalQuestions > 0) {
-      ticketCount = rules.ticketsConfig?.baseTickets || 1
-    }
-  } else if (rules.eligibilityMode === 'min_correct') {
-    if (correctCount >= (rules.minCorrectAnswers || 0)) {
-      ticketCount = rules.ticketsConfig?.baseTickets || 1
-    }
-  } else if (rules.eligibilityMode === 'per_correct') {
-    ticketCount = correctCount * (rules.ticketsConfig?.baseTickets || 1)
-  }
-  
-  // Delete old tickets
-  await supabase
-    .from('tickets')
-    .delete()
-    .eq('user_id', userId)
-    .eq('competition_id', competitionId)
-    .eq('reason', 'submissions')
-  
-  // Insert new tickets if eligible
-  if (ticketCount > 0) {
-    await supabase
-      .from('tickets')
-      .insert({
-        user_id: userId,
-        competition_id: competitionId,
-        count: ticketCount,
-        reason: 'submissions'
-      })
-  }
 }
 
 export async function getSubmissionStats(competitionId?: string) {
@@ -262,7 +174,7 @@ export async function getSubmissionStats(competitionId?: string) {
   
   let query = supabase
     .from('submissions')
-    .select('final_result, auto_result, question:questions(correct_answer)', { count: 'exact' })
+    .select('status, score, total_questions', { count: 'exact' })
   
   if (competitionId) {
     query = query.eq('competition_id', competitionId)
@@ -270,32 +182,23 @@ export async function getSubmissionStats(competitionId?: string) {
   
   const { data, count } = await query
   
-  const needsReview = data?.filter(s => !s.final_result).length || 0
-  const reviewed = data?.filter(s => s.final_result).length || 0
-  const noCorrectAnswer = data?.filter(s => {
-    const question = Array.isArray(s.question) ? s.question[0] : s.question
-    return !question?.correct_answer
-  }).length || 0
+  const pending = data?.filter(s => s.status === 'pending').length || 0
+  const underReview = data?.filter(s => s.status === 'under_review').length || 0
+  const approved = data?.filter(s => s.status === 'approved').length || 0
+  const rejected = data?.filter(s => s.status === 'rejected').length || 0
   
-  // Calculate disputed submissions (auto vs manual mismatch)
-  const disputed = data?.filter(s => 
-    s.auto_result && s.final_result && s.auto_result !== s.final_result
-  ).length || 0
-  
-  // Calculate accuracy stats
-  const correct = data?.filter(s => s.final_result === 'correct').length || 0
-  const incorrect = data?.filter(s => s.final_result === 'incorrect').length || 0
-  const accuracy = reviewed > 0 ? Math.round((correct / reviewed) * 100) : 0
+  // Calculate average score
+  const totalScore = data?.reduce((sum, s) => sum + (s.score || 0), 0) || 0
+  const totalPossible = data?.reduce((sum, s) => sum + (s.total_questions || 0), 0) || 0
+  const averageScore = totalPossible > 0 ? Math.round((totalScore / totalPossible) * 100) : 0
   
   return {
     total: count || 0,
-    needsReview,
-    reviewed,
-    noCorrectAnswer,
-    disputed,
-    correct,
-    incorrect,
-    accuracy
+    pending,
+    underReview,
+    approved,
+    rejected,
+    averageScore
   }
 }
 

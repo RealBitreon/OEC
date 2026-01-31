@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { getOrCreateFingerprint } from '@/lib/utils/device-fingerprint'
+import Icons from '@/components/icons'
 
 interface Question {
   id: string
@@ -9,6 +11,12 @@ interface Question {
   question_text: string
   options?: string[]
   correct_answer: string
+  source_ref?: {
+    volume: string
+    page: string
+    lineFrom: string
+    lineTo: string
+  }
 }
 
 interface Competition {
@@ -36,6 +44,73 @@ export default function ParticipationForm({ competition, questions }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{ success: boolean; correctCount: number; totalQuestions: number } | null>(null)
   const [showAllQuestions, setShowAllQuestions] = useState(false)
+  const [attemptInfo, setAttemptInfo] = useState<{ canAttempt: boolean; remainingAttempts: number; maxAttempts: number } | null>(null)
+  const [checkingAttempts, setCheckingAttempts] = useState(true)
+
+  // Check attempts on mount
+  useEffect(() => {
+    const checkAttempts = async () => {
+      try {
+        const deviceFingerprint = getOrCreateFingerprint()
+        const response = await fetch('/api/attempts/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            competitionId: competition.id,
+            deviceFingerprint,
+          }),
+        })
+
+        const data = await response.json()
+        setAttemptInfo(data)
+
+        if (!data.canAttempt) {
+          alert(`لقد استنفدت جميع المحاولات المتاحة (${data.maxAttempts} محاولات). سيتم إعادتك للصفحة الرئيسية.`)
+          router.push('/')
+        }
+      } catch (error) {
+        console.error('Error checking attempts:', error)
+      } finally {
+        setCheckingAttempts(false)
+      }
+    }
+
+    checkAttempts()
+  }, [competition.id, router])
+
+  // Cheat code: Expose correct answers in console
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).abrkadabra = () => {
+        console.clear()
+        console.log('%c🎩✨ ABRACADABRA! ✨🎩', 'font-size: 24px; font-weight: bold; color: #8b5cf6; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);')
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #8b5cf6;')
+        console.log('%cالإجابات الصحيحة مع الأدلة:', 'font-size: 18px; font-weight: bold; color: #10b981; margin-top: 10px;')
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #8b5cf6;')
+        
+        questions.forEach((q, index) => {
+          console.log(`\n%c📌 السؤال ${index + 1}:`, 'font-weight: bold; color: #3b82f6; font-size: 14px;')
+          console.log(`%c${q.question_text}`, 'color: #6b7280; font-size: 13px; margin-right: 10px;')
+          console.log(`%c✅ الإجابة الصحيحة: ${q.correct_answer}`, 'color: #10b981; font-weight: bold; font-size: 14px; background: #d1fae5; padding: 4px 8px; border-radius: 4px;')
+          
+          if (q.source_ref) {
+            console.log(`%c📚 الدليل من المصدر:`, 'color: #f59e0b; font-weight: bold; font-size: 13px; margin-top: 4px;')
+            console.log(`%c   المجلد: ${q.source_ref.volume} | الصفحة: ${q.source_ref.page} | السطر: ${q.source_ref.lineFrom}-${q.source_ref.lineTo}`, 'color: #d97706; font-size: 12px; background: #fef3c7; padding: 4px 8px; border-radius: 4px;')
+          }
+        })
+        
+        console.log('\n%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #8b5cf6;')
+        console.log('%c💡 نصيحة: استخدم هذه المعلومات بحكمة!', 'font-style: italic; color: #f59e0b; font-size: 12px;')
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #8b5cf6;')
+      }
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).abrkadabra
+      }
+    }
+  }, [questions])
 
   const currentQuestion = questions[currentQuestionIndex]
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100
@@ -99,6 +174,23 @@ export default function ParticipationForm({ competition, questions }: Props) {
     setSubmitting(true)
     
     try {
+      // Increment attempt count
+      const deviceFingerprint = getOrCreateFingerprint()
+      const incrementResponse = await fetch('/api/attempts/increment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          competitionId: competition.id,
+          deviceFingerprint,
+          userId: null, // Can be set if user is logged in
+        }),
+      })
+
+      if (!incrementResponse.ok) {
+        const errorData = await incrementResponse.json()
+        throw new Error(errorData.error || 'فشل تسجيل المحاولة')
+      }
+
       // Calculate score
       let correctCount = 0
       questions.forEach(q => {
@@ -152,11 +244,37 @@ export default function ParticipationForm({ competition, questions }: Props) {
 
   // Step 1: Participant Info
   if (step === 'info') {
+    if (checkingAttempts) {
+      return (
+        <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Icons.clock className="w-10 h-10 " />
+          </div>
+          <p className="text-lg text-neutral-600">جاري التحقق من المحاولات...</p>
+        </div>
+      )
+    }
+
     return (
       <div className="bg-white rounded-2xl shadow-sm p-8">
+        {attemptInfo && attemptInfo.remainingAttempts < attemptInfo.maxAttempts && (
+          <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl">
+            <div className="flex items-start gap-3">
+              <Icons.warning className="w-6 h-6 " />
+              <div>
+                <p className="font-bold text-amber-900 mb-1">تنبيه: محاولات محدودة</p>
+                <p className="text-sm text-amber-800">
+                  لديك <span className="font-bold">{attemptInfo.remainingAttempts}</span> محاولة متبقية من أصل {attemptInfo.maxAttempts}.
+                  تأكد من إجاباتك قبل الإرسال!
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="mb-6">
           <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-4xl">👤</span>
+            <Icons.user className="w-10 h-10 " />
           </div>
           <h2 className="text-2xl font-bold text-center text-neutral-800 mb-2">معلومات المشارك</h2>
           <p className="text-center text-neutral-600">
@@ -486,7 +604,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
         </p>
 
         <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-primary/20 rounded-xl p-6 mb-6">
-          <div className="text-5xl mb-3">🎯</div>
+          <div className="mb-3"><Icons.target className="w-12 h-12" /></div>
           <p className="text-lg font-bold text-neutral-800">
             النتيجة: {result.correctCount} / {result.totalQuestions}
           </p>

@@ -19,6 +19,7 @@ export interface Competition {
   startAt: string
   endAt: string
   wheelSpinAt: string
+  maxAttempts?: number
   rules: {
     eligibilityMode: 'all_correct' | 'min_correct'
     minCorrectAnswers?: number
@@ -38,6 +39,7 @@ export interface Question {
   id: string
   competitionId: string | null
   isTraining: boolean
+  status: 'DRAFT' | 'PUBLISHED'
   type: 'mcq' | 'true_false' | 'text' | 'fill_blank' | 'essay'
   category?: string
   difficulty?: 'سهل' | 'متوسط' | 'صعب'

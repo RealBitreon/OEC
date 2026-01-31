@@ -4,6 +4,7 @@ import type { Question } from '@/lib/store/types'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { BackButton } from '@/components'
+import Icons from '@/components/icons'
 
 export default async function QuestionsPage() {
   const supabase = await createClient()
@@ -28,7 +29,7 @@ export default async function QuestionsPage() {
           </div>
           <div className="bg-red-50 border border-red-200 rounded-card p-6 text-center">
             <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">⚠️</span>
+              <Icons.warning className="w-10 h-10 " />
             </div>
             <h2 className="text-2xl font-bold text-red-800 mb-2">
               حدث خطأ في تحميل الأسئلة
@@ -54,6 +55,7 @@ export default async function QuestionsPage() {
     questionText: q.question_text,
     options: q.options,
     correctAnswer: q.correct_answer,
+    status: q.status || 'DRAFT',
     sourceRef: q.source_ref || {
       volume: '',
       page: '',
@@ -83,7 +85,7 @@ export default async function QuestionsPage() {
         {questionsData.length === 0 ? (
           <div className="bg-white rounded-card shadow-sm p-8 text-center">
             <div className="w-20 h-20 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">📚</span>
+              <Icons.book className="w-10 h-10 " />
             </div>
             <h2 className="text-2xl font-bold text-neutral-800 mb-2">
               لا توجد أسئلة متاحة حالياً

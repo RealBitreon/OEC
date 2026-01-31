@@ -8,6 +8,7 @@ export class SupabaseQuestionsRepo implements IQuestionsRepo {
       id: data.id,
       competitionId: data.competition_id,
       isTraining: data.is_training || false,
+      status: data.status || 'DRAFT',
       type: data.type,
       category: data.category,
       difficulty: data.difficulty,
@@ -56,6 +57,8 @@ export class SupabaseQuestionsRepo implements IQuestionsRepo {
       .from('questions')
       .select('*')
       .eq('is_training', true)
+      .is('competition_id', null)
+      .eq('status', 'PUBLISHED')
       .eq('is_active', true)
       .order('created_at', { ascending: true })
 
@@ -82,6 +85,7 @@ export class SupabaseQuestionsRepo implements IQuestionsRepo {
         id: question.id,
         competition_id: question.competitionId,
         is_training: question.isTraining,
+        status: question.status || 'DRAFT',
         type: question.type,
         category: question.category,
         difficulty: question.difficulty,
@@ -107,6 +111,7 @@ export class SupabaseQuestionsRepo implements IQuestionsRepo {
 
     if (patch.competitionId !== undefined) updateData.competition_id = patch.competitionId
     if (patch.isTraining !== undefined) updateData.is_training = patch.isTraining
+    if (patch.status !== undefined) updateData.status = patch.status
     if (patch.type) updateData.type = patch.type
     if (patch.category !== undefined) updateData.category = patch.category
     if (patch.difficulty !== undefined) updateData.difficulty = patch.difficulty
@@ -154,5 +159,95 @@ export class SupabaseQuestionsRepo implements IQuestionsRepo {
       .eq('competition_id', competitionId)
 
     if (error) throw new Error(`Failed to move questions to training: ${error.message}`)
+  }
+
+  async listLibrary(): Promise<Question[]> {
+    const supabase = createServiceClient()
+    const { data, error } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('is_training', false)
+      .is('competition_id', null)
+      .eq('status', 'DRAFT')
+      .order('created_at', { ascending: false })
+
+    if (error) throw new Error(`Failed to list library questions: ${error.message}`)
+    return (data || []).map(q => this.transformFromDb(q))
+  }
+
+  async moveToLibrary(id: string): Promise<Question> {
+    const supabase = createServiceClient()
+    const { data, error } = await supabase
+      .from('questions')
+      .update({
+        status: 'DRAFT',
+        is_training: false,
+        competition_id: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw new Error(`Failed to move question to library: ${error.message}`)
+    return this.transformFromDb(data)
+  }
+
+  async publishToTraining(id: string): Promise<Question> {
+    const supabase = createServiceClient()
+    const { data, error } = await supabase
+      .from('questions')
+      .update({
+        status: 'PUBLISHED',
+        is_training: true,
+        competition_id: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw new Error(`Failed to publish question to training: ${error.message}`)
+    return this.transformFromDb(data)
+  }
+
+  async copyToCompetition(questionId: string, competitionId: string): Promise<Question> {
+    const supabase = createServiceClient()
+    
+    // Get the source question
+    const { data: sourceData, error: fetchError } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('id', questionId)
+      .single()
+
+    if (fetchError || !sourceData) {
+      throw new Error(`Failed to fetch source question: ${fetchError?.message}`)
+    }
+
+    // Create a copy with new ID and competition_id
+    const { data, error } = await supabase
+      .from('questions')
+      .insert({
+        competition_id: competitionId,
+        is_training: false,
+        status: 'PUBLISHED',
+        type: sourceData.type,
+        category: sourceData.category,
+        difficulty: sourceData.difficulty,
+        question_text: sourceData.question_text,
+        options: sourceData.options,
+        correct_answer: sourceData.correct_answer,
+        volume: sourceData.volume,
+        page: sourceData.page,
+        line_from: sourceData.line_from,
+        line_to: sourceData.line_to,
+        is_active: true,
+      })
+      .select()
+      .single()
+
+    if (error) throw new Error(`Failed to copy question to competition: ${error.message}`)
+    return this.transformFromDb(data)
   }
 }

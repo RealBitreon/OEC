@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface QuestionFormProps {
@@ -9,6 +9,7 @@ interface QuestionFormProps {
     type: 'mcq' | 'true_false' | 'text' | 'fill_blank' | 'essay'
     questionText: string
     options?: string[]
+    correctAnswer?: string
     sourceRef: {
       volume: string
       page: string
@@ -32,6 +33,41 @@ export default function QuestionForm({ question }: QuestionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<{ isCorrect: boolean; message: string } | null>(null)
+
+  // Cheat code: Expose correct answer in console
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).abrkadabra = async () => {
+        console.clear()
+        console.log('%c🎩✨ ABRACADABRA! ✨🎩', 'font-size: 24px; font-weight: bold; color: #8b5cf6; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);')
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #8b5cf6;')
+        console.log('%cالإجابة الصحيحة مع الدليل:', 'font-size: 18px; font-weight: bold; color: #10b981; margin-top: 10px;')
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #8b5cf6;')
+        
+        console.log(`\n%c📌 السؤال:`, 'font-weight: bold; color: #3b82f6; font-size: 14px;')
+        console.log(`%c${question.questionText}`, 'color: #6b7280; font-size: 13px; margin-right: 10px;')
+        
+        if (question.correctAnswer) {
+          console.log(`\n%c✅ الإجابة الصحيحة: ${question.correctAnswer}`, 'color: #10b981; font-weight: bold; font-size: 14px; background: #d1fae5; padding: 4px 8px; border-radius: 4px;')
+        } else {
+          console.log(`\n%c⚠️ الإجابة الصحيحة غير متاحة في الواجهة الأمامية`, 'color: #f59e0b; font-weight: bold; font-size: 14px;')
+        }
+        
+        console.log(`\n%c📚 الدليل من المصدر:`, 'color: #f59e0b; font-weight: bold; font-size: 13px;')
+        console.log(`%c   المجلد: ${question.sourceRef.volume} | الصفحة: ${question.sourceRef.page} | السطر: ${question.sourceRef.lineFrom}-${question.sourceRef.lineTo}`, 'color: #d97706; font-size: 12px; background: #fef3c7; padding: 4px 8px; border-radius: 4px;')
+        
+        console.log('\n%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #8b5cf6;')
+        console.log('%c💡 نصيحة: استخدم هذه المعلومات بحكمة!', 'font-style: italic; color: #f59e0b; font-size: 12px;')
+        console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #8b5cf6;')
+      }
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).abrkadabra
+      }
+    }
+  }, [question])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

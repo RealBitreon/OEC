@@ -2,6 +2,10 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
+/**
+ * Create Supabase client for server-side operations
+ * CRITICAL: Configured to prevent auto-refresh and polling
+ */
 export async function createClient() {
   const cookieStore = await cookies()
 
@@ -32,12 +36,23 @@ export async function createClient() {
           }
         },
       },
+      auth: {
+        // CRITICAL: Disable auto-refresh to prevent background requests
+        autoRefreshToken: false,
+        // CRITICAL: Disable session persistence to prevent storage polling
+        persistSession: false,
+        // CRITICAL: Disable detect session in URL to prevent unnecessary checks
+        detectSessionInUrl: false,
+      },
     }
   )
 }
 
-// Service role client for admin operations (bypasses RLS)
-// Only use this after manual authorization checks
+/**
+ * Service role client for admin operations (bypasses RLS)
+ * CRITICAL: Only use this after manual authorization checks
+ * NEVER use in frontend or expose to client
+ */
 export function createServiceClient() {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set')
@@ -49,7 +64,8 @@ export function createServiceClient() {
     {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
+        persistSession: false,
+        detectSessionInUrl: false,
       }
     }
   )

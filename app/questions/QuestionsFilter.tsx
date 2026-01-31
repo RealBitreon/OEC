@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import type { Question } from '@/lib/store/types'
+import Icons from '@/components/icons'
 
 interface QuestionsFilterProps {
   questions: Question[]
@@ -124,7 +125,7 @@ export default function QuestionsFilter({ questions }: QuestionsFilterProps) {
       {filteredQuestions.length === 0 ? (
         <div className="bg-white rounded-card shadow-sm p-8 text-center">
           <div className="w-20 h-20 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-4xl">🔍</span>
+            <Icons.search className="w-10 h-10 " />
           </div>
           <h2 className="text-2xl font-bold text-neutral-800 mb-2">
             لا توجد أسئلة مطابقة

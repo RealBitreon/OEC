@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { BackButton } from '@/components'
+import Icons from '@/components/icons'
 
 export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
@@ -189,7 +190,7 @@ export default function FAQPage() {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <div className="text-6xl md:text-8xl mb-4 md:mb-6">❓</div>
+            <div className="md:text-8xl mb-4 md:mb-6"><Icons.question className="w-16 h-16" /></div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 md:mb-4">
               الأسئلة الشائعة
             </h1>

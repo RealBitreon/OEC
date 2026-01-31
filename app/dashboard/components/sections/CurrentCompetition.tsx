@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Icons } from '@/components/icons'
 import { User } from '../../core/types'
 import { getActiveCompetition, getParticipationStats, getGradingDistribution, getRecentActivity } from '../../actions/monitoring'
 
@@ -16,13 +17,53 @@ export default function CurrentCompetition({ profile }: CurrentCompetitionProps)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadData()
+    let mounted = true
+    
+    const fetchData = async () => {
+      try {
+        const comp = await getActiveCompetition()
+        if (mounted) {
+          setCompetition(comp)
+          
+          if (comp) {
+            const [statsData, distData, activityData] = await Promise.all([
+              getParticipationStats(comp.id),
+              getGradingDistribution(comp.id),
+              getRecentActivity(comp.id, 10)
+            ])
+            if (mounted) {
+              setStats(statsData)
+              setDistribution(distData)
+              setRecentActivity(activityData)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load competition:', error)
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+    
+    fetchData()
+    
     // Refresh every 30 seconds
-    const interval = setInterval(loadData, 30000)
-    return () => clearInterval(interval)
+    const interval = setInterval(() => {
+      if (mounted) {
+        fetchData()
+      }
+    }, 30000)
+    
+    return () => {
+      mounted = false
+      clearInterval(interval)
+    }
   }, [])
 
   const loadData = async () => {
+    setLoading(true)
     try {
       const comp = await getActiveCompetition()
       setCompetition(comp)
@@ -62,7 +103,7 @@ export default function CurrentCompetition({ profile }: CurrentCompetitionProps)
         <h1 className="text-3xl font-bold text-neutral-900">المسابقة الحالية</h1>
         <div className="bg-white rounded-xl p-12 shadow-sm border border-neutral-200 text-center">
           <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-4xl">🏆</span>
+            <Icons.trophy className="w-10 h-10 " />
           </div>
           <h2 className="text-xl font-bold text-neutral-900 mb-2">
             لا توجد مسابقة نشطة حالياً
@@ -183,7 +224,7 @@ export default function CurrentCompetition({ profile }: CurrentCompetitionProps)
 
         {recentActivity.length === 0 ? (
           <div className="p-12 text-center">
-            <span className="text-4xl mb-4 block">📝</span>
+            <Icons.file className="w-10 h-10 mb-4 block" />
             <h3 className="text-lg font-bold text-neutral-900 mb-2">لا يوجد نشاط</h3>
             <p className="text-neutral-600">لم يتم تقديم أي إجابات بعد</p>
           </div>
@@ -238,7 +279,7 @@ export default function CurrentCompetition({ profile }: CurrentCompetitionProps)
           href="/dashboard?section=questions"
           className="p-6 bg-white rounded-xl shadow-sm border border-neutral-200 hover:border-blue-300 transition-colors group"
         >
-          <div className="text-3xl mb-3">❓</div>
+          <div className="mb-3"><Icons.question className="w-8 h-8" /></div>
           <div className="font-bold text-neutral-900 mb-1 group-hover:text-blue-600">إدارة الأسئلة</div>
           <div className="text-sm text-neutral-600">إضافة وتعديل أسئلة المسابقة</div>
         </a>
@@ -246,7 +287,7 @@ export default function CurrentCompetition({ profile }: CurrentCompetitionProps)
           href="/dashboard?section=submissions"
           className="p-6 bg-white rounded-xl shadow-sm border border-neutral-200 hover:border-blue-300 transition-colors group"
         >
-          <div className="text-3xl mb-3">📝</div>
+          <div className="mb-3"><Icons.file className="w-8 h-8" /></div>
           <div className="font-bold text-neutral-900 mb-1 group-hover:text-blue-600">مراجعة الإجابات</div>
           <div className="text-sm text-neutral-600">تصحيح ومراجعة إجابات الطلاب</div>
         </a>

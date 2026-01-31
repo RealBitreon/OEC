@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
+import Icons from '@/components/icons'
 
 interface WheelSpinnerProps {
   candidates: Array<{ studentUsername: string; tickets: number }>
@@ -227,7 +228,7 @@ export default function WheelSpinner({ candidates, status, winnerUsername, winne
       
       {status === 'idle' && (
         <div className="text-center mt-4 text-neutral-600">
-          <div className="text-2xl mb-2">⏳</div>
+          <div className="mb-2"><Icons.clock className="w-6 h-6" /></div>
           <p>في انتظار السحب...</p>
         </div>
       )}
@@ -238,9 +239,7 @@ export default function WheelSpinner({ candidates, status, winnerUsername, winne
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ repeat: Infinity, duration: 1 }}
             className="text-4xl mb-2"
-          >
-            🎲
-          </motion.div>
+          ><Icons.dice className="w-6 h-6" /></motion.div>
           <p className="text-lg font-bold text-primary">جاري السحب...</p>
         </div>
       )}

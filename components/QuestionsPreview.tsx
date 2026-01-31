@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import type { Question } from '@/lib/store/types'
+import Icons from '@/components/icons'
 
 interface QuestionsPreviewProps {
   questions: Question[]
@@ -56,7 +57,7 @@ export default function QuestionsPreview({ questions }: QuestionsPreviewProps) {
 
           <div className="bg-white rounded-card shadow-sm p-8 text-center max-w-2xl mx-auto">
             <div className="w-20 h-20 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">📚</span>
+              <Icons.book className="w-10 h-10 " />
             </div>
             <h3 className="text-2xl font-bold text-neutral-800 mb-2">
               لا توجد أسئلة متاحة حالياً

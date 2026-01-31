@@ -1,50 +1,77 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Icons } from '@/components/icons'
 import { User, Question, Competition } from '../../core/types'
-import { getQuestions, createQuestion, updateQuestion, deleteQuestion, duplicateQuestion, moveToTraining, type QuestionFormData } from '../../actions/questions'
+import { 
+  getQuestions, 
+  createQuestion, 
+  updateQuestion, 
+  deleteQuestion, 
+  duplicateQuestion, 
+  moveToTraining,
+  moveToLibrary,
+  getLibraryQuestions,
+  type QuestionFormData 
+} from '../../actions/questions'
 import { getCompetitions } from '../../actions/competitions'
+import { Modal } from '@/components/ui/Modal'
 
 interface QuestionsManagementProps {
   profile: User
+  mode?: 'training' | 'bank'
 }
 
-export default function QuestionsManagement({ profile }: QuestionsManagementProps) {
+export default function QuestionsManagement({ profile, mode = 'training' }: QuestionsManagementProps) {
   const [questions, setQuestions] = useState<Question[]>([])
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [showDestinationModal, setShowDestinationModal] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
-  const [showTemplates, setShowTemplates] = useState(false)
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; question: Question | null }>({ 
+    isOpen: false, 
+    question: null 
+  })
+  const [deleting, setDeleting] = useState(false)
+  
   const [filters, setFilters] = useState<{
-    competition_id: string
     type: string
-    is_training: string
     search: string
   }>({
-    competition_id: '',
     type: '',
-    is_training: '',
     search: ''
   })
 
   useEffect(() => {
     loadData()
-  }, [filters])
+  }, [mode, filters])
 
   const loadData = async () => {
     try {
-      // Convert string is_training to boolean for API
-      const apiFilters = {
-        ...filters,
-        is_training: filters.is_training === 'true' ? true : filters.is_training === 'false' ? false : undefined
+      let questionsData: Question[]
+      
+      if (mode === 'bank') {
+        // Library: DRAFT questions with competition_id = NULL and is_training = false
+        const result = await getQuestions({ 
+          is_training: false,
+          search: filters.search,
+          type: filters.type
+        })
+        questionsData = result.questions.filter(q => q.competition_id === null && q.status === 'DRAFT')
+      } else {
+        // Training: PUBLISHED questions with is_training = true and competition_id = NULL
+        const result = await getQuestions({ 
+          is_training: true,
+          search: filters.search,
+          type: filters.type
+        })
+        questionsData = result.questions.filter(q => q.competition_id === null && q.status === 'PUBLISHED')
       }
       
-      const [questionsData, competitionsData] = await Promise.all([
-        getQuestions(apiFilters),
-        getCompetitions()
-      ])
-      setQuestions(questionsData.questions)
+      const competitionsData = await getCompetitions()
+      
+      setQuestions(questionsData)
       setCompetitions(competitionsData)
     } catch (error) {
       console.error('Failed to load data:', error)
@@ -55,15 +82,29 @@ export default function QuestionsManagement({ profile }: QuestionsManagementProp
 
   const handleCreate = () => {
     setEditingQuestion(null)
-    setShowForm(true)
+    setShowDestinationModal(true)
   }
 
-  const handleUseTemplate = (template: Partial<Question>) => {
-    // Pass template without id so it creates new question
-    const { id, created_at, updated_at, ...templateData } = template as any
-    setEditingQuestion(templateData as Question)
-    setShowTemplates(false)
+  const handleDestinationSelected = (destination: 'library' | 'training') => {
+    setShowDestinationModal(false)
     setShowForm(true)
+    // Set a temporary question with the destination
+    setEditingQuestion({
+      id: '',
+      competition_id: null,
+      is_training: destination === 'training',
+      status: destination === 'training' ? 'PUBLISHED' : 'DRAFT',
+      type: 'mcq',
+      question_text: '',
+      options: null,
+      correct_answer: null,
+      volume: '',
+      page: '',
+      line_from: '',
+      line_to: '',
+      is_active: true,
+      created_at: new Date().toISOString()
+    })
   }
 
   const handleEdit = (question: Question) => {
@@ -71,14 +112,22 @@ export default function QuestionsManagement({ profile }: QuestionsManagementProp
     setShowForm(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('هل تريد حذف هذا السؤال؟')) return
+  const handleDelete = (question: Question) => {
+    setDeleteModal({ isOpen: true, question })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteModal.question) return
     
+    setDeleting(true)
     try {
-      await deleteQuestion(id)
+      await deleteQuestion(deleteModal.question.id)
+      setDeleteModal({ isOpen: false, question: null })
       await loadData()
     } catch (error: any) {
       alert(error?.message || 'فشل حذف السؤال')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -92,7 +141,7 @@ export default function QuestionsManagement({ profile }: QuestionsManagementProp
   }
 
   const handleMoveToTraining = async (id: string) => {
-    if (!confirm('هل تريد نقل هذا السؤال إلى التدريب؟')) return
+    if (!confirm('هل تريد نشر هذا السؤال كسؤال تدريبي؟')) return
     
     try {
       await moveToTraining(id)
@@ -102,10 +151,23 @@ export default function QuestionsManagement({ profile }: QuestionsManagementProp
     }
   }
 
+  const handleMoveToLibrary = async (id: string) => {
+    if (!confirm('هل تريد نقل هذا السؤال إلى المكتبة؟')) return
+    
+    try {
+      await moveToLibrary(id)
+      await loadData()
+    } catch (error: any) {
+      alert(error?.message || 'فشل نقل السؤال')
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-neutral-900">إدارة الأسئلة</h1>
+        <h1 className="text-3xl font-bold text-neutral-900">
+          {mode === 'bank' ? 'مكتبة الأسئلة' : 'الأسئلة التدريبية'}
+        </h1>
         <div className="bg-white rounded-xl p-6 shadow-sm animate-pulse">
           <div className="h-8 bg-neutral-200 rounded w-1/2 mb-4" />
           <div className="h-4 bg-neutral-200 rounded w-3/4" />
@@ -114,21 +176,12 @@ export default function QuestionsManagement({ profile }: QuestionsManagementProp
     )
   }
 
-  if (showTemplates) {
-    return (
-      <QuestionTemplates
-        competitions={competitions}
-        onUseTemplate={handleUseTemplate}
-        onClose={() => setShowTemplates(false)}
-      />
-    )
-  }
-
   if (showForm) {
     return (
       <QuestionForm
         question={editingQuestion}
         competitions={competitions}
+        mode={mode}
         onClose={() => {
           setShowForm(false)
           setEditingQuestion(null)
@@ -142,40 +195,46 @@ export default function QuestionsManagement({ profile }: QuestionsManagementProp
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-neutral-900">إدارة الأسئلة</h1>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowTemplates(true)}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-          >
-            ⚡ أسئلة جاهزة
-          </button>
-          <button
-            onClick={handleCreate}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            + إضافة سؤال
-          </button>
+        <div>
+          <h1 className="text-3xl font-bold text-neutral-900">
+            {mode === 'bank' ? 'مكتبة الأسئلة' : 'الأسئلة التدريبية'}
+          </h1>
+          <p className="text-neutral-600 mt-1">
+            {mode === 'bank' 
+              ? 'أسئلة محفوظة كمسودات - لن تظهر للطلاب حتى يتم نشرها'
+              : 'أسئلة منشورة للتدريب - متاحة لجميع الطلاب'
+            }
+          </p>
+        </div>
+        <button
+          onClick={handleCreate}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        >
+          + إضافة سؤال
+        </button>
+      </div>
+
+      {/* Info Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">ℹ️</span>
+          <div>
+            <h3 className="font-bold text-blue-900 mb-1">
+              {mode === 'bank' ? 'مكتبة الأسئلة (مسودات)' : 'الأسئلة التدريبية'}
+            </h3>
+            <p className="text-sm text-blue-700">
+              {mode === 'bank'
+                ? 'الأسئلة المحفوظة هنا لن تُضاف تلقائياً لأي مسابقة. يمكنك نشرها كأسئلة تدريبية أو إضافتها للمسابقات لاحقاً.'
+                : 'الأسئلة المنشورة هنا متاحة لجميع الطلاب للتدريب. لإضافة أسئلة لمسابقة معينة، استخدم صفحة إدارة المسابقة.'
+              }
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Filters */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-neutral-200">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">المسابقة</label>
-            <select
-              value={filters.competition_id}
-              onChange={e => setFilters({ ...filters, competition_id: e.target.value })}
-              className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">الكل</option>
-              {competitions.map(comp => (
-                <option key={comp.id} value={comp.id}>{comp.title}</option>
-              ))}
-            </select>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-2">النوع</label>
             <select
@@ -187,19 +246,6 @@ export default function QuestionsManagement({ profile }: QuestionsManagementProp
               <option value="mcq">اختيار من متعدد</option>
               <option value="true_false">صح/خطأ</option>
               <option value="text">نص</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-2">التصنيف</label>
-            <select
-              value={filters.is_training}
-              onChange={e => setFilters({ ...filters, is_training: e.target.value })}
-              className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">الكل</option>
-              <option value="false">مسابقة</option>
-              <option value="true">تدريب</option>
             </select>
           </div>
 
@@ -219,7 +265,7 @@ export default function QuestionsManagement({ profile }: QuestionsManagementProp
       {/* Questions List */}
       {questions.length === 0 ? (
         <div className="bg-white rounded-xl p-12 shadow-sm border border-neutral-200 text-center">
-          <span className="text-4xl mb-4 block">❓</span>
+          <Icons.question className="w-10 h-10 mb-4 block" />
           <h2 className="text-xl font-bold text-neutral-900 mb-2">لا توجد أسئلة</h2>
           <p className="text-neutral-600 mb-6">ابدأ بإضافة سؤال جديد</p>
           <button
@@ -247,16 +293,11 @@ export default function QuestionsManagement({ profile }: QuestionsManagementProp
                     `}>
                       {getTypeLabel(question.type)}
                     </span>
-                    {question.is_training && (
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-                        تدريب
-                      </span>
-                    )}
-                    {!question.correct_answer && (
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                        بدون إجابة صحيحة
-                      </span>
-                    )}
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      question.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {question.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
+                    </span>
                   </div>
                   <p className="text-neutral-900 font-medium mb-2">{question.question_text}</p>
                   <div className="flex items-center gap-4 text-sm text-neutral-600">
@@ -280,16 +321,24 @@ export default function QuestionsManagement({ profile }: QuestionsManagementProp
                 >
                   نسخ
                 </button>
-                {!question.is_training && (
+                {mode === 'bank' && (
                   <button
                     onClick={() => handleMoveToTraining(question.id)}
                     className="px-4 py-2 text-sm font-medium text-yellow-700 hover:bg-yellow-50 rounded-lg transition-colors"
                   >
-                    نقل للتدريب
+                    نشر للتدريب
+                  </button>
+                )}
+                {mode === 'training' && (
+                  <button
+                    onClick={() => handleMoveToLibrary(question.id)}
+                    className="px-4 py-2 text-sm font-medium text-yellow-700 hover:bg-yellow-50 rounded-lg transition-colors"
+                  >
+                    نقل للمكتبة
                   </button>
                 )}
                 <button
-                  onClick={() => handleDelete(question.id)}
+                  onClick={() => handleDelete(question)}
                   className="px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   حذف
@@ -299,42 +348,166 @@ export default function QuestionsManagement({ profile }: QuestionsManagementProp
           ))}
         </div>
       )}
+
+      {/* Destination Modal */}
+      <Modal
+        isOpen={showDestinationModal}
+        onClose={() => setShowDestinationModal(false)}
+        title="أين تريد حفظ السؤال؟"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-neutral-700 mb-4">
+            اختر وجهة السؤال الجديد:
+          </p>
+          
+          <button
+            onClick={() => handleDestinationSelected('library')}
+            className="w-full p-4 border-2 border-neutral-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-right"
+          >
+            <div className="flex items-start gap-3">
+              <Icons.book className="w-6 h-6 " />
+              <div>
+                <h3 className="font-bold text-neutral-900 mb-1">حفظ في المكتبة (مسودة)</h3>
+                <p className="text-sm text-neutral-600">
+                  السؤال سيُحفظ كمسودة ولن يظهر للطلاب. يمكنك نشره لاحقاً.
+                </p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleDestinationSelected('training')}
+            className="w-full p-4 border-2 border-blue-500 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-right"
+          >
+            <div className="flex items-start gap-3">
+              <Icons.check className="w-6 h-6 " />
+              <div>
+                <h3 className="font-bold text-blue-900 mb-1">نشر كسؤال تدريبي (افتراضي)</h3>
+                <p className="text-sm text-blue-700">
+                  السؤال سيُنشر فوراً ويكون متاحاً لجميع الطلاب للتدريب.
+                </p>
+              </div>
+            </div>
+          </button>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
+            <p className="text-xs text-yellow-800">
+              ⚠️ لن يتم إضافة السؤال تلقائياً لأي مسابقة. لإضافة أسئلة لمسابقة، استخدم صفحة إدارة المسابقة.
+            </p>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onClose={() => !deleting && setDeleteModal({ isOpen: false, question: null })}
+        title="تأكيد الحذف"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-neutral-700">
+            هل أنت متأكد من حذف هذا السؤال؟
+          </p>
+          {deleteModal.question && (
+            <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200">
+              <p className="text-sm text-neutral-900 font-medium">
+                {deleteModal.question.question_text}
+              </p>
+            </div>
+          )}
+          <p className="text-sm text-red-600">
+            ⚠️ هذا الإجراء لا يمكن التراجع عنه
+          </p>
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              onClick={confirmDelete}
+              disabled={deleting}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {deleting ? 'جاري الحذف...' : 'نعم، احذف'}
+            </button>
+            <button
+              onClick={() => setDeleteModal({ isOpen: false, question: null })}
+              disabled={deleting}
+              className="flex-1 px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              إلغاء
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
 
-function QuestionForm({ question, competitions, onClose }: { 
+function QuestionForm({ question, competitions, mode = 'training', onClose }: { 
   question: Question | null
   competitions: Competition[]
+  mode?: 'training' | 'bank'
   onClose: () => void 
 }) {
-  const [formData, setFormData] = useState<QuestionFormData>({
-    competition_id: question?.competition_id || null,
-    is_training: question?.is_training || false,
-    type: question?.type || 'mcq',
-    question_text: question?.question_text || '',
-    options: question?.options || ['', '', '', ''],
-    correct_answer: question?.correct_answer || null,
-    source_ref: {
-      volume: question?.volume || '',
-      page: question?.page || '',
-      lineFrom: question?.line_from || '',
-      lineTo: question?.line_to || '',
+  const isEditing = question && question.id !== ''
+  
+  // FIXED: Add localStorage persistence to prevent data loss
+  const DRAFT_KEY = `draft:question:${isEditing ? question.id : 'new'}`
+  
+  const [formData, setFormData] = useState<QuestionFormData>(() => {
+    // Try to restore from localStorage first
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(DRAFT_KEY)
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          console.error('Failed to parse saved draft:', e)
+        }
+      }
+    }
+    
+    // Otherwise use initial data
+    return {
+      competition_id: null, // Always null - enforced
+      is_training: question?.is_training ?? true,
+      status: question?.status ?? 'PUBLISHED',
+      type: question?.type || 'mcq',
+      question_text: question?.question_text || '',
+      options: question?.options || ['', '', '', ''],
+      correct_answer: question?.correct_answer || null,
+      source_ref: {
+        volume: question?.volume || '',
+        page: question?.page || '',
+        lineFrom: question?.line_from || '',
+        lineTo: question?.line_to || '',
+      }
     }
   })
   const [saving, setSaving] = useState(false)
+
+  // FIXED: Auto-save draft to localStorage on every change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formData))
+    }
+  }, [formData, DRAFT_KEY])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
 
     try {
-      // Only update if question has an id property (not from template)
-      if (question && question.id) {
+      if (isEditing) {
         await updateQuestion(question.id, formData)
       } else {
         await createQuestion(formData)
       }
+      
+      // FIXED: Clear draft from localStorage after successful save
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(DRAFT_KEY)
+      }
+      
       onClose()
     } catch (error: any) {
       alert(error?.message || 'فشل حفظ السؤال')
@@ -366,7 +539,7 @@ function QuestionForm({ question, competitions, onClose }: {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900">
-          {question ? 'تعديل السؤال' : 'إضافة سؤال جديد'}
+          {isEditing ? 'تعديل السؤال' : 'إضافة سؤال جديد'}
         </h1>
         <button
           onClick={onClose}
@@ -377,46 +550,29 @@ function QuestionForm({ question, competitions, onClose }: {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 shadow-sm border border-neutral-200 space-y-6">
-        {/* Competition & Training */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-neutral-900 mb-2">
-              المسابقة
-            </label>
-            <select
-              value={formData.competition_id || ''}
-              onChange={e => {
-                const value = e.target.value
-                setFormData({ 
-                  ...formData, 
-                  competition_id: value && value !== 'undefined' ? value : null 
-                })
-              }}
-              disabled={formData.is_training}
-              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-neutral-100"
-            >
-              <option value="">اختر مسابقة</option>
-              {competitions.filter(c => c.status !== 'archived').map(comp => (
-                <option key={comp.id} value={comp.id}>{comp.title}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.is_training}
-                onChange={e => setFormData({ 
-                  ...formData, 
-                  is_training: e.target.checked,
-                  competition_id: e.target.checked ? null : formData.competition_id
-                })}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-              />
-              <span className="text-sm font-medium text-neutral-900">سؤال تدريبي</span>
-            </label>
-            <p className="text-xs text-neutral-600 mt-1">الأسئلة التدريبية لا تنتمي لمسابقة محددة</p>
+        {/* Info Banner */}
+        <div className={`border rounded-lg p-4 ${
+          formData.is_training 
+            ? 'bg-green-50 border-green-200' 
+            : 'bg-yellow-50 border-yellow-200'
+        }`}>
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">{formData.is_training ? '✅' : '📚'}</span>
+            <div>
+              <h3 className={`font-bold mb-1 ${
+                formData.is_training ? 'text-green-900' : 'text-yellow-900'
+              }`}>
+                {formData.is_training ? 'سؤال تدريبي' : 'مسودة في المكتبة'}
+              </h3>
+              <p className={`text-sm ${
+                formData.is_training ? 'text-green-700' : 'text-yellow-700'
+              }`}>
+                {formData.is_training
+                  ? 'هذا السؤال سيكون متاحاً لجميع الطلاب للتدريب. لن يُضاف تلقائياً لأي مسابقة.'
+                  : 'هذا السؤال محفوظ كمسودة ولن يظهر للطلاب حتى يتم نشره.'
+                }
+              </p>
+            </div>
           </div>
         </div>
 
@@ -435,7 +591,7 @@ function QuestionForm({ question, competitions, onClose }: {
                   : 'border-neutral-300 hover:border-neutral-400'
               }`}
             >
-              <div className="text-2xl mb-2">📝</div>
+              <div className="mb-2"><Icons.file className="w-6 h-6" /></div>
               <div className="font-medium">اختيار من متعدد</div>
             </button>
             <button
@@ -459,7 +615,7 @@ function QuestionForm({ question, competitions, onClose }: {
                   : 'border-neutral-300 hover:border-neutral-400'
               }`}
             >
-              <div className="text-2xl mb-2">💬</div>
+              <div className="mb-2"><Icons.message className="w-6 h-6" /></div>
               <div className="font-medium">نص</div>
             </button>
           </div>
@@ -651,270 +807,6 @@ function QuestionForm({ question, competitions, onClose }: {
           </button>
         </div>
       </form>
-    </div>
-  )
-}
-
-function QuestionTemplates({ competitions, onUseTemplate, onClose }: {
-  competitions: Competition[]
-  onUseTemplate: (template: Partial<Question>) => void
-  onClose: () => void
-}) {
-  const templates = [
-    {
-      id: 'geography-mcq',
-      category: 'جغرافيا',
-      icon: '🗺️',
-      type: 'mcq' as const,
-      question_text: 'ما هي عاصمة سلطنة عمان؟',
-      options: ['مسقط', 'صلالة', 'نزوى', 'صحار'],
-      correct_answer: 'مسقط',
-      volume: '1',
-      page: '1',
-      line_from: '1',
-      line_to: '1'
-    },
-    {
-      id: 'history-mcq',
-      category: 'تاريخ',
-      icon: '📜',
-      type: 'mcq' as const,
-      question_text: 'في أي عام تم توحيد عمان الحديثة؟',
-      options: ['1970', '1971', '1980', '1990'],
-      correct_answer: '1970',
-      volume: '1',
-      page: '1',
-      line_from: '1',
-      line_to: '1'
-    },
-    {
-      id: 'culture-mcq',
-      category: 'ثقافة',
-      icon: '🎭',
-      type: 'mcq' as const,
-      question_text: 'ما هو الزي التقليدي للرجال في عمان؟',
-      options: ['الدشداشة', 'الثوب', 'الجلابية', 'القفطان'],
-      correct_answer: 'الدشداشة',
-      volume: '1',
-      page: '1',
-      line_from: '1',
-      line_to: '1'
-    },
-    {
-      id: 'nature-mcq',
-      category: 'طبيعة',
-      icon: '🌴',
-      type: 'mcq' as const,
-      question_text: 'ما هو الحيوان الوطني لسلطنة عمان؟',
-      options: ['المها العربي', 'الصقر', 'الجمل', 'الغزال'],
-      correct_answer: 'المها العربي',
-      volume: '1',
-      page: '1',
-      line_from: '1',
-      line_to: '1'
-    },
-    {
-      id: 'economy-mcq',
-      category: 'اقتصاد',
-      icon: '💰',
-      type: 'mcq' as const,
-      question_text: 'ما هي العملة الرسمية لسلطنة عمان؟',
-      options: ['الريال العماني', 'الدرهم', 'الدينار', 'الريال السعودي'],
-      correct_answer: 'الريال العماني',
-      volume: '1',
-      page: '1',
-      line_from: '1',
-      line_to: '1'
-    },
-    {
-      id: 'landmarks-mcq',
-      category: 'معالم',
-      icon: '🕌',
-      type: 'mcq' as const,
-      question_text: 'ما هو أكبر مسجد في سلطنة عمان؟',
-      options: ['جامع السلطان قابوس الأكبر', 'جامع الزواوي', 'جامع الروضة', 'جامع السلطان'],
-      correct_answer: 'جامع السلطان قابوس الأكبر',
-      volume: '1',
-      page: '1',
-      line_from: '1',
-      line_to: '1'
-    },
-    {
-      id: 'true-false-1',
-      category: 'صح/خطأ',
-      icon: '✓✗',
-      type: 'true_false' as const,
-      question_text: 'تقع سلطنة عمان في جنوب شرق شبه الجزيرة العربية',
-      correct_answer: 'true',
-      volume: '1',
-      page: '1',
-      line_from: '1',
-      line_to: '1'
-    },
-    {
-      id: 'true-false-2',
-      category: 'صح/خطأ',
-      icon: '✓✗',
-      type: 'true_false' as const,
-      question_text: 'صلالة هي عاصمة سلطنة عمان',
-      correct_answer: 'false',
-      volume: '1',
-      page: '1',
-      line_from: '1',
-      line_to: '1'
-    },
-    {
-      id: 'text-1',
-      category: 'نص',
-      icon: '💬',
-      type: 'text' as const,
-      question_text: 'اذكر ثلاثة من محافظات سلطنة عمان',
-      correct_answer: 'مسقط، ظفار، الباطنة',
-      volume: '1',
-      page: '1',
-      line_from: '1',
-      line_to: '1'
-    },
-    {
-      id: 'text-2',
-      category: 'نص',
-      icon: '💬',
-      type: 'text' as const,
-      question_text: 'ما معنى كلمة "المها" في اللغة العربية؟',
-      correct_answer: 'نوع من الظباء البيضاء',
-      volume: '1',
-      page: '1',
-      line_from: '1',
-      line_to: '1'
-    }
-  ]
-
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const categories = ['all', 'جغرافيا', 'تاريخ', 'ثقافة', 'طبيعة', 'اقتصاد', 'معالم', 'صح/خطأ', 'نص']
-
-  const filteredTemplates = selectedCategory === 'all' 
-    ? templates 
-    : templates.filter(t => t.category === selectedCategory)
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-neutral-900">⚡ أسئلة جاهزة</h1>
-          <p className="text-neutral-600 mt-1">اختر قالب سؤال جاهز وعدّله حسب احتياجك</p>
-        </div>
-        <button
-          onClick={onClose}
-          className="px-4 py-2 text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
-        >
-          إلغاء
-        </button>
-      </div>
-
-      {/* Category Filter */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-neutral-200">
-        <div className="flex items-center gap-2 flex-wrap">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedCategory === cat
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-              }`}
-            >
-              {cat === 'all' ? 'الكل' : cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Templates Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredTemplates.map(template => (
-          <div
-            key={template.id}
-            className="bg-white rounded-xl p-6 shadow-sm border border-neutral-200 hover:border-blue-300 transition-colors"
-          >
-            <div className="flex items-start gap-4">
-              <div className="text-4xl">{template.icon}</div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`
-                    px-3 py-1 rounded-full text-xs font-medium
-                    ${template.type === 'mcq' ? 'bg-blue-100 text-blue-700' : ''}
-                    ${template.type === 'true_false' ? 'bg-green-100 text-green-700' : ''}
-                    ${template.type === 'text' ? 'bg-purple-100 text-purple-700' : ''}
-                  `}>
-                    {getTypeLabel(template.type)}
-                  </span>
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700">
-                    {template.category}
-                  </span>
-                </div>
-                <p className="text-neutral-900 font-medium mb-3">{template.question_text}</p>
-                
-                {template.type === 'mcq' && template.options && (
-                  <div className="space-y-1 mb-3">
-                    {template.options.map((opt, idx) => (
-                      <div 
-                        key={idx}
-                        className={`text-sm px-3 py-1 rounded ${
-                          opt === template.correct_answer 
-                            ? 'bg-green-50 text-green-700 font-medium' 
-                            : 'text-neutral-600'
-                        }`}
-                      >
-                        {opt} {opt === template.correct_answer && '✓'}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {template.type === 'true_false' && (
-                  <div className="text-sm text-neutral-600 mb-3">
-                    الإجابة: <span className="font-medium text-green-700">
-                      {template.correct_answer === 'true' ? 'صح ✓' : 'خطأ ✗'}
-                    </span>
-                  </div>
-                )}
-                
-                {template.type === 'text' && (
-                  <div className="text-sm text-neutral-600 mb-3">
-                    إجابة نموذجية: <span className="font-medium">{template.correct_answer}</span>
-                  </div>
-                )}
-                
-                <button
-                  onClick={() => onUseTemplate({
-                    type: template.type,
-                    question_text: template.question_text,
-                    options: template.options,
-                    correct_answer: template.correct_answer,
-                    volume: template.volume,
-                    page: template.page,
-                    line_from: template.line_from,
-                    line_to: template.line_to,
-                    is_training: false
-                  } as any)}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  استخدام هذا القالب
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filteredTemplates.length === 0 && (
-        <div className="bg-white rounded-xl p-12 shadow-sm border border-neutral-200 text-center">
-          <span className="text-4xl mb-4 block">🔍</span>
-          <h2 className="text-xl font-bold text-neutral-900 mb-2">لا توجد قوالب</h2>
-          <p className="text-neutral-600">جرب فئة أخرى</p>
-        </div>
-      )}
     </div>
   )
 }

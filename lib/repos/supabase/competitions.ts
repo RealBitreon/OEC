@@ -13,6 +13,7 @@ export class SupabaseCompetitionsRepo implements ICompetitionsRepo {
       startAt: data.start_at,
       endAt: data.end_at,
       wheelSpinAt: data.wheel_at,
+      maxAttempts: data.max_attempts || 2,
       rules: data.rules || {
         eligibilityMode: 'all_correct',
         ticketsConfig: {
@@ -99,6 +100,7 @@ export class SupabaseCompetitionsRepo implements ICompetitionsRepo {
         start_at: competition.startAt,
         end_at: competition.endAt,
         wheel_at: competition.wheelSpinAt,
+        max_attempts: competition.maxAttempts || 2,
         rules: competition.rules,
       })
       .select()
@@ -119,6 +121,7 @@ export class SupabaseCompetitionsRepo implements ICompetitionsRepo {
     if (patch.startAt) updateData.start_at = patch.startAt
     if (patch.endAt) updateData.end_at = patch.endAt
     if (patch.wheelSpinAt) updateData.wheel_at = patch.wheelSpinAt
+    if (patch.maxAttempts !== undefined) updateData.max_attempts = patch.maxAttempts
     if (patch.rules) updateData.rules = patch.rules
 
     const { data, error } = await supabase

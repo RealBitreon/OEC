@@ -12,6 +12,7 @@ function toDashboardFormat(q: RepoQuestion): DashboardQuestion {
     id: q.id,
     competition_id: q.competitionId,
     is_training: q.isTraining,
+    status: 'PUBLISHED', // Default to PUBLISHED for existing questions
     type: q.type as DashboardQuestion['type'],
     question_text: q.questionText,
     options: q.options || null,
@@ -28,6 +29,7 @@ function toDashboardFormat(q: RepoQuestion): DashboardQuestion {
 export interface QuestionFormData {
   competition_id: string | null
   is_training: boolean
+  status: 'DRAFT' | 'PUBLISHED'
   type: 'mcq' | 'true_false' | 'text'
   question_text: string
   options?: string[]
@@ -92,10 +94,16 @@ export async function getQuestionById(id: string) {
 }
 
 export async function createQuestion(data: QuestionFormData) {
+  // ENFORCE: Questions from library/training pages must have competition_id = NULL
+  if (data.competition_id !== null) {
+    throw new Error('Questions cannot be directly assigned to competitions. Use addToCompetition instead.')
+  }
+
   const question = {
     id: randomUUID(),
-    competitionId: data.competition_id,
+    competitionId: null, // Always null for new questions
     isTraining: data.is_training,
+    status: data.status,
     type: data.type,
     questionText: data.question_text,
     options: data.options,
@@ -116,8 +124,14 @@ export async function updateQuestion(id: string, data: Partial<QuestionFormData>
     updatedAt: new Date().toISOString(),
   }
 
-  if (data.competition_id !== undefined) updates.competitionId = data.competition_id
+  // ENFORCE: Cannot set competition_id through update
+  // Use addToCompetition or copyToCompetition instead
+  if (data.competition_id !== undefined && data.competition_id !== null) {
+    throw new Error('Cannot assign questions to competitions through update. Use addToCompetition instead.')
+  }
+
   if (data.is_training !== undefined) updates.isTraining = data.is_training
+  if (data.status !== undefined) updates.status = data.status
   if (data.type) updates.type = data.type
   if (data.question_text) updates.questionText = data.question_text
   if (data.options) updates.options = data.options
@@ -157,6 +171,7 @@ export async function duplicateQuestion(id: string) {
     options: question.options,
     correctAnswer: question.correctAnswer,
     sourceRef: question.sourceRef,
+    status: 'DRAFT' as const,
     isActive: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -168,13 +183,60 @@ export async function duplicateQuestion(id: string) {
 }
 
 export async function moveToTraining(id: string) {
-  await questionsRepo.update(id, {
-    competitionId: null,
-    isTraining: true,
-    updatedAt: new Date().toISOString(),
-  })
+  await questionsRepo.publishToTraining(id)
   revalidatePath('/dashboard')
   return { success: true }
+}
+
+export async function moveToLibrary(id: string) {
+  await questionsRepo.moveToLibrary(id)
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+export async function getLibraryQuestions() {
+  const questions = await questionsRepo.listLibrary()
+  return questions.map(toDashboardFormat)
+}
+
+export async function addQuestionsToCompetition(questionIds: string[], competitionId: string) {
+  // Verify competition exists
+  const competition = await competitionsRepo.getById(competitionId)
+  if (!competition) {
+    throw new Error('Competition not found')
+  }
+
+  // Copy each question to the competition
+  const copiedQuestions = []
+  for (const questionId of questionIds) {
+    const copied = await questionsRepo.copyToCompetition(questionId, competitionId)
+    copiedQuestions.push(copied)
+  }
+
+  revalidatePath('/dashboard')
+  return { success: true, count: copiedQuestions.length }
+}
+
+export async function bulkImportQuestions(
+  questions: Array<Omit<QuestionFormData, 'competition_id' | 'is_training' | 'status'>>,
+  destination: 'library' | 'training'
+) {
+  const imported = []
+  
+  for (const q of questions) {
+    const questionData: QuestionFormData = {
+      ...q,
+      competition_id: null, // Always null for imports
+      is_training: destination === 'training',
+      status: destination === 'training' ? 'PUBLISHED' : 'DRAFT',
+    }
+    
+    const result = await createQuestion(questionData)
+    imported.push(result.question)
+  }
+
+  revalidatePath('/dashboard')
+  return { success: true, count: imported.length, questions: imported }
 }
 
 export async function getCompetitions() {

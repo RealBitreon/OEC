@@ -36,11 +36,15 @@ export interface IQuestionsRepo {
   getById(id: string): Promise<Question | null>
   listByCompetition(competitionId: string): Promise<Question[]>
   listTraining(): Promise<Question[]>
+  listLibrary(): Promise<Question[]>
   listAll(): Promise<Question[]>
   create(data: Question): Promise<Question>
   update(id: string, patch: Partial<Question>): Promise<Question>
   delete(id: string): Promise<void>
   moveToTraining(competitionId: string): Promise<void>
+  moveToLibrary(id: string): Promise<Question>
+  publishToTraining(id: string): Promise<Question>
+  copyToCompetition(questionId: string, competitionId: string): Promise<Question>
 }
 
 export interface ISubmissionsRepo {

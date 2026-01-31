@@ -12,12 +12,9 @@ export function hasRole(userRole: UserRole, requiredRole: UserRole): boolean {
 export function canAccessSection(userRole: UserRole, section: DashboardSection): boolean {
   const sectionPermissions: Record<DashboardSection, UserRole> = {
     'overview': 'LRC_MANAGER',
-    'current-competition': 'LRC_MANAGER',
     'competitions': 'LRC_MANAGER',
-    'questions': 'LRC_MANAGER',
-    'submissions': 'LRC_MANAGER',
-    'tickets': 'LRC_MANAGER',
-    'wheel': 'LRC_MANAGER',
+    'training-questions': 'LRC_MANAGER',
+    'question-bank': 'LRC_MANAGER',
     'archives': 'LRC_MANAGER',
     'settings': 'LRC_MANAGER',
     'users': 'CEO',
@@ -30,12 +27,9 @@ export function canAccessSection(userRole: UserRole, section: DashboardSection):
 export function getAccessibleSections(userRole: UserRole): DashboardSection[] {
   const allSections: DashboardSection[] = [
     'overview',
-    'current-competition',
     'competitions',
-    'questions',
-    'submissions',
-    'tickets',
-    'wheel',
+    'training-questions',
+    'question-bank',
     'archives',
     'settings',
     'users',

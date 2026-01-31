@@ -1,0 +1,42 @@
+{
+  "school": {
+    "name": "مدرسة الإمام المهنا بن سلطان للتعليم ما بعد الاساسي(10-12) في مسقط",
+    "shortName": "مدرسة الإمام المهنا بن سلطان",
+    "nameEn": "Imam Al-Muhanna bin Sultan Post-Basic Education School (10-12) in Muscat",
+    "shortNameEn": "Imam Al-Muhanna bin Sultan School",
+    "principal": "سليمان الجابري",
+    "assistantPrincipal": "وليد الغافري",
+    "lrcTeacher": "مبارك الهنائي",
+    "phone": "+968 24505858",
+    "address": "مرتفعات بوشر، بوشر، محافظة مسقط",
+    "addressEn": "Bousher Heights, Bousher, Muscat Governorate"
+  },
+  "site": {
+    "title": "منصة المسابقات التعليمية",
+    "titleEn": "Educational Competitions Platform",
+    "description": "منصة المسابقات التعليمية لمدرسة الإمام المهنا بن سلطان",
+    "descriptionEn": "Educational Competitions Platform for Imam Al-Muhanna bin Sultan School"
+  },
+  "developer": {
+    "name": "يوسف محمد صبح",
+    "nameEn": "Youssef Mohammed Sobh",
+    "grade": "10/7",
+    "school": "مدرسة الإمام المهنا بن سلطان"
+  },
+  "contact": {
+    "method": "يرجى زيارة مركز مصادر التعلم في المدرسة للاستفسار عن حساب المسابقة",
+    "methodEn": "Please visit the Learning Resource Center (LRC) at school to inquire about competition account",
+    "lrcTeacher": "مبارك الهنائي"
+  },
+  "social": {
+    "instagram": "https://www.instagram.com/edugovmct1434/",
+    "twitter": "https://x.com/edugovmct1434",
+    "threads": "https://www.threads.com/@edugovmct1434"
+  },
+  "features": {
+    "enableWheel": true,
+    "enableCompetitions": true,
+    "enableTraining": true,
+    "enableCertificates": true
+  }
+}

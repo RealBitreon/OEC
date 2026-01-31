@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import StartCompetitionButton from '@/components/StartCompetitionButton'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import WheelSpinner from './WheelSpinner'
 import { BackButton } from '@/components'
+import Icons from '@/components/icons'
 
 export default function WheelPage() {
   const [competition, setCompetition] = useState<any>(null)
@@ -166,7 +168,7 @@ function NotLockedYet({ competition }: { competition: any }) {
       animate={{ opacity: 1, scale: 1 }}
       className="card text-center bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200"
     >
-      <div className="text-8xl mb-6">⏳</div>
+      <div className="mb-6"><Icons.clock className="w-24 h-24" /></div>
       <h2 className="text-3xl font-bold text-primary mb-4">
         لم يتم قفل المرشحين بعد
       </h2>
@@ -192,9 +194,7 @@ function NotLockedYet({ competition }: { competition: any }) {
         تابع هذه الصفحة للحصول على التحديثات
       </p>
 
-      <Link href="/questions" className="btn-primary inline-block">
-        ابدأ الإجابة على الأسئلة
-      </Link>
+      <StartCompetitionButton className="btn-primary inline-block" />
     </motion.div>
   )
 }
@@ -207,7 +207,7 @@ function LockedNotRun({ wheelRun, competition }: { wheelRun: any; competition: a
       className="space-y-6"
     >
       <div className="card text-center bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-400">
-        <div className="text-8xl mb-6">🔒</div>
+        <div className="mb-6"><Icons.lock className="w-24 h-24" /></div>
         <h2 className="text-3xl font-bold text-neutral-900 mb-4">
           تم قفل المرشحين — السحب قريباً
         </h2>
@@ -277,9 +277,7 @@ function WheelComplete({ wheelRun, competition }: { wheelRun: any; competition: 
             repeatDelay: 3
           }}
           className="text-8xl mb-6"
-        >
-          🏆
-        </motion.div>
+        ><Icons.trophy className="w-6 h-6" /></motion.div>
         <h2 className="text-3xl font-bold text-green-700 mb-4">
           مبروك للفائز!
         </h2>

@@ -2,14 +2,15 @@ import type { Metadata, Viewport } from 'next'
 import { ToastProvider } from '@/components/ui'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { config } from '@/lib/config/site'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'مسابقة الموسوعة العُمانية',
-  description: 'ابحث في الموسوعة… وثّق المصدر… واجمع فرصك للدخول في السحب',
+  title: `${config.site.title} - ${config.school.name}`,
+  description: config.site.description,
   openGraph: {
-    title: 'مسابقة الموسوعة العُمانية',
-    description: 'ابحث في الموسوعة… وثّق المصدر… واجمع فرصك للدخول في السحب',
+    title: `${config.site.title} - ${config.school.name}`,
+    description: config.site.description,
     locale: 'ar_OM',
   },
 }
