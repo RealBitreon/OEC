@@ -60,113 +60,125 @@ export async function reviewSubmission(
   status: 'approved' | 'rejected',
   notes?: string
 ) {
-  const supabase = await createClient()
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('student_id')?.value
-  
-  if (!userId) {
-    throw new Error('غير مصرح')
-  }
-
-  // Verify user role from database (security check)
-  const { data: user } = await supabase
-    .from('student_participants')
-    .select('role')
-    .eq('id', userId)
-    .single()
-  
-  if (!user || !['LRC_MANAGER', 'CEO'].includes(user.role)) {
-    throw new Error('غير مصرح - يتطلب صلاحيات مدير')
-  }
-  
-  // Get submission details
-  const { data: submission, error: fetchError } = await supabase
-    .from('submissions')
-    .select('*')
-    .eq('id', submissionId)
-    .single()
-  
-  if (fetchError || !submission) {
-    throw new Error('الإجابة غير موجودة')
-  }
-  
-  // Update submission
-  const { error } = await supabase
-    .from('submissions')
-    .update({
-      status,
-      reviewed_at: new Date().toISOString(),
-      reviewed_by: userId,
-      review_notes: notes || null
-    })
-    .eq('id', submissionId)
-  
-  if (error) {
-    throw new Error(error.message)
-  }
-  
-  // Log audit
-  await supabase.from('audit_logs').insert({
-    user_id: userId,
-    action: 'submission_reviewed',
-    details: { 
-      submission_id: submissionId, 
-      status,
-      notes: notes || null
+  try {
+    const supabase = await createClient()
+    
+    // Get current user
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !authUser) {
+      throw new Error('غير مصرح')
     }
-  })
-  
-  revalidatePath('/dashboard')
+
+    // Get user profile
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('auth_id', authUser.id)
+      .single()
+    
+    if (!profile || !['LRC_MANAGER', 'CEO'].includes(profile.role)) {
+      throw new Error('غير مصرح - يتطلب صلاحيات مدير')
+    }
+    
+    // Get submission details
+    const { data: submission, error: fetchError } = await supabase
+      .from('submissions')
+      .select('*')
+      .eq('id', submissionId)
+      .single()
+    
+    if (fetchError || !submission) {
+      throw new Error('الإجابة غير موجودة')
+    }
+    
+    // Update submission
+    const { error } = await supabase
+      .from('submissions')
+      .update({
+        status,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: profile.id,
+        review_notes: notes || null
+      })
+      .eq('id', submissionId)
+    
+    if (error) {
+      throw new Error(error.message)
+    }
+    
+    // Log audit
+    await supabase.from('audit_logs').insert({
+      user_id: profile.id,
+      action: 'submission_reviewed',
+      details: { 
+        submission_id: submissionId, 
+        status,
+        notes: notes || null
+      }
+    })
+    
+    revalidatePath('/dashboard')
+  } catch (error: any) {
+    console.error('Error in reviewSubmission:', error)
+    throw error
+  }
 }
 
 export async function bulkReview(
   submissionIds: string[],
   status: 'approved' | 'rejected'
 ) {
-  const supabase = await createClient()
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('student_id')?.value
-  
-  if (!userId) {
-    throw new Error('غير مصرح')
-  }
-
-  // Verify user role from database (security check)
-  const { data: user } = await supabase
-    .from('student_participants')
-    .select('role')
-    .eq('id', userId)
-    .single()
-  
-  if (!user || !['LRC_MANAGER', 'CEO'].includes(user.role)) {
-    throw new Error('غير مصرح - يتطلب صلاحيات مدير')
-  }
-  
-  // Update all submissions
-  const { error } = await supabase
-    .from('submissions')
-    .update({
-      status,
-      reviewed_at: new Date().toISOString(),
-      reviewed_by: userId
-    })
-    .in('id', submissionIds)
-  
-  if (error) {
-    throw new Error(error.message)
-  }
-  
-  // Log audit
-  await supabase.from('audit_logs').insert({
-    user_id: userId,
-    action: 'bulk_review',
-    details: { 
-      count: submissionIds.length,
-      status
+  try {
+    const supabase = await createClient()
+    
+    // Get current user
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !authUser) {
+      throw new Error('غير مصرح')
     }
-  })
-  
-  revalidatePath('/dashboard')
+
+    // Get user profile
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('auth_id', authUser.id)
+      .single()
+    
+    if (!profile || !['LRC_MANAGER', 'CEO'].includes(profile.role)) {
+      throw new Error('غير مصرح - يتطلب صلاحيات مدير')
+    }
+    
+    // Update all submissions
+    const { error } = await supabase
+      .from('submissions')
+      .update({
+        status,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: profile.id
+      })
+      .in('id', submissionIds)
+    
+    if (error) {
+      throw new Error(error.message)
+    }
+    
+    // Log audit
+    await supabase.from('audit_logs').insert({
+      user_id: profile.id,
+      action: 'bulk_review',
+      details: { 
+        count: submissionIds.length,
+        status
+      }
+    })
+    
+    revalidatePath('/dashboard')
+  } catch (error: any) {
+    console.error('Error in bulkReview:', error)
+    throw error
+  }
 }
 
 export async function getSubmissionStats(competitionId?: string) {
@@ -203,57 +215,63 @@ export async function getSubmissionStats(competitionId?: string) {
 }
 
 export async function allowRetry(submissionId: string) {
-  const supabase = await createClient()
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('student_id')?.value
-  
-  if (!userId) {
-    throw new Error('غير مصرح')
-  }
-
-  // Verify user role from database (security check)
-  const { data: user } = await supabase
-    .from('student_participants')
-    .select('role')
-    .eq('id', userId)
-    .single()
-  
-  if (!user || !['LRC_MANAGER', 'CEO'].includes(user.role)) {
-    throw new Error('غير مصرح - يتطلب صلاحيات مدير')
-  }
-  
-  // Get submission details
-  const { data: submission, error: fetchError } = await supabase
-    .from('submissions')
-    .select('*')
-    .eq('id', submissionId)
-    .single()
-  
-  if (fetchError || !submission) {
-    throw new Error('الإجابة غير موجودة')
-  }
-  
-  // Update submission to allow retry
-  const { error } = await supabase
-    .from('submissions')
-    .update({
-      retry_allowed: true
-    })
-    .eq('id', submissionId)
-  
-  if (error) {
-    throw new Error(error.message)
-  }
-  
-  // Log audit
-  await supabase.from('audit_logs').insert({
-    user_id: userId,
-    action: 'allow_retry',
-    details: { 
-      submission_id: submissionId,
-      participant_name: submission.participant_name
+  try {
+    const supabase = await createClient()
+    
+    // Get current user
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !authUser) {
+      throw new Error('غير مصرح')
     }
-  })
-  
-  revalidatePath('/dashboard')
+
+    // Get user profile
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('auth_id', authUser.id)
+      .single()
+    
+    if (!profile || !['LRC_MANAGER', 'CEO'].includes(profile.role)) {
+      throw new Error('غير مصرح - يتطلب صلاحيات مدير')
+    }
+    
+    // Get submission details
+    const { data: submission, error: fetchError } = await supabase
+      .from('submissions')
+      .select('*')
+      .eq('id', submissionId)
+      .single()
+    
+    if (fetchError || !submission) {
+      throw new Error('الإجابة غير موجودة')
+    }
+    
+    // Update submission to allow retry
+    const { error } = await supabase
+      .from('submissions')
+      .update({
+        retry_allowed: true
+      })
+      .eq('id', submissionId)
+    
+    if (error) {
+      throw new Error(error.message)
+    }
+    
+    // Log audit
+    await supabase.from('audit_logs').insert({
+      user_id: profile.id,
+      action: 'allow_retry',
+      details: { 
+        submission_id: submissionId,
+        participant_name: submission.participant_name
+      }
+    })
+    
+    revalidatePath('/dashboard')
+  } catch (error: any) {
+    console.error('Error in allowRetry:', error)
+    throw error
+  }
 }
