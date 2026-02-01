@@ -79,7 +79,10 @@ export default function StartCompetitionButton({
       }
 
       // Redirect to competition questions
-      router.push(`/competition/${targetSlug}/participate`)
+      // Ensure slug is properly encoded for URL
+      const encodedSlug = encodeURIComponent(targetSlug)
+      console.log('[START BUTTON] Redirecting to:', `/competition/${encodedSlug}/participate`)
+      router.push(`/competition/${encodedSlug}/participate`)
     } catch (err) {
       console.error('Error starting competition:', err)
       setError('حدث خطأ. يرجى المحاولة مرة أخرى.')

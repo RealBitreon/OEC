@@ -4,8 +4,15 @@ import { createServiceClient } from '@/lib/supabase/server'
 export async function POST(request: NextRequest) {
   try {
     const { competitionId, deviceFingerprint } = await request.json()
+    
+    console.log('[ATTEMPTS CHECK API] Request:', { 
+      competitionId, 
+      fingerprint: deviceFingerprint?.substring(0, 8) + '...',
+      timestamp: new Date().toISOString()
+    })
 
     if (!competitionId || !deviceFingerprint) {
+      console.error('[ATTEMPTS CHECK API] Missing fields')
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -22,6 +29,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (compError || !competition) {
+      console.error('[ATTEMPTS CHECK API] Competition not found:', compError)
       return NextResponse.json(
         { error: 'Competition not found' },
         { status: 404 }
@@ -41,15 +49,19 @@ export async function POST(request: NextRequest) {
     const currentAttempts = tracking?.attempt_count || 0
     const canAttempt = currentAttempts < maxAttempts
     const remainingAttempts = Math.max(0, maxAttempts - currentAttempts)
-
-    return NextResponse.json({
+    
+    const result = {
       canAttempt,
       currentAttempts,
       maxAttempts,
       remainingAttempts,
-    })
+    }
+    
+    console.log('[ATTEMPTS CHECK API] Result:', result)
+
+    return NextResponse.json(result)
   } catch (error) {
-    console.error('Error checking attempts:', error)
+    console.error('[ATTEMPTS CHECK API] Error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

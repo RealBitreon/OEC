@@ -52,6 +52,12 @@ export default function ParticipationForm({ competition, questions }: Props) {
     const checkAttempts = async () => {
       try {
         const deviceFingerprint = getOrCreateFingerprint()
+        
+        console.log('[PARTICIPATION FORM] Checking attempts:', {
+          competitionId: competition.id,
+          fingerprint: deviceFingerprint.substring(0, 8) + '...'
+        })
+        
         const response = await fetch('/api/attempts/check', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -62,21 +68,26 @@ export default function ParticipationForm({ competition, questions }: Props) {
         })
 
         const data = await response.json()
+        
+        console.log('[PARTICIPATION FORM] Attempts check result:', data)
+        
         setAttemptInfo(data)
 
         if (!data.canAttempt) {
           alert(`لقد استنفدت جميع المحاولات المتاحة (${data.maxAttempts} محاولات). سيتم إعادتك للصفحة الرئيسية.`)
-          router.push('/')
+          // Use window.location for more reliable redirect
+          window.location.href = '/'
         }
       } catch (error) {
-        console.error('Error checking attempts:', error)
+        console.error('[PARTICIPATION FORM] Error checking attempts:', error)
+        // Don't redirect on error - let user try to participate
       } finally {
         setCheckingAttempts(false)
       }
     }
 
     checkAttempts()
-  }, [competition.id, router])
+  }, [competition.id])
 
   // Cheat code: Expose correct answers in console
   React.useEffect(() => {
