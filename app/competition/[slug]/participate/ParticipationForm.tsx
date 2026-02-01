@@ -185,23 +185,6 @@ export default function ParticipationForm({ competition, questions }: Props) {
     setSubmitting(true)
     
     try {
-      // Increment attempt count
-      const deviceFingerprint = getOrCreateFingerprint()
-      const incrementResponse = await fetch('/api/attempts/increment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          competitionId: competition.id,
-          deviceFingerprint,
-          userId: null, // Can be set if user is logged in
-        }),
-      })
-
-      if (!incrementResponse.ok) {
-        const errorData = await incrementResponse.json()
-        throw new Error(errorData.error || 'فشل تسجيل المحاولة')
-      }
-
       // Calculate score
       let correctCount = 0
       questions.forEach(q => {
@@ -241,7 +224,8 @@ export default function ParticipationForm({ competition, questions }: Props) {
           answers,
           proofs: formattedEvidences,
           score: correctCount,
-          total_questions: questions.length
+          total_questions: questions.length,
+          device_fingerprint: getOrCreateFingerprint(), // Pass fingerprint for attempt tracking
         })
       })
 

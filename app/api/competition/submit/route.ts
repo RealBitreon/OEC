@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
       participant_name: body.participant_name,
       answersCount: Object.keys(body.answers || {}).length,
       proofsCount: Object.keys(body.proofs || {}).length,
+      device_fingerprint: body.device_fingerprint?.substring(0, 8) + '...',
       timestamp: new Date().toISOString()
     })
     
@@ -102,7 +103,8 @@ export async function POST(request: NextRequest) {
       grade,
       answers, 
       proofs,
-      participant_email 
+      participant_email,
+      device_fingerprint
     } = body
 
     // Validate required fields
@@ -276,6 +278,35 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 }
       )
+    }
+
+    // ✅ FIX: Increment attempt count ONLY AFTER successful submission
+    if (device_fingerprint) {
+      console.log(`[${correlationId}] Incrementing attempt count for device`)
+      
+      const { data: tracking } = await supabase
+        .from('attempt_tracking')
+        .select('attempt_count')
+        .eq('competition_id', competition_id)
+        .eq('device_fingerprint', device_fingerprint)
+        .single()
+
+      const currentAttempts = tracking?.attempt_count || 0
+
+      await supabase
+        .from('attempt_tracking')
+        .upsert({
+          competition_id,
+          device_fingerprint,
+          user_id: null,
+          attempt_count: currentAttempts + 1,
+          last_attempt_at: submittedAt.toISOString(),
+          updated_at: submittedAt.toISOString(),
+        }, {
+          onConflict: 'competition_id,device_fingerprint',
+        })
+      
+      console.log(`[${correlationId}] Attempt count incremented to ${currentAttempts + 1}`)
     }
 
     // ✅ FIX: Actually create tickets if earned
