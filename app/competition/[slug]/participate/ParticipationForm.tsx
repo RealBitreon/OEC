@@ -629,14 +629,14 @@ export default function ParticipationForm({ competition, questions }: Props) {
             </button>
           )}
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push(`/competition/${competition.slug}`)}
             className={`px-8 py-3 font-bold rounded-lg transition-all duration-200 ${
               allCorrect 
                 ? 'bg-primary hover:bg-primary-dark text-white'
                 : 'border-2 border-neutral-300 text-neutral-700 hover:bg-neutral-50'
             }`}
           >
-            العودة للصفحة الرئيسية
+            العودة للمسابقة
           </button>
         </div>
       </div>
