@@ -239,26 +239,37 @@ export async function POST(request: NextRequest) {
       ticketsEarned
     })
     
+    // Build submission data with only available fields
+    const submissionData: any = {
+      id: submissionId,
+      competition_id,
+      participant_name,
+      answers,
+      score,
+      total_questions: totalQuestions,
+      tickets_earned: ticketsEarned,
+      status: 'pending',
+      submitted_at: submittedAt.toISOString(),
+    }
+    
+    // Add optional fields if provided
+    if (participant_email) submissionData.participant_email = participant_email
+    if (first_name) submissionData.first_name = first_name
+    if (father_name) submissionData.father_name = father_name
+    if (family_name) submissionData.family_name = family_name
+    if (grade) submissionData.grade = grade
+    if (proofs) submissionData.proofs = proofs
+    
+    // Add is_correct if column exists (graceful degradation)
+    try {
+      submissionData.is_correct = score === totalQuestions
+    } catch (e) {
+      console.log(`[${correlationId}] is_correct column may not exist, skipping`)
+    }
+    
     const { error: subError } = await supabase
       .from('submissions')
-      .insert({
-        id: submissionId,
-        competition_id,
-        participant_name,
-        participant_email: participant_email || null,
-        first_name: first_name || null,
-        father_name: father_name || null,
-        family_name: family_name || null,
-        grade: grade || null,
-        answers,
-        proofs: proofs || {},
-        score,
-        total_questions: totalQuestions,
-        tickets_earned: ticketsEarned,
-        status: 'pending',
-        submitted_at: submittedAt.toISOString(),
-        is_correct: score === totalQuestions
-      })
+      .insert(submissionData)
     
     if (subError) {
       console.error(`[${correlationId}] Failed to create submission:`, {
