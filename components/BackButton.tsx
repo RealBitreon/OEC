@@ -7,17 +7,25 @@ interface BackButtonProps {
   label?: string
   className?: string
   variant?: 'default' | 'minimal' | 'primary'
+  forceUrl?: boolean
 }
 
 export default function BackButton({ 
   fallbackUrl = '/', 
   label = 'العودة',
   className = '',
-  variant = 'default'
+  variant = 'default',
+  forceUrl = false
 }: BackButtonProps) {
   const router = useRouter()
 
   const handleBack = () => {
+    // If forceUrl is true, always use fallbackUrl (for participation pages)
+    if (forceUrl) {
+      router.push(fallbackUrl)
+      return
+    }
+    
     // Check if there's history to go back to
     if (window.history.length > 1) {
       router.back()
