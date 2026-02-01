@@ -464,8 +464,8 @@ function QuestionForm({ question, competitions, mode = 'training', onClose }: {
     // Otherwise use initial data
     return {
       competition_id: null, // Always null - enforced
-      is_training: question?.is_training ?? true,
-      status: question?.status ?? 'PUBLISHED',
+      is_training: question?.is_training ?? (mode === 'training'),
+      status: question?.status ?? (mode === 'bank' ? 'DRAFT' : 'PUBLISHED'),
       type: question?.type || 'mcq',
       question_text: question?.question_text || '',
       options: question?.options || ['', '', '', ''],
