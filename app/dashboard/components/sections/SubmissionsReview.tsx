@@ -40,6 +40,7 @@ interface Submission {
   review_notes?: string
   retry_allowed: boolean
   is_retry: boolean
+  is_winner?: boolean | null
   competition?: {
     id: string
     title: string
@@ -367,6 +368,16 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                           الصف: {submission.grade}
                         </div>
                       )}
+                      {submission.is_winner === true && (
+                        <div className="mt-1">
+                          <Badge variant="success">🏆 فائز</Badge>
+                        </div>
+                      )}
+                      {submission.is_winner === false && (
+                        <div className="mt-1">
+                          <Badge variant="default">خاسر</Badge>
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-sm text-neutral-900">
@@ -629,7 +640,15 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">الحالة الحالية</label>
-              {getStatusBadge(reviewModal.submission)}
+              <div className="flex gap-2 items-center">
+                {getStatusBadge(reviewModal.submission)}
+                {reviewModal.submission.is_winner === true && (
+                  <Badge variant="success">🏆 فائز</Badge>
+                )}
+                {reviewModal.submission.is_winner === false && (
+                  <Badge variant="default">خاسر</Badge>
+                )}
+              </div>
             </div>
 
             {reviewModal.submission.review_notes && (
@@ -666,6 +685,64 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
               >
                 إغلاق
               </Button>
+            </div>
+
+            {/* Winner/Loser Status Buttons */}
+            <div className="border-t border-neutral-200 pt-4 mt-4">
+              <label className="block text-sm font-medium text-neutral-700 mb-3">
+                حالة الفوز في السحب
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={async () => {
+                    try {
+                      await fetch('/api/submissions/mark-winner', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          submissionId: reviewModal.submission!.id,
+                          isWinner: true
+                        })
+                      })
+                      showToast('تم تحديد الطالب كفائز 🎉', 'success')
+                      loadData()
+                      setReviewModal({ open: false, submission: null })
+                    } catch (error) {
+                      showToast('فشل تحديث حالة الفوز', 'error')
+                    }
+                  }}
+                  variant="primary"
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-3"
+                >
+                  🏆 فائز
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await fetch('/api/submissions/mark-winner', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          submissionId: reviewModal.submission!.id,
+                          isWinner: false
+                        })
+                      })
+                      showToast('تم تحديد الطالب كخاسر', 'success')
+                      loadData()
+                      setReviewModal({ open: false, submission: null })
+                    } catch (error) {
+                      showToast('فشل تحديث حالة الفوز', 'error')
+                    }
+                  }}
+                  variant="secondary"
+                  className="bg-neutral-600 hover:bg-neutral-700 text-white font-bold py-3"
+                >
+                  خاسر
+                </Button>
+              </div>
+              <p className="text-xs text-neutral-500 mt-2 text-center">
+                استخدم هذه الأزرار لتحديد الفائزين بعد إجراء السحب على عجلة الحظ
+              </p>
             </div>
           </div>
         </Modal>
