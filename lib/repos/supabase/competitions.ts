@@ -143,7 +143,8 @@ export class SupabaseCompetitionsRepo implements ICompetitionsRepo {
       .from('questions')
       .update({ 
         competition_id: null,
-        source_ref: 'training'
+        is_training: true,
+        status: 'PUBLISHED'
       })
       .eq('competition_id', id)
     
