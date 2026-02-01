@@ -111,7 +111,6 @@ export async function updateCompetition(id: string, data: Partial<DashboardCompe
 }
 
 export async function deleteCompetition(id: string) {
-  // Note: This will cascade delete questions and submissions due to foreign keys
   const competitions = await competitionsRepo.listAll()
   const competition = competitions.find(c => c.id === id)
   
@@ -119,9 +118,11 @@ export async function deleteCompetition(id: string) {
     throw new Error('Competition not found')
   }
 
-  // In Supabase, we don't actually delete, we archive
-  await competitionsRepo.update(id, { status: 'archived' })
+  // Delete the competition and move questions to training
+  await competitionsRepo.delete(id)
   revalidatePath('/dashboard')
+  revalidatePath('/dashboard/competitions')
+  revalidatePath('/dashboard/question-bank')
   return { success: true }
 }
 

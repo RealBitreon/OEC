@@ -29,6 +29,7 @@ export interface ICompetitionsRepo {
   listByStatus(status: 'active' | 'archived' | 'draft'): Promise<Competition[]>
   create(data: Competition): Promise<Competition>
   update(id: string, patch: Partial<Competition>): Promise<Competition>
+  delete(id: string): Promise<void>
   archiveActive(): Promise<void>
 }
 

@@ -299,12 +299,7 @@ export default function QuestionsManagement({ profile, mode = 'training' }: Ques
                       {question.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
                     </span>
                   </div>
-                  <p className="text-neutral-900 font-medium mb-2">{question.question_text}</p>
-                  <div className="flex items-center gap-4 text-sm text-neutral-600">
-                    <span>📚 المجلد {question.volume}</span>
-                    <span>📄 ص {question.page}</span>
-                    <span>📝 س {question.line_from}-{question.line_to}</span>
-                  </div>
+                  <p className="text-neutral-900 font-medium">{question.question_text}</p>
                 </div>
               </div>
 
@@ -715,78 +710,20 @@ function QuestionForm({ question, competitions, mode = 'training', onClose }: {
           <p className="text-xs text-neutral-600 mt-1">يمكن تحديد الإجابة الصحيحة لاحقاً</p>
         </div>
 
-        {/* Source Reference */}
+        {/* Note about Evidence */}
         <div className="border-t pt-6">
-          <h3 className="text-lg font-bold text-neutral-900 mb-4">الدليل من المصدر *</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-900 mb-2">
-                المجلد *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.source_ref.volume}
-                onChange={e => setFormData({ 
-                  ...formData, 
-                  source_ref: { ...formData.source_ref, volume: e.target.value }
-                })}
-                placeholder="1"
-                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-900 mb-2">
-                الصفحة *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.source_ref.page}
-                onChange={e => setFormData({ 
-                  ...formData, 
-                  source_ref: { ...formData.source_ref, page: e.target.value }
-                })}
-                placeholder="42"
-                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-900 mb-2">
-                السطر من *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.source_ref.lineFrom}
-                onChange={e => setFormData({ 
-                  ...formData, 
-                  source_ref: { ...formData.source_ref, lineFrom: e.target.value }
-                })}
-                placeholder="5"
-                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-900 mb-2">
-                السطر إلى *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.source_ref.lineTo}
-                onChange={e => setFormData({ 
-                  ...formData, 
-                  source_ref: { ...formData.source_ref, lineTo: e.target.value }
-                })}
-                placeholder="8"
-                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">ℹ️</span>
+              <div>
+                <h3 className="font-bold text-blue-900 mb-1">ملاحظة عن الدليل</h3>
+                <p className="text-sm text-blue-700">
+                  سيُطلب من الطلاب تقديم الدليل من المصدر (المجلد، الصفحة، السطر) عند الإجابة على هذا السؤال.
+                  ستقوم أنت بمراجعة إجاباتهم وتصحيحها يدوياً من خلال صفحة مراجعة الإجابات.
+                </p>
+              </div>
             </div>
           </div>
-          <p className="text-xs text-neutral-600 mt-2">
-            هذه الحقول إلزامية لمنع استخدام الذكاء الاصطناعي
-          </p>
         </div>
 
         {/* Actions */}

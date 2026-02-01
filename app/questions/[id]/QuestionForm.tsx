@@ -41,7 +41,7 @@ export default function QuestionForm({ question }: QuestionFormProps) {
         console.clear()
         console.log('%c🎩✨ ABRACADABRA! ✨🎩', 'font-size: 24px; font-weight: bold; color: #8b5cf6; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);')
         console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #8b5cf6;')
-        console.log('%cالإجابة الصحيحة مع الدليل:', 'font-size: 18px; font-weight: bold; color: #10b981; margin-top: 10px;')
+        console.log('%cالإجابة الصحيحة:', 'font-size: 18px; font-weight: bold; color: #10b981; margin-top: 10px;')
         console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #8b5cf6;')
         
         console.log(`\n%c📌 السؤال:`, 'font-weight: bold; color: #3b82f6; font-size: 14px;')
@@ -53,11 +53,9 @@ export default function QuestionForm({ question }: QuestionFormProps) {
           console.log(`\n%c⚠️ الإجابة الصحيحة غير متاحة في الواجهة الأمامية`, 'color: #f59e0b; font-weight: bold; font-size: 14px;')
         }
         
-        console.log(`\n%c📚 الدليل من المصدر:`, 'color: #f59e0b; font-weight: bold; font-size: 13px;')
-        console.log(`%c   المجلد: ${question.sourceRef.volume} | الصفحة: ${question.sourceRef.page} | السطر: ${question.sourceRef.lineFrom}-${question.sourceRef.lineTo}`, 'color: #d97706; font-size: 12px; background: #fef3c7; padding: 4px 8px; border-radius: 4px;')
-        
         console.log('\n%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #8b5cf6;')
         console.log('%c💡 نصيحة: استخدم هذه المعلومات بحكمة!', 'font-style: italic; color: #f59e0b; font-size: 12px;')
+        console.log('%c💡 تذكر: يجب عليك تقديم الدليل من المصدر (المجلد، الصفحة، السطر)', 'font-style: italic; color: #f59e0b; font-size: 12px;')
         console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #8b5cf6;')
       }
     }
@@ -209,17 +207,6 @@ export default function QuestionForm({ question }: QuestionFormProps) {
         <h2 className="text-xl md:text-2xl font-bold text-neutral-800 mb-4">
           {question.questionText}
         </h2>
-        
-        {/* Source Reference */}
-        <div className="flex items-center gap-2 text-sm text-neutral-600 bg-neutral-50 rounded p-3">
-          <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          <span>
-            <strong>المصدر:</strong> المجلد {question.sourceRef.volume} - صفحة {question.sourceRef.page} - 
-            السطر {question.sourceRef.lineFrom} إلى {question.sourceRef.lineTo}
-          </span>
-        </div>
       </div>
 
       {/* Student Info */}
@@ -369,7 +356,7 @@ export default function QuestionForm({ question }: QuestionFormProps) {
           <div>
             <h3 className="text-lg font-bold text-amber-900 mb-1">الدليل من المصدر *</h3>
             <p className="text-sm text-amber-700">
-              يجب تحديد موقع الإجابة في الموسوعة العُمانية بدقة
+              يجب تحديد موقع الإجابة في الموسوعة العُمانية بدقة. سيقوم المعلم بمراجعة إجابتك والدليل المقدم وتصحيحها يدوياً.
             </p>
           </div>
         </div>

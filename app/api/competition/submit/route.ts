@@ -1,135 +1,206 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
-import { submissionsRepo, questionsRepo, competitionsRepo } from '@/lib/repos'
-import type { Competition } from '@/lib/store/types'
+import { createServiceClient } from '@/lib/supabase/server'
 
 /**
- * Type guard to check if rules use the old schema (ticketsPerCorrect)
+ * FIXED Competition Submission API
+ * 
+ * Changes from original:
+ * 1. Actually creates tickets in tickets table
+ * 2. Returns proper HTTP status codes (400, 404, 500)
+ * 3. Structured error responses with correlation IDs
+ * 4. Validates competition is active
+ * 5. Persists tickets_earned to submission record
+ * 6. Idempotent (checks for existing submission)
  */
-function hasLegacyTicketsSchema(rules: any): rules is {
-  eligibilityMode: 'all_correct' | 'min_correct' | 'per_correct'
-  minCorrectAnswers?: number
-  ticketsPerCorrect?: number
-  earlyBonusTiers?: Array<{ cutoffDate: string; bonusTickets: number }>
-} {
-  return 'ticketsPerCorrect' in rules
+
+interface ErrorResponse {
+  ok: false
+  code: string
+  message: string
+  hint?: string
+  correlationId: string
 }
 
-/**
- * Calculate tickets earned based on competition rules
- * Supports both old (ticketsPerCorrect) and new (ticketsConfig) schemas
- * 
- * @example
- * // all_correct mode: only perfect scores earn tickets
- * computeTickets(rules, 10, 10, new Date()) // => baseTickets + bonuses
- * computeTickets(rules, 9, 10, new Date())  // => 0
- * 
- * // min_correct mode: scores >= threshold earn tickets
- * computeTickets(rules, 7, 10, new Date())  // => baseTickets (if minCorrectAnswers <= 7)
- */
+interface SuccessResponse {
+  ok: true
+  submission: {
+    id: string
+    score: number
+    totalQuestions: number
+    ticketsEarned: number
+    status: string
+    isEligible: boolean
+  }
+  correlationId: string
+}
+
 function computeTickets(
-  rules: Competition['rules'] | any,
+  rules: any,
   score: number,
   totalQuestions: number,
   submittedAt: Date
 ): number {
-  // Handle legacy schema (ticketsPerCorrect)
-  if (hasLegacyTicketsSchema(rules)) {
-    const baseTickets = rules.ticketsPerCorrect || 1
-    const eligibilityMode = rules.eligibilityMode || 'all_correct'
-    const minCorrectAnswers = rules.minCorrectAnswers || 0
-
-    let isEligible = false
-    if (eligibilityMode === 'all_correct') {
-      isEligible = score === totalQuestions
-    } else if (eligibilityMode === 'min_correct') {
-      isEligible = score >= minCorrectAnswers
-    } else if (eligibilityMode === 'per_correct') {
-      isEligible = score > 0
-    }
-
-    if (!isEligible) return 0
-
-    // Calculate early bonus from legacy schema
-    let bonusTickets = 0
-    if (rules.earlyBonusTiers && rules.earlyBonusTiers.length > 0) {
-      for (const tier of rules.earlyBonusTiers) {
-        const cutoffDate = new Date(tier.cutoffDate)
-        if (submittedAt <= cutoffDate) {
-          bonusTickets = Math.max(bonusTickets, tier.bonusTickets || 0)
-        }
-      }
-    }
-
-    return baseTickets + bonusTickets
-  }
-
-  // Handle new schema (ticketsConfig)
-  const ticketsConfig = rules.ticketsConfig || { baseTickets: 1, earlyBonusTiers: [] }
-  const baseTickets = ticketsConfig.baseTickets || 1
   const eligibilityMode = rules.eligibilityMode || 'all_correct'
   const minCorrectAnswers = rules.minCorrectAnswers || 0
-
+  
+  // Determine base tickets
+  let baseTickets = 1
+  if (rules.ticketsConfig?.baseTickets) {
+    baseTickets = rules.ticketsConfig.baseTickets
+  } else if (rules.ticketsPerCorrect) {
+    baseTickets = rules.ticketsPerCorrect
+  }
+  
+  // Check eligibility
   let isEligible = false
   if (eligibilityMode === 'all_correct') {
-    isEligible = score === totalQuestions
+    isEligible = score === totalQuestions && totalQuestions > 0
   } else if (eligibilityMode === 'min_correct') {
     isEligible = score >= minCorrectAnswers
+  } else if (eligibilityMode === 'per_correct') {
+    isEligible = score > 0
   }
-
+  
   if (!isEligible) return 0
-
-  // Calculate early bonus from new schema
+  
+  // Calculate early bonus
   let bonusTickets = 0
-  if (ticketsConfig.earlyBonusTiers && ticketsConfig.earlyBonusTiers.length > 0) {
-    for (const tier of ticketsConfig.earlyBonusTiers) {
-      const beforeDate = new Date(tier.beforeDate)
-      if (submittedAt <= beforeDate) {
-        bonusTickets = Math.max(bonusTickets, tier.bonusTickets || 0)
-      }
+  const earlyBonusTiers = rules.ticketsConfig?.earlyBonusTiers || rules.earlyBonusTiers || []
+  
+  for (const tier of earlyBonusTiers) {
+    const cutoffDate = new Date(tier.beforeDate || tier.cutoffDate)
+    if (submittedAt <= cutoffDate) {
+      bonusTickets = Math.max(bonusTickets, tier.bonusTickets || 0)
     }
   }
-
+  
   return baseTickets + bonusTickets
 }
 
 export async function POST(request: NextRequest) {
+  const correlationId = randomUUID()
+  const supabase = createServiceClient()
+  
   try {
     const body = await request.json()
-    const { competition_id, participant_name, answers } = body
+    const { 
+      competition_id, 
+      participant_name, 
+      first_name,
+      father_name,
+      family_name,
+      grade,
+      answers, 
+      proofs,
+      participant_email 
+    } = body
 
     // Validate required fields
     if (!competition_id || !participant_name || !answers) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
+      return NextResponse.json<ErrorResponse>(
+        { 
+          ok: false,
+          code: 'MISSING_FIELDS',
+          message: 'الحقول المطلوبة مفقودة',
+          hint: 'يجب توفير competition_id و participant_name و answers',
+          correlationId
+        },
         { status: 400 }
       )
     }
 
     // Get competition
-    const competition = await competitionsRepo.getById(competition_id)
-    if (!competition) {
-      return NextResponse.json(
-        { error: 'Competition not found' },
+    const { data: competition, error: compError } = await supabase
+      .from('competitions')
+      .select('*')
+      .eq('id', competition_id)
+      .single()
+    
+    if (compError || !competition) {
+      console.error(`[${correlationId}] Competition not found:`, compError)
+      return NextResponse.json<ErrorResponse>(
+        { 
+          ok: false,
+          code: 'COMPETITION_NOT_FOUND',
+          message: 'المسابقة غير موجودة',
+          correlationId
+        },
         { status: 404 }
       )
     }
+    
+    // Validate competition is active
+    if (competition.status !== 'active') {
+      return NextResponse.json<ErrorResponse>(
+        { 
+          ok: false,
+          code: 'COMPETITION_NOT_ACTIVE',
+          message: 'المسابقة غير نشطة حالياً',
+          hint: `حالة المسابقة: ${competition.status}`,
+          correlationId
+        },
+        { status: 400 }
+      )
+    }
+
+    // Check for existing submission (idempotency)
+    const { data: existing } = await supabase
+      .from('submissions')
+      .select('id, status, tickets_earned')
+      .eq('competition_id', competition_id)
+      .eq('participant_name', participant_name)
+      .maybeSingle()
+    
+    if (existing) {
+      console.log(`[${correlationId}] Duplicate submission detected, returning existing`)
+      return NextResponse.json<SuccessResponse>({
+        ok: true,
+        submission: {
+          id: existing.id,
+          score: 0,
+          totalQuestions: 0,
+          ticketsEarned: existing.tickets_earned || 0,
+          status: existing.status || 'pending',
+          isEligible: (existing.tickets_earned || 0) > 0
+        },
+        correlationId
+      })
+    }
 
     // Get questions for this competition
-    const questions = await questionsRepo.listByCompetition(competition_id)
+    const { data: questions, error: qError } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('competition_id', competition_id)
+      .eq('is_active', true)
+    
+    if (qError) {
+      console.error(`[${correlationId}] Failed to fetch questions:`, qError)
+      return NextResponse.json<ErrorResponse>(
+        { 
+          ok: false,
+          code: 'QUESTIONS_FETCH_FAILED',
+          message: 'فشل جلب الأسئلة',
+          hint: qError.message,
+          correlationId
+        },
+        { status: 500 }
+      )
+    }
+    
+    const totalQuestions = questions?.length || 0
     
     // Calculate score
     let score = 0
-    const totalQuestions = questions.length
-
-    for (const question of questions) {
+    for (const question of questions || []) {
       const userAnswer = answers[question.id]
-      if (userAnswer && userAnswer === question.correctAnswer) {
+      if (userAnswer && userAnswer === question.correct_answer) {
         score++
       }
     }
 
-    // Calculate tickets using the helper function
+    // Calculate tickets
     const submittedAt = new Date()
     const ticketsEarned = computeTickets(
       competition.rules,
@@ -139,33 +210,87 @@ export async function POST(request: NextRequest) {
     )
 
     // Create submission
-    const submission = {
-      id: randomUUID(),
-      userId: participant_name, // Using participant_name as userId for now
-      competitionId: competition_id,
-      questionId: '', // Not used in new schema
-      answer: JSON.stringify(answers),
-      isCorrect: score === totalQuestions,
-      finalResult: undefined,
-      submittedAt: submittedAt.toISOString(),
+    const submissionId = randomUUID()
+    const { error: subError } = await supabase
+      .from('submissions')
+      .insert({
+        id: submissionId,
+        competition_id,
+        participant_name,
+        participant_email: participant_email || null,
+        first_name: first_name || null,
+        father_name: father_name || null,
+        family_name: family_name || null,
+        grade: grade || null,
+        answers,
+        proofs: proofs || {},
+        score,
+        total_questions: totalQuestions,
+        tickets_earned: ticketsEarned,
+        status: 'pending',
+        submitted_at: submittedAt.toISOString(),
+        is_correct: score === totalQuestions
+      })
+    
+    if (subError) {
+      console.error(`[${correlationId}] Failed to create submission:`, subError)
+      return NextResponse.json<ErrorResponse>(
+        { 
+          ok: false,
+          code: 'SUBMISSION_CREATE_FAILED',
+          message: 'فشل حفظ الإجابات',
+          hint: subError.message,
+          correlationId
+        },
+        { status: 500 }
+      )
     }
 
-    await submissionsRepo.create(submission)
+    // ✅ FIX: Actually create tickets if earned
+    if (ticketsEarned > 0) {
+      const { error: ticketError } = await supabase
+        .from('tickets')
+        .insert({
+          user_id: null, // Anonymous submission
+          competition_id,
+          count: ticketsEarned,
+          reason: `submission_${submissionId}`,
+          created_at: submittedAt.toISOString()
+        })
+      
+      if (ticketError) {
+        console.error(`[${correlationId}] Failed to create tickets:`, ticketError)
+        // Don't fail the whole request, but log it
+      } else {
+        console.log(`[${correlationId}] Created ${ticketsEarned} tickets for submission ${submissionId}`)
+      }
+    }
 
-    return NextResponse.json({
-      success: true,
+    console.log(`[${correlationId}] Submission created successfully: ${submissionId}, score: ${score}/${totalQuestions}, tickets: ${ticketsEarned}`)
+
+    return NextResponse.json<SuccessResponse>({
+      ok: true,
       submission: {
-        id: submission.id,
+        id: submissionId,
         score,
         totalQuestions,
         ticketsEarned,
         status: 'pending',
+        isEligible: ticketsEarned > 0
       },
+      correlationId
     })
-  } catch (error) {
-    console.error('Error submitting competition:', error)
-    return NextResponse.json(
-      { error: 'Failed to submit competition' },
+    
+  } catch (error: any) {
+    console.error(`[${correlationId}] Unexpected error:`, error)
+    return NextResponse.json<ErrorResponse>(
+      { 
+        ok: false,
+        code: 'INTERNAL_ERROR',
+        message: 'حدث خطأ غير متوقع',
+        hint: error.message,
+        correlationId
+      },
       { status: 500 }
     )
   }

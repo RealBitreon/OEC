@@ -135,6 +135,56 @@ export class SupabaseCompetitionsRepo implements ICompetitionsRepo {
     return this.transformFromDb(data)
   }
 
+  async delete(id: string): Promise<void> {
+    const supabase = createServiceClient()
+    
+    // First, move all questions to training
+    const { error: questionsError } = await supabase
+      .from('questions')
+      .update({ 
+        competition_id: null,
+        source_ref: 'training'
+      })
+      .eq('competition_id', id)
+    
+    if (questionsError) {
+      throw new Error(`Failed to move questions to training: ${questionsError.message}`)
+    }
+    
+    // Delete related data (cascade should handle this, but being explicit)
+    // Delete submissions
+    await supabase
+      .from('submissions')
+      .delete()
+      .eq('competition_id', id)
+    
+    // Delete tickets
+    await supabase
+      .from('tickets')
+      .delete()
+      .eq('competition_id', id)
+    
+    // Delete wheel runs
+    await supabase
+      .from('wheel_runs')
+      .delete()
+      .eq('competition_id', id)
+    
+    // Delete winners
+    await supabase
+      .from('winners')
+      .delete()
+      .eq('competition_id', id)
+    
+    // Finally, delete the competition
+    const { error } = await supabase
+      .from('competitions')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw new Error(`Failed to delete competition: ${error.message}`)
+  }
+
   async archiveActive(): Promise<void> {
     const supabase = createServiceClient()
     const { error } = await supabase
