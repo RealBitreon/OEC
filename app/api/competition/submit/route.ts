@@ -84,6 +84,15 @@ export async function POST(request: NextRequest) {
   
   try {
     const body = await request.json()
+    
+    console.log(`[${correlationId}] Submission request received:`, {
+      competition_id: body.competition_id,
+      participant_name: body.participant_name,
+      answersCount: Object.keys(body.answers || {}).length,
+      proofsCount: Object.keys(body.proofs || {}).length,
+      timestamp: new Date().toISOString()
+    })
+    
     const { 
       competition_id, 
       participant_name, 
@@ -169,11 +178,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Get questions for this competition
+    console.log(`[${correlationId}] Fetching questions for competition:`, competition_id)
+    
     const { data: questions, error: qError } = await supabase
       .from('questions')
       .select('*')
       .eq('competition_id', competition_id)
       .eq('is_active', true)
+    
+    console.log(`[${correlationId}] Questions fetched:`, {
+      count: questions?.length || 0,
+      error: qError?.message
+    })
     
     if (qError) {
       console.error(`[${correlationId}] Failed to fetch questions:`, qError)
@@ -211,6 +227,16 @@ export async function POST(request: NextRequest) {
 
     // Create submission
     const submissionId = randomUUID()
+    
+    console.log(`[${correlationId}] Creating submission:`, {
+      id: submissionId,
+      competition_id,
+      participant_name,
+      score,
+      totalQuestions,
+      ticketsEarned
+    })
+    
     const { error: subError } = await supabase
       .from('submissions')
       .insert({
@@ -233,13 +259,19 @@ export async function POST(request: NextRequest) {
       })
     
     if (subError) {
-      console.error(`[${correlationId}] Failed to create submission:`, subError)
+      console.error(`[${correlationId}] Failed to create submission:`, {
+        error: subError,
+        code: subError.code,
+        message: subError.message,
+        details: subError.details,
+        hint: subError.hint
+      })
       return NextResponse.json<ErrorResponse>(
         { 
           ok: false,
           code: 'SUBMISSION_CREATE_FAILED',
           message: 'فشل حفظ الإجابات',
-          hint: subError.message,
+          hint: `${subError.message} (${subError.code})`,
           correlationId
         },
         { status: 500 }

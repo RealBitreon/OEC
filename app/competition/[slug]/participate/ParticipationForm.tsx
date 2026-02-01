@@ -219,6 +219,15 @@ export default function ParticipationForm({ competition, questions }: Props) {
         formattedEvidences[qId] = `المجلد ${ev.volume} - الصفحة ${ev.page} - السطر ${ev.line}`
       })
 
+      console.log('[SUBMIT] Sending submission:', {
+        competition_id: competition.id,
+        participant_name: participantName,
+        answersCount: Object.keys(answers).length,
+        proofsCount: Object.keys(formattedEvidences).length,
+        score: correctCount,
+        total_questions: questions.length
+      })
+
       const response = await fetch('/api/competition/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -236,9 +245,16 @@ export default function ParticipationForm({ competition, questions }: Props) {
         })
       })
 
+      console.log('[SUBMIT] Response status:', response.status)
+
       if (!response.ok) {
-        throw new Error('فشل إرسال الإجابات')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('[SUBMIT] Error response:', errorData)
+        throw new Error(errorData.message || errorData.hint || 'فشل إرسال الإجابات')
       }
+
+      const result = await response.json()
+      console.log('[SUBMIT] Success:', result)
 
       setResult({
         success: true,
