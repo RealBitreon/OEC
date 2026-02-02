@@ -11,14 +11,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is admin or supervisor
+    // Check if user is CEO or LRC_MANAGER
     const { data: profile } = await supabase
       .from('users')
       .select('role')
       .eq('auth_id', user.id)
       .single()
 
-    if (!profile || (profile.role !== 'admin' && profile.role !== 'supervisor')) {
+    if (!profile || (profile.role !== 'CEO' && profile.role !== 'LRC_MANAGER')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

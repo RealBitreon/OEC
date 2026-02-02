@@ -67,8 +67,8 @@ export default function DashboardPage() {
 
       const sessionData = await sessionResponse.json()
       
-      // Check if user is admin or supervisor
-      if (sessionData.user.role !== 'admin' && sessionData.user.role !== 'supervisor') {
+      // Check if user is CEO or LRC_MANAGER
+      if (sessionData.user.role !== 'CEO' && sessionData.user.role !== 'LRC_MANAGER') {
         router.push('/unauthorized')
         return
       }
@@ -153,7 +153,7 @@ export default function DashboardPage() {
             <div>
               <h1 className="text-3xl font-bold text-neutral-800">لوحة إدارة المسابقات</h1>
               <p className="text-neutral-600 mt-1">
-                مرحباً {profile.username} - {profile.role === 'admin' ? 'المدير التنفيذي' : 'مشرف مركز مصادر التعلم'}
+                مرحباً {profile.username} - {profile.role === 'CEO' ? 'المدير التنفيذي' : 'مشرف مركز مصادر التعلم'}
               </p>
             </div>
             <Link

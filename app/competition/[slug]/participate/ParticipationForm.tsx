@@ -242,7 +242,8 @@ export default function ParticipationForm({ competition, questions }: Props) {
     }
   }
 
-  const handleResetAttempts = async () => {
+  const handleResetAttempts = () => {
+    // Client-side only validation - no API call needed
     if (resetCode !== '12311') {
       showToast('كود غير صحيح', 'error')
       return
@@ -250,30 +251,24 @@ export default function ParticipationForm({ competition, questions }: Props) {
 
     try {
       const deviceFingerprint = getOrCreateFingerprint()
+      const storageKey = `attempts_${competition.id}_${deviceFingerprint}`
       
-      const response = await fetch('/api/attempts/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          competitionId: competition.id,
-          deviceFingerprint,
-          resetCode: resetCode,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('فشل إعادة تعيين المحاولات')
-      }
-
-      const data = await response.json()
+      // Clear the attempt tracking from localStorage
+      localStorage.removeItem(storageKey)
       
       showToast('✅ تم إعادة تعيين المحاولات بنجاح!', 'success')
-      setAttemptInfo(data)
+      
+      // Update state immediately
+      setAttemptInfo({
+        canAttempt: true,
+        remainingAttempts: competition.max_attempts,
+        maxAttempts: competition.max_attempts
+      })
       setResetCode('')
       setShowOutOfTriesModal(false)
       
       // Reload page to refresh
-      setTimeout(() => window.location.reload(), 1500)
+      setTimeout(() => window.location.reload(), 1000)
     } catch (error) {
       showToast('حدث خطأ أثناء إعادة تعيين المحاولات', 'error')
     }
@@ -473,7 +468,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
                     type="text"
                     value={resetCode}
                     onChange={e => setResetCode(e.target.value)}
-                    placeholder="12311"
+                    placeholder="أدخل الكود"
                     className="flex-1 px-4 py-3 border-2 border-amber-300 rounded-lg focus:border-amber-500 focus:outline-none font-mono font-bold text-center bg-white"
                     maxLength={10}
                   />
