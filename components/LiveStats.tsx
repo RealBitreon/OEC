@@ -1,11 +1,90 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
+interface Stats {
+  todayParticipations: number
+  totalTickets: number
+  totalParticipants: number
+  drawTime: string
+  loading: boolean
+}
+
 export default function LiveStats() {
-  const stats = {
+  const [stats, setStats] = useState<Stats>({
     todayParticipations: 0,
     totalTickets: 0,
-    drawTime: 'قريباً'
-  }
+    totalParticipants: 0,
+    drawTime: 'قريباً',
+    loading: true
+  })
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        // Fetch active competition
+        const competitionRes = await fetch('/api/competitions/active')
+        const competitionData = await competitionRes.json()
+        
+        if (!competitionData.competition) {
+          setStats(prev => ({ ...prev, loading: false }))
+          return
+        }
+
+        const competition = competitionData.competition
+
+        // Fetch submissions for this competition
+        const submissionsRes = await fetch(`/api/competition/${competition.id}/stats`)
+        
+        if (submissionsRes.ok) {
+          const submissionsData = await submissionsRes.json()
+          
+          // Calculate today's participations
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          
+          const todayCount = submissionsData.submissions?.filter((sub: any) => {
+            const subDate = new Date(sub.created_at)
+            subDate.setHours(0, 0, 0, 0)
+            return subDate.getTime() === today.getTime()
+          }).length || 0
+
+          // Format draw time
+          let drawTimeText = 'قريباً'
+          if (competition.draw_date) {
+            const drawDate = new Date(competition.draw_date)
+            drawTimeText = drawDate.toLocaleDateString('ar-EG', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          }
+
+          setStats({
+            todayParticipations: todayCount,
+            totalTickets: submissionsData.totalTickets || 0,
+            totalParticipants: submissionsData.totalParticipants || 0,
+            drawTime: drawTimeText,
+            loading: false
+          })
+        } else {
+          setStats(prev => ({ ...prev, loading: false }))
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error)
+        setStats(prev => ({ ...prev, loading: false }))
+      }
+    }
+
+    fetchStats()
+    
+    // Refresh stats every 30 seconds
+    const interval = setInterval(fetchStats, 30000)
+    
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <section className="py-24 bg-white">
@@ -26,10 +105,16 @@ export default function LiveStats() {
               <circle cx="16" cy="15" r="2" fill="currentColor"/>
             </svg>
             <div className="text-5xl font-bold text-primary mb-2">
-              {stats.todayParticipations}
+              {stats.loading ? (
+                <div className="inline-block animate-pulse">...</div>
+              ) : (
+                stats.todayParticipations.toLocaleString('ar-EG')
+              )}
             </div>
             <div className="text-lg font-semibold text-neutral-700">مشاركة اليوم</div>
-            <div className="text-sm text-neutral-500 mt-2">سيتم التحديث قريباً</div>
+            <div className="text-sm text-neutral-500 mt-2">
+              {stats.loading ? 'جاري التحميل...' : 'تحديث مباشر'}
+            </div>
           </div>
 
           {/* Total Tickets */}
@@ -41,10 +126,16 @@ export default function LiveStats() {
               <circle cx="17" cy="12" r="1.5" fill="currentColor"/>
             </svg>
             <div className="text-5xl font-bold text-primary mb-2">
-              {stats.totalTickets.toLocaleString('ar-EG')}
+              {stats.loading ? (
+                <div className="inline-block animate-pulse">...</div>
+              ) : (
+                stats.totalTickets.toLocaleString('ar-EG')
+              )}
             </div>
             <div className="text-lg font-semibold text-neutral-700">إجمالي التذاكر</div>
-            <div className="text-sm text-neutral-500 mt-2">جميع المشاركين</div>
+            <div className="text-sm text-neutral-500 mt-2">
+              {stats.loading ? 'جاري التحميل...' : `${stats.totalParticipants.toLocaleString('ar-EG')} مشارك`}
+            </div>
           </div>
 
           {/* Draw Time */}
@@ -54,11 +145,17 @@ export default function LiveStats() {
               <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               <circle cx="12" cy="12" r="2" fill="currentColor"/>
             </svg>
-            <div className="text-3xl font-bold text-primary mb-2">
-              {stats.drawTime}
+            <div className={`${stats.drawTime === 'قريباً' ? 'text-3xl' : 'text-2xl'} font-bold text-primary mb-2`}>
+              {stats.loading ? (
+                <div className="inline-block animate-pulse">...</div>
+              ) : (
+                stats.drawTime
+              )}
             </div>
             <div className="text-lg font-semibold text-neutral-700">وقت السحب</div>
-            <div className="text-sm text-neutral-500 mt-2">سيتم الإعلان عنه</div>
+            <div className="text-sm text-neutral-500 mt-2">
+              {stats.drawTime === 'قريباً' ? 'سيتم الإعلان عنه' : 'موعد السحب'}
+            </div>
           </div>
         </div>
 
