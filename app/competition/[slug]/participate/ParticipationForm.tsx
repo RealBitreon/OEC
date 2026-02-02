@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { getOrCreateFingerprint } from '@/lib/utils/device-fingerprint'
 import { applyCustomValidation } from '@/lib/utils/form-validation'
+import { useToast } from '@/components/ui/Toast'
 import Icons from '@/components/icons'
 
 interface Question {
@@ -33,6 +34,7 @@ interface Props {
 
 export default function ParticipationForm({ competition, questions }: Props) {
   const router = useRouter()
+  const { showToast } = useToast()
   const formRef = useRef<HTMLFormElement>(null)
   const [step, setStep] = useState<'info' | 'questions' | 'complete'>('info')
   const [firstName, setFirstName] = useState('')
@@ -51,12 +53,14 @@ export default function ParticipationForm({ competition, questions }: Props) {
   const [resetCode, setResetCode] = useState('')
   const [showResetInput, setShowResetInput] = useState(false)
 
-  // Apply custom validation messages
+  // Apply custom validation messages with toast
   useEffect(() => {
     if (formRef.current) {
-      applyCustomValidation(formRef.current)
+      applyCustomValidation(formRef.current, (message, type) => {
+        showToast(message, type)
+      })
     }
-  }, [step]) // Re-apply when step changes
+  }, [step, showToast]) // Re-apply when step changes
 
   // Check attempts on mount
   useEffect(() => {
@@ -144,32 +148,32 @@ export default function ParticipationForm({ competition, questions }: Props) {
     const nameRegex = /^[\u0600-\u06FFa-zA-Z\s]+$/
     
     if (!firstName.trim() || !fatherName.trim() || !familyName.trim()) {
-      alert('يرجى إدخال الاسم الثلاثي كاملاً')
+      showToast('يرجى إدخال الاسم الثلاثي كاملاً', 'error')
       return
     }
     
     if (!nameRegex.test(firstName)) {
-      alert('الاسم الأول يجب أن يحتوي على حروف فقط (بدون أرقام)')
+      showToast('الاسم الأول: يجب أن يحتوي على حروف فقط (بدون أرقام)', 'error')
       return
     }
     
     if (!nameRegex.test(fatherName)) {
-      alert('اسم الأب يجب أن يحتوي على حروف فقط (بدون أرقام)')
+      showToast('اسم الأب: يجب أن يحتوي على حروف فقط (بدون أرقام)', 'error')
       return
     }
     
     if (!nameRegex.test(familyName)) {
-      alert('اسم العائلة يجب أن يحتوي على حروف فقط (بدون أرقام)')
+      showToast('اسم العائلة: يجب أن يحتوي على حروف فقط (بدون أرقام)', 'error')
       return
     }
     
     if (!gradeLevel.trim()) {
-      alert('يرجى إدخال الصف')
+      showToast('يرجى إدخال الصف', 'error')
       return
     }
     
     if (!classNumber.trim()) {
-      alert('يرجى إدخال الفصل')
+      showToast('يرجى إدخال الفصل', 'error')
       return
     }
     
@@ -177,12 +181,12 @@ export default function ParticipationForm({ competition, questions }: Props) {
     const numberRegex = /^\d+$/
     
     if (!numberRegex.test(gradeLevel)) {
-      alert('الصف يجب أن يحتوي على أرقام فقط')
+      showToast('الصف: يجب أن يحتوي على أرقام فقط', 'error')
       return
     }
     
     if (!numberRegex.test(classNumber)) {
-      alert('الفصل يجب أن يحتوي على أرقام فقط')
+      showToast('الفصل: يجب أن يحتوي على أرقام فقط', 'error')
       return
     }
     
@@ -205,12 +209,12 @@ export default function ParticipationForm({ competition, questions }: Props) {
 
   const handleNext = () => {
     if (!answers[currentQuestion.id]) {
-      alert('يرجى اختيار إجابة')
+      showToast('يرجى اختيار إجابة', 'warning')
       return
     }
     const evidence = evidences[currentQuestion.id]
     if (!evidence || !evidence.volume.trim() || !evidence.page.trim()) {
-      alert('يرجى إدخال الدليل كاملاً (المجلد والصفحة)')
+      showToast('يرجى إدخال الدليل كاملاً (المجلد والصفحة)', 'warning')
       return
     }
 
@@ -234,7 +238,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
 
   const handleResetAttempts = async () => {
     if (resetCode.toUpperCase() !== 'LRC@RESET') {
-      alert('كود غير صحيح')
+      showToast('كود غير صحيح', 'error')
       return
     }
 
@@ -257,15 +261,15 @@ export default function ParticipationForm({ competition, questions }: Props) {
 
       const data = await response.json()
       
-      alert('✅ تم إعادة تعيين المحاولات بنجاح!')
+      showToast('✅ تم إعادة تعيين المحاولات بنجاح!', 'success')
       setAttemptInfo(data)
       setResetCode('')
       setShowResetInput(false)
       
       // Reload page to refresh
-      window.location.reload()
+      setTimeout(() => window.location.reload(), 1500)
     } catch (error) {
-      alert('حدث خطأ أثناء إعادة تعيين المحاولات')
+      showToast('حدث خطأ أثناء إعادة تعيين المحاولات', 'error')
     }
   }
 

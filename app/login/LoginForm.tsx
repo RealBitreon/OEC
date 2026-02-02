@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, FormEvent, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { loginAction } from './actions'
 import { applyCustomValidation } from '@/lib/utils/form-validation'
+import { useToast } from '@/components/ui/Toast'
 
 export default function LoginForm() {
-  const router = useRouter()
+  const { showToast } = useToast()
   const formRef = useRef<HTMLFormElement>(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -14,12 +14,14 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  // Apply custom validation messages
+  // Apply custom validation messages with toast
   useEffect(() => {
     if (formRef.current) {
-      applyCustomValidation(formRef.current)
+      applyCustomValidation(formRef.current, (message, type) => {
+        showToast(message, type)
+      })
     }
-  }, [])
+  }, [showToast])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()

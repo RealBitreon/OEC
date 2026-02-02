@@ -34,70 +34,108 @@ export const ValidationMessages = {
 } as const
 
 /**
- * Set custom validation message for an input element
+ * Get field label from input element
  */
-export function setCustomValidity(input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement) {
-  const validity = input.validity
-  
-  if (validity.valid) {
-    input.setCustomValidity('')
-    return
-  }
-  
-  // Check each validation state and set appropriate message
-  if (validity.valueMissing) {
-    input.setCustomValidity(ValidationMessages.valueMissing)
-  } else if (validity.typeMismatch) {
-    if (input.type === 'email') {
-      input.setCustomValidity(ValidationMessages.typeMismatchEmail)
-    } else if (input.type === 'url') {
-      input.setCustomValidity(ValidationMessages.typeMismatchUrl)
-    }
-  } else if (validity.patternMismatch) {
-    input.setCustomValidity(ValidationMessages.patternMismatch)
-  } else if (validity.tooShort) {
-    const minLength = parseInt(input.getAttribute('minlength') || '0')
-    input.setCustomValidity(ValidationMessages.tooShort(minLength))
-  } else if (validity.tooLong) {
-    const maxLength = parseInt(input.getAttribute('maxlength') || '0')
-    input.setCustomValidity(ValidationMessages.tooLong(maxLength))
-  } else if (validity.rangeUnderflow) {
-    const min = parseFloat(input.getAttribute('min') || '0')
-    input.setCustomValidity(ValidationMessages.rangeUnderflow(min))
-  } else if (validity.rangeOverflow) {
-    const max = parseFloat(input.getAttribute('max') || '0')
-    input.setCustomValidity(ValidationMessages.rangeOverflow(max))
-  } else if (validity.stepMismatch) {
-    input.setCustomValidity(ValidationMessages.stepMismatch)
-  } else if (validity.badInput) {
-    input.setCustomValidity(ValidationMessages.badInput)
-  }
+function getFieldLabel(input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement): string {
+  const label = input.labels?.[0]?.textContent?.trim() || 
+                ('placeholder' in input ? input.placeholder : '') || 
+                input.name
+  return label
 }
 
 /**
- * Apply custom validation to all form inputs
+ * Get validation error message for an input element
+ */
+export function getValidationMessage(input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement): string {
+  const validity = input.validity
+  
+  if (validity.valid) {
+    return ''
+  }
+  
+  const fieldLabel = getFieldLabel(input)
+  
+  // Check each validation state and return appropriate message
+  if (validity.valueMissing) {
+    return `${fieldLabel}: ${ValidationMessages.valueMissing}`
+  } else if (validity.typeMismatch) {
+    if (input.type === 'email') {
+      return `${fieldLabel}: ${ValidationMessages.typeMismatchEmail}`
+    } else if (input.type === 'url') {
+      return `${fieldLabel}: ${ValidationMessages.typeMismatchUrl}`
+    }
+  } else if (validity.patternMismatch) {
+    return `${fieldLabel}: ${ValidationMessages.patternMismatch}`
+  } else if (validity.tooShort) {
+    const minLength = parseInt(input.getAttribute('minlength') || '0')
+    return `${fieldLabel}: ${ValidationMessages.tooShort(minLength)}`
+  } else if (validity.tooLong) {
+    const maxLength = parseInt(input.getAttribute('maxlength') || '0')
+    return `${fieldLabel}: ${ValidationMessages.tooLong(maxLength)}`
+  } else if (validity.rangeUnderflow) {
+    const min = parseFloat(input.getAttribute('min') || '0')
+    return `${fieldLabel}: ${ValidationMessages.rangeUnderflow(min)}`
+  } else if (validity.rangeOverflow) {
+    const max = parseFloat(input.getAttribute('max') || '0')
+    return `${fieldLabel}: ${ValidationMessages.rangeOverflow(max)}`
+  } else if (validity.stepMismatch) {
+    return `${fieldLabel}: ${ValidationMessages.stepMismatch}`
+  } else if (validity.badInput) {
+    return `${fieldLabel}: ${ValidationMessages.badInput}`
+  }
+  
+  return `${fieldLabel}: خطأ في التحقق`
+}
+
+/**
+ * Set custom validation message for an input element
+ */
+export function setCustomValidity(input: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement) {
+  const message = getValidationMessage(input)
+  input.setCustomValidity(message)
+}
+
+/**
+ * Apply custom validation to all form inputs with toast notifications
  * Call this in useEffect or on form mount
  */
-export function applyCustomValidation(formElement: HTMLFormElement) {
+export function applyCustomValidation(
+  formElement: HTMLFormElement,
+  showToast?: (message: string, type: 'error' | 'warning') => void
+) {
   const inputs = formElement.querySelectorAll('input, textarea, select')
   
   inputs.forEach((input) => {
     const element = input as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     
-    // Set custom message on invalid event
+    // Prevent default browser validation popup
     element.addEventListener('invalid', (e) => {
       e.preventDefault()
-      setCustomValidity(element)
+      
+      const message = getValidationMessage(element)
+      
+      // Show toast notification if callback provided
+      if (showToast && message) {
+        showToast(message, 'error')
+      }
+      
+      // Add error styling to input
+      element.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/20')
+      element.classList.remove('border-emerald-200', 'focus:border-emerald-500', 'focus:ring-emerald-500/20')
     })
     
-    // Clear custom message on input
+    // Clear error styling on input
     element.addEventListener('input', () => {
       element.setCustomValidity('')
+      element.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/20')
+      element.classList.add('border-emerald-200', 'focus:border-emerald-500', 'focus:ring-emerald-500/20')
     })
     
-    // Clear custom message on change
+    // Clear error styling on change
     element.addEventListener('change', () => {
       element.setCustomValidity('')
+      element.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/20')
+      element.classList.add('border-emerald-200', 'focus:border-emerald-500', 'focus:ring-emerald-500/20')
     })
   })
 }

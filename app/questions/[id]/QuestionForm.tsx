@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { applyCustomValidation } from '@/lib/utils/form-validation'
+import { useToast } from '@/components/ui/Toast'
 
 interface QuestionFormProps {
   question: {
@@ -22,6 +23,7 @@ interface QuestionFormProps {
 
 export default function QuestionForm({ question }: QuestionFormProps) {
   const router = useRouter()
+  const { showToast } = useToast()
   const formRef = useRef<HTMLFormElement>(null)
   const [answer, setAnswer] = useState('')
   const [studentName, setStudentName] = useState('')
@@ -35,12 +37,14 @@ export default function QuestionForm({ question }: QuestionFormProps) {
   const [error, setError] = useState('')
   const [result, setResult] = useState<{ isCorrect: boolean; message: string } | null>(null)
 
-  // Apply custom validation messages
+  // Apply custom validation messages with toast
   useEffect(() => {
     if (formRef.current) {
-      applyCustomValidation(formRef.current)
+      applyCustomValidation(formRef.current, (message, type) => {
+        showToast(message, type)
+      })
     }
-  }, [])
+  }, [showToast])
 
   // Cheat code: Expose correct answer in console
   React.useEffect(() => {
@@ -79,27 +83,27 @@ export default function QuestionForm({ question }: QuestionFormProps) {
     e.preventDefault()
     
     if (!answer.trim()) {
-      setError('الرجاء اختيار أو كتابة إجابة')
+      showToast('الرجاء اختيار أو كتابة إجابة', 'warning')
       return
     }
 
     if (!studentName.trim()) {
-      setError('الرجاء إدخال اسمك')
+      showToast('الرجاء إدخال اسمك', 'warning')
       return
     }
 
     if (!grade.trim()) {
-      setError('الرجاء إدخال الصف')
+      showToast('الرجاء إدخال الصف', 'warning')
       return
     }
 
     if (!classNumber.trim()) {
-      setError('الرجاء إدخال الفصل')
+      showToast('الرجاء إدخال الفصل', 'warning')
       return
     }
 
     if (!evidence.volume.trim() || !evidence.page.trim()) {
-      setError('الرجاء إدخال الدليل كاملاً (المجلد والصفحة)')
+      showToast('الرجاء إدخال الدليل كاملاً (المجلد والصفحة)', 'warning')
       return
     }
 
@@ -151,7 +155,7 @@ export default function QuestionForm({ question }: QuestionFormProps) {
       setAnswer('')
       setEvidence({ volume: '', page: '' })
     } catch (err) {
-      setError('حدث خطأ أثناء إرسال الإجابة. حاول مرة أخرى.')
+      showToast('حدث خطأ أثناء إرسال الإجابة. حاول مرة أخرى.', 'error')
     } finally {
       setIsSubmitting(false)
     }
