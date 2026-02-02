@@ -4,7 +4,7 @@ export interface User {
   id: string
   username: string
   email: string
-  role: 'student' | 'teacher' | 'manager' | 'ceo'
+  role: 'CEO' | 'LRC_MANAGER'
   displayName?: string
   createdAt: string
   updatedAt: string

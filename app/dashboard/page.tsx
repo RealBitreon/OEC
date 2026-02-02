@@ -67,8 +67,9 @@ export default function DashboardPage() {
 
       const sessionData = await sessionResponse.json()
       
-      // Check if user is CEO or LRC_MANAGER
-      if (sessionData.user.role !== 'CEO' && sessionData.user.role !== 'LRC_MANAGER') {
+      // Check if user is CEO or LRC_MANAGER (only 2 roles allowed)
+      const allowedRoles = ['CEO', 'LRC_MANAGER']
+      if (!allowedRoles.includes(sessionData.user.role)) {
         router.push('/unauthorized')
         return
       }
@@ -156,13 +157,6 @@ export default function DashboardPage() {
                 مرحباً {profile.username} - {profile.role === 'CEO' ? 'المدير التنفيذي' : 'مشرف مركز مصادر التعلم'}
               </p>
             </div>
-            <Link
-              href="/admin/competitions/create"
-              className="px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
-            >
-              <Icons.plus className="w-5 h-5" />
-              <span>إنشاء مسابقة جديدة</span>
-            </Link>
           </div>
         </div>
 
@@ -229,42 +223,33 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Link
-            href="/admin/competitions"
-            className="bg-gradient-to-br from-primary to-primary-dark text-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+        {/* Quick Actions - All stay on dashboard */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          <button
+            onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+            className="bg-gradient-to-br from-primary to-primary-dark text-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1 text-right"
           >
             <Icons.trophy className="w-8 h-8 mb-3" />
             <h3 className="text-lg font-bold mb-1">إدارة المسابقات</h3>
-            <p className="text-white/80 text-sm">إنشاء وتعديل المسابقات</p>
+            <p className="text-white/80 text-sm">عرض وإدارة جميع المسابقات</p>
+          </button>
+
+          <Link
+            href="/admin/simulator"
+            className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1 text-right"
+          >
+            <Icons.settings className="w-8 h-8 mb-3" />
+            <h3 className="text-lg font-bold mb-1">محاكي العجلة</h3>
+            <p className="text-white/80 text-sm">اختبار نظام السحب</p>
           </Link>
 
           <Link
-            href="/admin/submissions"
-            className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+            href="/wheel"
+            className="bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1 text-right"
           >
-            <Icons.file className="w-8 h-8 mb-3" />
-            <h3 className="text-lg font-bold mb-1">مراجعة المشاركات</h3>
-            <p className="text-white/80 text-sm">مراجعة وتقييم الإجابات</p>
-          </Link>
-
-          <Link
-            href="/admin/questions"
-            className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
-          >
-            <Icons.help className="w-8 h-8 mb-3" />
-            <h3 className="text-lg font-bold mb-1">بنك الأسئلة</h3>
-            <p className="text-white/80 text-sm">إضافة وإدارة الأسئلة</p>
-          </Link>
-
-          <Link
-            href="/admin/users"
-            className="bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
-          >
-            <Icons.user className="w-8 h-8 mb-3" />
-            <h3 className="text-lg font-bold mb-1">إدارة المستخدمين</h3>
-            <p className="text-white/80 text-sm">عرض وإدارة الحسابات</p>
+            <Icons.target className="w-8 h-8 mb-3" />
+            <h3 className="text-lg font-bold mb-1">عجلة الحظ</h3>
+            <p className="text-white/80 text-sm">عرض عجلة السحب</p>
           </Link>
         </div>
 
@@ -363,25 +348,18 @@ export default function DashboardPage() {
 
                     <div className="flex gap-2 mr-4">
                       <Link
-                        href={`/admin/competitions/${competition.id}/edit`}
-                        className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
-                        title="تعديل"
-                      >
-                        <Icons.edit className="w-5 h-5" />
-                      </Link>
-                      <Link
-                        href={`/api/competition/${competition.id}/stats`}
-                        className="p-2 bg-green-50 hover:bg-green-100 text-green-600 rounded-lg transition-colors"
-                        title="الإحصائيات"
-                      >
-                        <Icons.chart className="w-5 h-5" />
-                      </Link>
-                      <Link
                         href={`/competition/${competition.slug}`}
                         className="p-2 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-lg transition-colors"
-                        title="معاينة"
+                        title="معاينة المسابقة"
                       >
                         <Icons.eye className="w-5 h-5" />
+                      </Link>
+                      <Link
+                        href={`/competition/${competition.slug}/wheel`}
+                        className="p-2 bg-green-50 hover:bg-green-100 text-green-600 rounded-lg transition-colors"
+                        title="عجلة السحب"
+                      >
+                        <Icons.target className="w-5 h-5" />
                       </Link>
                     </div>
                   </div>
