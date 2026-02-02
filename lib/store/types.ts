@@ -20,6 +20,7 @@ export interface Competition {
   endAt: string
   wheelSpinAt: string
   maxAttempts?: number
+  winnerCount?: number // Number of winners to select (1-10), defaults to 1
   rules: {
     eligibilityMode: 'all_correct' | 'min_correct'
     minCorrectAnswers?: number

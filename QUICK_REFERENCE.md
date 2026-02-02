@@ -1,146 +1,86 @@
-# Quick Reference - Production Fixes
+# Quick Reference Guide - Recent Changes
 
-## 🚀 Deployment Status
-✅ **All changes deployed to production**  
-✅ **Build: Successful**  
-✅ **Git: Clean & Pushed**  
-✅ **Vercel: Live**
+## For Teachers/Administrators
 
----
+### 1. Evidence Fields Changed
+**Before**: Students had to enter المجلد (volume), الصفحة (page), and السطر (line)
+**Now**: Students only enter المجلد (volume) and الصفحة (page)
 
-## 📋 What Was Fixed
+**Why**: This prevents students from using ChatGPT to generate fake line numbers and makes verification easier.
 
-### 1️⃣ Arabic Slug Redirect Issue ✅ FIXED
-**Problem**: `/competition/<arabic-slug>/participate` redirected to "/"  
-**Solution**: Decode slug + proper 404 UI instead of redirect  
-**Status**: Live in production
+### 2. Wheel Changed to Scrolling Names
+**Before**: Traditional spinning wheel animation
+**Now**: Names scroll vertically in a container until stopping on the winner
 
-### 2️⃣ Attempt Tracking Bug ✅ FIXED (CRITICAL)
-**Problem**: "Maximum attempts reached" on FIRST submission  
-**Solution**: Move attempt tracking to AFTER successful submission  
-**Status**: Live in production
+**Why**: More modern, accessible, and easier to see on all devices.
 
-### 3️⃣ Submission 500 Error 🔍 DEBUGGING
-**Problem**: "فشل إرسال الإجابات" with HTTP 500  
-**Solution**: Added comprehensive logging to identify root cause  
-**Status**: Waiting for logs to identify exact issue
+### 3. Submission Review Simplified
+**Before**: "Accept" or "Reject" buttons
+**Now**: Simple "Pass" (نجح) or "Fail" (لم ينجح) status
 
----
+**Why**: Clearer terminology that better fits the educational context.
 
-## 🔍 Quick Checks
+## For Students
 
-### Check if Arabic Slug Works
-```
-Visit: https://msoec.vercel.app/competition/<arabic-slug>/participate
-Expected: Page loads (no redirect to home)
-```
+### What You Need to Know:
 
-### Check Submission Logs
-```
-1. Go to: https://vercel.com/realbitreon/oec/logs
-2. Search for: [SUBMIT] or [<correlationId>]
-3. Look for error details
-```
+1. **When Answering Questions**:
+   - You must provide evidence from the Omani Encyclopedia
+   - Enter only: المجلد (volume number) and الصفحة (page number)
+   - No need to enter line numbers anymore
 
----
+2. **After Submitting**:
+   - Your name enters the draw if you answer correctly
+   - The draw uses a scrolling name system (not a wheel)
+   - More correct answers = more chances to win
 
-## 📂 Key Files Changed
+3. **Viewing Results**:
+   - Check the "السحب" (Draw) page to see winners
+   - Watch the live draw when it happens
 
-```
-app/competition/[slug]/participate/page.tsx          ← Arabic slug fix
-app/competition/[slug]/participate/ParticipationForm.tsx  ← Logging
-app/api/competition/submit/route.ts                  ← Logging
-app/api/attempts/check/route.ts                      ← Logging
-components/StartCompetitionButton.tsx                ← Slug encoding
-```
+## Technical Details
 
----
+### Files Changed:
+- Evidence forms: Removed line field, kept volume and page
+- Wheel component: New scrolling animation
+- API endpoints: Updated to use pass/fail logic
+- UI text: Changed "wheel" references to "draw"
 
-## 📚 Documentation
+### Database Changes:
+- Added `is_winner` column to submissions table
+- Run migration: `Docs/SQL/add_is_winner_to_submissions.sql`
 
-| File | Purpose |
-|------|---------|
-| `PRODUCTION_FIXES_SUMMARY.md` | Complete overview of all fixes |
-| `ARABIC_SLUG_FIX_SUMMARY.md` | Technical details of slug fix |
-| `ATTEMPT_TRACKING_FIX.md` | Critical attempt tracking bug fix |
-| `DEBUG_SUBMISSION_500.md` | How to debug submission errors |
-| `verify-arabic-slug-fix.js` | Automated testing script |
-| `QUICK_REFERENCE.md` | This file - quick access |
+### New Components:
+- `app/wheel/ScrollingWheel.tsx` - Modern scrolling draw animation
 
----
+## Common Questions
 
-## 🆘 If Something Breaks
+**Q: Will old submissions still work?**
+A: Yes, existing submissions are compatible. The migration script handles data conversion.
 
-### Rollback Everything
-```bash
-git reset --hard fc8e5f9^  # Before all fixes
-git push --force
-```
+**Q: Do I need to update the database?**
+A: Yes, run the SQL migration file before deploying the new code.
 
-### Rollback Just Submission Logging
-```bash
-git revert 2f8b032 893af68
-git push
-```
+**Q: What happens to submissions with line numbers?**
+A: They remain in the database but the line field is no longer displayed or required for new submissions.
 
-### Rollback Just Arabic Slug Fix
-```bash
-git revert fc8e5f9 6d8c120
-git push
-```
+**Q: Can students still cheat?**
+A: The removal of the line field makes it harder to use AI tools, but teachers should still verify the volume and page references.
 
----
+## Deployment Checklist
 
-## 🎯 Next Steps
+- [ ] Run database migration: `add_is_winner_to_submissions.sql`
+- [ ] Deploy new code to production
+- [ ] Clear browser cache
+- [ ] Test evidence submission (volume and page only)
+- [ ] Test scrolling draw animation
+- [ ] Verify pass/fail marking works
+- [ ] Check all navigation links work
 
-1. ✅ Monitor Vercel logs for submission errors
-2. ⏳ Identify root cause from logs
-3. ⏳ Apply fix based on error code
-4. ⏳ Test in production
-5. ⏳ Update documentation
+## Support
 
----
-
-## 📞 Common Issues & Solutions
-
-### "Still redirecting to home"
-→ Check: Competition exists and is active  
-→ Check: Slug matches database exactly  
-→ Check: Browser console for `[PARTICIPATE]` logs
-
-### "Submission still fails"
-→ Check: Vercel logs for correlation ID  
-→ Check: Error code (42703, 23505, 42501)  
-→ See: `DEBUG_SUBMISSION_500.md`
-
-### "Build fails"
-→ Run: `npm install`  
-→ Run: `npm run build`  
-→ Check: TypeScript errors
-
----
-
-## ✅ Verification Commands
-
-```bash
-# Check git status
-git status
-
-# Check recent commits
-git log --oneline -5
-
-# Build production
-npm run build
-
-# Test locally
-npm start
-
-# Check for errors
-npm run build 2>&1 | grep -i error
-```
-
----
-
-**Last Updated**: February 1, 2026  
-**Status**: ✅ PRODUCTION READY  
-**URL**: https://msoec.vercel.app
+If you encounter any issues:
+1. Check that the database migration ran successfully
+2. Clear browser cache and reload
+3. Verify all environment variables are set correctly
+4. Check browser console for any errors

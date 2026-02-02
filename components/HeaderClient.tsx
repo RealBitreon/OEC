@@ -63,7 +63,7 @@ export default function HeaderClient() {
               href="/wheel"
               className="text-neutral-700 font-medium hover:text-primary transition-colors relative after:absolute after:bottom-0 after:right-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full"
             >
-              عجلة الحظ
+              السحب
             </Link>
             <Link
               href="/about"

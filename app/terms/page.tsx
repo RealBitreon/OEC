@@ -176,7 +176,7 @@ export default function TermsPage() {
                       </li>
                       <li className="flex items-start gap-2 md:gap-3">
                         <span className="text-secondary text-lg md:text-xl flex-shrink-0 mt-0.5">●</span>
-                        <span className="text-sm md:text-base text-neutral-700">السحب عشوائي وعادل باستخدام عجلة الحظ</span>
+                        <span className="text-sm md:text-base text-neutral-700">السحب عشوائي وعادل</span>
                       </li>
                       <li className="flex items-start gap-2 md:gap-3">
                         <span className="text-secondary text-lg md:text-xl flex-shrink-0 mt-0.5">●</span>

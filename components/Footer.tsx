@@ -41,7 +41,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/wheel" className="text-white/70 hover:text-secondary transition-colors text-sm">
-                  عجلة الحظ
+                  السحب
                 </Link>
               </li>
               <li>

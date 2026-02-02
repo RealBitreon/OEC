@@ -14,11 +14,12 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceClient()
 
-    // Update submission with winner status
+    // Update submission with winner status (pass/fail)
     const { error } = await supabase
       .from('submissions')
       .update({
         is_winner: isWinner,
+        status: isWinner ? 'approved' : 'rejected', // Keep for compatibility but focus on is_winner
         updated_at: new Date().toISOString()
       })
       .eq('id', submissionId)
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: isWinner ? 'تم تحديد الطالب كفائز' : 'تم تحديد الطالب كخاسر'
+      message: isWinner ? 'تم تحديد الطالب كفائز (نجح)' : 'تم تحديد الطالب كخاسر (لم ينجح)'
     })
   } catch (error) {
     console.error('Error in mark-winner API:', error)

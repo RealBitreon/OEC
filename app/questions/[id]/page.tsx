@@ -55,7 +55,7 @@ export default async function QuestionDetailPage({ params }: { params: Promise<{
                 <div>
                   <h3 className="font-bold text-amber-900 mb-1">ملاحظة هامة</h3>
                   <p className="text-amber-800 text-sm leading-relaxed">
-                    يجب تحديد <strong>الدليل من المصدر</strong> بدقة: <strong>المجلد</strong> و<strong>الصفحة</strong> و<strong>السطر</strong> من الموسوعة العُمانية. الإجابات الصحيحة تدخلك في عجلة الحظ للفوز بالجوائز!
+                    يجب تحديد <strong>الدليل من المصدر</strong> بدقة: <strong>المجلد</strong> و<strong>الصفحة</strong> من الموسوعة العُمانية. الإجابات الصحيحة تدخلك في السحب للفوز بالجوائز!
                   </p>
                 </div>
               </div>

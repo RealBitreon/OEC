@@ -6,7 +6,7 @@ import Link from 'next/link'
 import StartCompetitionButton from '@/components/StartCompetitionButton'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import WheelSpinner from './WheelSpinner'
+import ScrollingWheel from './ScrollingWheel'
 import { BackButton } from '@/components'
 import Icons from '@/components/icons'
 
@@ -107,9 +107,9 @@ export default function WheelPage() {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <div className="text-6xl md:text-8xl mb-6">🎡</div>
+            <div className="text-6xl md:text-8xl mb-6">🎯</div>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-              عجلة الحظ
+              السحب على الجوائز
             </h1>
             <p className="text-xl md:text-2xl text-white/90">
               شاهد السحب المباشر وتعرّف على الفائزين
@@ -147,7 +147,7 @@ function NoActiveCompetition() {
       animate={{ opacity: 1, scale: 1 }}
       className="card text-center bg-gradient-to-br from-neutral-100 to-neutral-50"
     >
-      <div className="text-8xl mb-6">🎡</div>
+      <div className="text-8xl mb-6">🎯</div>
       <h2 className="text-3xl font-bold text-neutral-900 mb-4">
         لا توجد مسابقة نشطة حالياً
       </h2>
@@ -239,8 +239,8 @@ function LockedNotRun({ wheelRun, competition }: { wheelRun: any; competition: a
 
       {/* Idle Wheel Animation */}
       <div className="card bg-white">
-        <h3 className="text-xl font-bold text-neutral-900 mb-4 text-center">عجلة الحظ</h3>
-        <WheelSpinner 
+        <h3 className="text-xl font-bold text-neutral-900 mb-4 text-center">السحب</h3>
+        <ScrollingWheel 
           candidates={wheelRun.candidatesSnapshot}
           status="idle"
         />
@@ -328,7 +328,7 @@ function WheelComplete({ wheelRun, competition }: { wheelRun: any; competition: 
       {/* Wheel Replay */}
       <div className="card bg-white shadow-lg">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-neutral-900">🎡 عجلة الحظ</h3>
+          <h3 className="text-xl font-bold text-neutral-900">🎯 السحب</h3>
           <button
             onClick={() => setShowReplay(!showReplay)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
@@ -336,7 +336,7 @@ function WheelComplete({ wheelRun, competition }: { wheelRun: any; competition: 
             {showReplay ? '⏸️ إيقاف' : '▶️ إعادة السحب'}
           </button>
         </div>
-        <WheelSpinner 
+        <ScrollingWheel 
           candidates={wheelRun.locked_snapshot?.map((e: any) => ({
             studentUsername: e.user.display_name || e.user.username,
             tickets: e.totalTickets

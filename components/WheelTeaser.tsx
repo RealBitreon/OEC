@@ -29,7 +29,7 @@ export default function WheelTeaser() {
 
           {/* Title */}
           <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            عجلة الحظ
+            السحب على الجوائز
           </h2>
 
           {/* Description */}

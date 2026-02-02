@@ -40,7 +40,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
   const [classNumber, setClassNumber] = useState('')
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
-  const [evidences, setEvidences] = useState<Record<string, { volume: string; page: string; line: string }>>({})
+  const [evidences, setEvidences] = useState<Record<string, { volume: string; page: string }>>({})
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{ success: boolean; correctCount: number; totalQuestions: number } | null>(null)
   const [showAllQuestions, setShowAllQuestions] = useState(false)
@@ -147,7 +147,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
     setAnswers({ ...answers, [currentQuestion.id]: answer })
   }
 
-  const handleEvidence = (questionId: string, field: 'volume' | 'page' | 'line', value: string) => {
+  const handleEvidence = (questionId: string, field: 'volume' | 'page', value: string) => {
     setEvidences({
       ...evidences,
       [questionId]: {
@@ -163,8 +163,8 @@ export default function ParticipationForm({ competition, questions }: Props) {
       return
     }
     const evidence = evidences[currentQuestion.id]
-    if (!evidence || !evidence.volume.trim() || !evidence.page.trim() || !evidence.line.trim()) {
-      alert('يرجى إدخال الدليل كاملاً (المجلد، الصفحة، السطر)')
+    if (!evidence || !evidence.volume.trim() || !evidence.page.trim()) {
+      alert('يرجى إدخال الدليل كاملاً (المجلد والصفحة)')
       return
     }
 
@@ -199,7 +199,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
       const formattedEvidences: Record<string, string> = {}
       Object.keys(evidences).forEach(qId => {
         const ev = evidences[qId]
-        formattedEvidences[qId] = `المجلد ${ev.volume} - الصفحة ${ev.page} - السطر ${ev.line}`
+        formattedEvidences[qId] = `المجلد ${ev.volume} - الصفحة ${ev.page}`
       })
 
       console.log('[SUBMIT] Sending submission:', {
@@ -495,7 +495,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
               الدليل من المصدر * <span className="text-sm text-neutral-600">(مطلوب)</span>
             </label>
             <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-amber-900 mb-2">
                     المجلد *
@@ -522,22 +522,9 @@ export default function ParticipationForm({ competition, questions }: Props) {
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-amber-900 mb-2">
-                    السطر *
-                  </label>
-                  <input
-                    type="text"
-                    value={evidences[currentQuestion.id]?.line || ''}
-                    onChange={e => handleEvidence(currentQuestion.id, 'line', e.target.value)}
-                    placeholder="رقم السطر"
-                    className="w-full px-3 py-2 border-2 border-amber-300 rounded-lg focus:border-amber-500 focus:outline-none bg-white"
-                    required
-                  />
-                </div>
               </div>
               <p className="text-sm text-amber-700 mt-3">
-                ⚠️ يجب تحديد موقع الإجابة في الموسوعة العُمانية بدقة
+                ⚠️ يجب تحديد موقع الإجابة في الموسوعة العُمانية بدقة (المجلد والصفحة فقط)
               </p>
             </div>
           </div>
@@ -596,13 +583,13 @@ export default function ParticipationForm({ competition, questions }: Props) {
           {allCorrect ? (
             <>
               🌟 رائع! أجبت على جميع الأسئلة بشكل صحيح!<br/>
-              ✨ اسمك الآن في عجلة الحظ! 🎡<br/>
+              ✨ اسمك الآن في قائمة المرشحين للسحب! 🎯<br/>
               🍀 بالتوفيق في السحب على الجوائز!
             </>
           ) : someCorrect ? (
             <>
               أجبت على {result.correctCount} من {result.totalQuestions} أسئلة بشكل صحيح<br/>
-              اسمك في عجلة الحظ! 🎡<br/>
+              اسمك في قائمة المرشحين للسحب! 🎯<br/>
               بالتوفيق! 🍀
             </>
           ) : (

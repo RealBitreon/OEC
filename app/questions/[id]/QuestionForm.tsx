@@ -27,8 +27,7 @@ export default function QuestionForm({ question }: QuestionFormProps) {
   const [classNumber, setClassNumber] = useState('')
   const [evidence, setEvidence] = useState({
     volume: '',
-    page: '',
-    line: ''
+    page: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -90,8 +89,8 @@ export default function QuestionForm({ question }: QuestionFormProps) {
       return
     }
 
-    if (!evidence.volume.trim() || !evidence.page.trim() || !evidence.line.trim()) {
-      setError('الرجاء إدخال الدليل كاملاً (المجلد، الصفحة، السطر)')
+    if (!evidence.volume.trim() || !evidence.page.trim()) {
+      setError('الرجاء إدخال الدليل كاملاً (المجلد والصفحة)')
       return
     }
 
@@ -108,7 +107,7 @@ export default function QuestionForm({ question }: QuestionFormProps) {
           studentName: studentName.trim(),
           grade: grade.trim(),
           classNumber: classNumber.trim(),
-          evidence: `المجلد ${evidence.volume} - الصفحة ${evidence.page} - السطر ${evidence.line}`,
+          evidence: `المجلد ${evidence.volume} - الصفحة ${evidence.page}`,
         }),
       })
 
@@ -130,7 +129,7 @@ export default function QuestionForm({ question }: QuestionFormProps) {
         const randomMessage = successMessages[Math.floor(Math.random() * successMessages.length)]
         setResult({
           isCorrect: true,
-          message: `${randomMessage}\n\nاسمك الآن في عجلة الحظ! 🎡\nبالتوفيق في السحب! 🍀`
+          message: `${randomMessage}\n\nاسمك الآن في قائمة المرشحين للسحب! 🎯\nبالتوفيق في السحب! 🍀`
         })
       } else {
         setResult({
@@ -141,7 +140,7 @@ export default function QuestionForm({ question }: QuestionFormProps) {
       
       // Reset only answer and evidence, keep name and class
       setAnswer('')
-      setEvidence({ volume: '', page: '', line: '' })
+      setEvidence({ volume: '', page: '' })
     } catch (err) {
       setError('حدث خطأ أثناء إرسال الإجابة. حاول مرة أخرى.')
     } finally {
@@ -152,7 +151,7 @@ export default function QuestionForm({ question }: QuestionFormProps) {
   const handleRetry = () => {
     setResult(null)
     setAnswer('')
-    setEvidence({ volume: '', page: '', line: '' })
+    setEvidence({ volume: '', page: '' })
     setError('')
   }
 
@@ -356,12 +355,12 @@ export default function QuestionForm({ question }: QuestionFormProps) {
           <div>
             <h3 className="text-lg font-bold text-amber-900 mb-1">الدليل من المصدر *</h3>
             <p className="text-sm text-amber-700">
-              يجب تحديد موقع الإجابة في الموسوعة العُمانية بدقة. سيقوم المعلم بمراجعة إجابتك والدليل المقدم وتصحيحها يدوياً.
+              يجب تحديد موقع الإجابة في الموسوعة العُمانية بدقة (المجلد والصفحة فقط). سيقوم المعلم بمراجعة إجابتك والدليل المقدم وتصحيحها يدوياً.
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-semibold text-amber-900 mb-2">
               المجلد *
@@ -384,19 +383,6 @@ export default function QuestionForm({ question }: QuestionFormProps) {
               value={evidence.page}
               onChange={(e) => setEvidence({ ...evidence, page: e.target.value })}
               placeholder="رقم الصفحة"
-              className="w-full px-4 py-3 border-2 border-amber-300 rounded-lg focus:border-amber-500 focus:outline-none bg-white"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-amber-900 mb-2">
-              السطر *
-            </label>
-            <input
-              type="text"
-              value={evidence.line}
-              onChange={(e) => setEvidence({ ...evidence, line: e.target.value })}
-              placeholder="رقم السطر"
               className="w-full px-4 py-3 border-2 border-amber-300 rounded-lg focus:border-amber-500 focus:outline-none bg-white"
               required
             />

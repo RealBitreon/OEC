@@ -83,7 +83,7 @@ export default function Hero({ activeCompetition }: { activeCompetition: Competi
                   href="/wheel"
                   className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-bold px-6 py-3 md:px-8 md:py-4 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 inline-block"
                 >
-                  شاهد عجلة الحظ
+                  شاهد السحب
                 </Link>
                 <Link
                   href="/rules"
@@ -113,7 +113,7 @@ export default function Hero({ activeCompetition }: { activeCompetition: Competi
                   href="/wheel"
                   className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border-2 border-white/30 font-bold px-6 py-3 md:px-8 md:py-4 rounded-button text-base md:text-lg transition-all duration-300 hover:scale-105 inline-block"
                 >
-                  شاهد عجلة الحظ
+                  شاهد السحب
                 </Link>
                 <Link
                   href="/rules"

@@ -40,7 +40,7 @@ export default function HowItWorks() {
           <circle cx="12" cy="12" r="2" fill="currentColor"/>
         </svg>
       ),
-      title: 'تابع عجلة الحظ',
+      title: 'تابع السحب',
       description: 'شاهد السحب المباشر وتعرّف على الفائزين في الوقت المحدد'
     }
   ]
