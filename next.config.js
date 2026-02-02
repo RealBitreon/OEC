@@ -5,7 +5,7 @@ const nextConfig = {
   
   // Prevent redirect loops
   skipTrailingSlashRedirect: true,
-  skipMiddlewareUrlNormalize: true,
+  skipProxyUrlNormalize: true,
   
   // Server configuration
   experimental: {

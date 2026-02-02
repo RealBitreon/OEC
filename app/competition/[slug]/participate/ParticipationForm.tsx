@@ -28,6 +28,7 @@ interface Competition {
   slug: string
   endAt: string
   wheelSpinAt?: string
+  maxAttempts?: number
 }
 
 interface Props {
