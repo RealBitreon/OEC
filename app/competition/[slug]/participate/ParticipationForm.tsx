@@ -261,8 +261,8 @@ export default function ParticipationForm({ competition, questions }: Props) {
       // Update state immediately
       setAttemptInfo({
         canAttempt: true,
-        remainingAttempts: competition.max_attempts,
-        maxAttempts: competition.max_attempts
+        remainingAttempts: competition.maxAttempts || 3,
+        maxAttempts: competition.maxAttempts || 3
       })
       setResetCode('')
       setShowOutOfTriesModal(false)

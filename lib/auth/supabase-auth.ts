@@ -6,7 +6,7 @@ export interface User {
   authId: string
   username: string
   email?: string
-  role: 'CEO' | 'LRC_MANAGER'
+  role: 'CEO' | 'LRC_MANAGER' // CEO is highest, LRC_MANAGER is second
   createdAt: string
 }
 
@@ -18,6 +18,10 @@ export interface User {
  * Sign up a new user with Supabase Auth (username-based)
  * Email is auto-generated as username@local.app for Supabase Auth compatibility
  * Role code is REQUIRED - no signup without valid role code
+ * 
+ * Role Hierarchy:
+ * 1. CEO - Highest level, full system access
+ * 2. LRC_MANAGER - Second level, learning resource center manager
  */
 export async function signup(
   username: string,
