@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import CompetitionsManagement from '../components/sections/CompetitionsManagement'
+import Archives from '../components/sections/Archives'
 
-export default async function CompetitionsPage() {
+export default async function ArchivesPage() {
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -18,9 +18,9 @@ export default async function CompetitionsPage() {
     .eq('auth_id', user.id)
     .single()
 
-  if (!profile) {
-    redirect('/login')
+  if (!profile || (profile.role !== 'CEO' && profile.role !== 'LRC_MANAGER')) {
+    redirect('/dashboard')
   }
 
-  return <CompetitionsManagement profile={profile} />
+  return <Archives profile={profile} />
 }
