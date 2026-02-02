@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { applyCustomValidation } from '@/lib/utils/form-validation'
 
 interface QuestionFormProps {
   question: {
@@ -21,6 +22,7 @@ interface QuestionFormProps {
 
 export default function QuestionForm({ question }: QuestionFormProps) {
   const router = useRouter()
+  const formRef = useRef<HTMLFormElement>(null)
   const [answer, setAnswer] = useState('')
   const [studentName, setStudentName] = useState('')
   const [grade, setGrade] = useState('')
@@ -32,6 +34,13 @@ export default function QuestionForm({ question }: QuestionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<{ isCorrect: boolean; message: string } | null>(null)
+
+  // Apply custom validation messages
+  useEffect(() => {
+    if (formRef.current) {
+      applyCustomValidation(formRef.current)
+    }
+  }, [])
 
   // Cheat code: Expose correct answer in console
   React.useEffect(() => {
@@ -200,7 +209,7 @@ export default function QuestionForm({ question }: QuestionFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" noValidate>
       {/* Question Text */}
       <div className="bg-white rounded-card shadow-sm p-6 border-r-4 border-primary">
         <h2 className="text-xl md:text-2xl font-bold text-neutral-800 mb-4">

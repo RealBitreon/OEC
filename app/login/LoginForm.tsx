@@ -1,16 +1,25 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { loginAction } from './actions'
+import { applyCustomValidation } from '@/lib/utils/form-validation'
 
 export default function LoginForm() {
   const router = useRouter()
+  const formRef = useRef<HTMLFormElement>(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+
+  // Apply custom validation messages
+  useEffect(() => {
+    if (formRef.current) {
+      applyCustomValidation(formRef.current)
+    }
+  }, [])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -45,7 +54,7 @@ export default function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" dir="rtl" suppressHydrationWarning>
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" dir="rtl" suppressHydrationWarning noValidate>
       {/* Error Message */}
       {error && (
         <div className="bg-gradient-to-l from-red-50 to-rose-50 border-2 border-red-300 rounded-xl p-4 text-center shadow-sm animate-shake" suppressHydrationWarning>

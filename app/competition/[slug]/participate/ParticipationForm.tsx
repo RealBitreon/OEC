@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { getOrCreateFingerprint } from '@/lib/utils/device-fingerprint'
+import { applyCustomValidation } from '@/lib/utils/form-validation'
 import Icons from '@/components/icons'
 
 interface Question {
@@ -32,6 +33,7 @@ interface Props {
 
 export default function ParticipationForm({ competition, questions }: Props) {
   const router = useRouter()
+  const formRef = useRef<HTMLFormElement>(null)
   const [step, setStep] = useState<'info' | 'questions' | 'complete'>('info')
   const [firstName, setFirstName] = useState('')
   const [fatherName, setFatherName] = useState('')
@@ -48,6 +50,13 @@ export default function ParticipationForm({ competition, questions }: Props) {
   const [checkingAttempts, setCheckingAttempts] = useState(true)
   const [resetCode, setResetCode] = useState('')
   const [showResetInput, setShowResetInput] = useState(false)
+
+  // Apply custom validation messages
+  useEffect(() => {
+    if (formRef.current) {
+      applyCustomValidation(formRef.current)
+    }
+  }, [step]) // Re-apply when step changes
 
   // Check attempts on mount
   useEffect(() => {
@@ -363,7 +372,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
           </p>
         </div>
 
-        <form onSubmit={handleStartQuestions} className="space-y-6">
+        <form ref={formRef} onSubmit={handleStartQuestions} className="space-y-6" noValidate>
           <div>
             <label className="block text-lg font-semibold text-neutral-800 mb-3">
               الاسم الثلاثي * <span className="text-sm text-neutral-500">(حروف فقط، بدون أرقام)</span>

@@ -11,3 +11,5 @@ export { default as ArchivedCompetitions } from './ArchivedCompetitions'
 export { default as AnnouncementBar } from './AnnouncementBar'
 export { default as ScrollToTop } from './ScrollToTop'
 export { default as BackButton } from './BackButton'
+export { ErrorBoundary } from './ErrorBoundary'
+

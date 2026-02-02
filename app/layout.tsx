@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { ToastProvider } from '@/components/ui'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { config } from '@/lib/config/site'
@@ -35,9 +36,11 @@ export default async function RootLayout({
           <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         </head>
         <body className="overflow-x-hidden antialiased">
-          <ToastProvider>
-            {children}
-          </ToastProvider>
+          <ErrorBoundary>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </ErrorBoundary>
           <Analytics />
           <SpeedInsights />
         </body>
