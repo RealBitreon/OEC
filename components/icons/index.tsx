@@ -357,6 +357,7 @@ export const Icons = {
   idea: Lightbulb,
   
   // Navigation
+  arrow: ArrowRight,
   arrowRight: ArrowRight,
   chevronRight: ChevronRight,
   chevronLeft: ChevronLeft,
