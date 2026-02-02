@@ -14,15 +14,15 @@ if (!supabaseAnonKey) {
 
 /**
  * Client for browser/server with RLS
- * CRITICAL: Configured to prevent auto-refresh and polling
+ * CRITICAL: Configured to prevent auto-refresh but allow session persistence
  */
 export const supabase = supabaseUrl && supabaseAnonKey 
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         // CRITICAL: Disable auto-refresh to prevent background requests
         autoRefreshToken: false,
-        // CRITICAL: Disable session persistence to prevent storage polling
-        persistSession: false,
+        // IMPORTANT: Keep persistSession true for login to work
+        persistSession: true,
         // CRITICAL: Disable detect session in URL to prevent unnecessary checks
         detectSessionInUrl: false,
       },

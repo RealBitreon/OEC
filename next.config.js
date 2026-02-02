@@ -3,6 +3,10 @@ const nextConfig = {
   // Production-ready configuration
   reactStrictMode: true,
   
+  // Prevent redirect loops
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
+  
   // Server configuration
   experimental: {
     // Speed up compilation

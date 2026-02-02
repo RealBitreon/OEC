@@ -39,8 +39,8 @@ export async function createClient() {
       auth: {
         // CRITICAL: Disable auto-refresh to prevent background requests
         autoRefreshToken: false,
-        // CRITICAL: Disable session persistence to prevent storage polling
-        persistSession: false,
+        // IMPORTANT: Keep persistSession true for login to work
+        persistSession: true,
         // CRITICAL: Disable detect session in URL to prevent unnecessary checks
         detectSessionInUrl: false,
       },
