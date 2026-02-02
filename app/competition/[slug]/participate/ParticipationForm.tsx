@@ -46,6 +46,8 @@ export default function ParticipationForm({ competition, questions }: Props) {
   const [showAllQuestions, setShowAllQuestions] = useState(false)
   const [attemptInfo, setAttemptInfo] = useState<{ canAttempt: boolean; remainingAttempts: number; maxAttempts: number } | null>(null)
   const [checkingAttempts, setCheckingAttempts] = useState(true)
+  const [resetCode, setResetCode] = useState('')
+  const [showResetInput, setShowResetInput] = useState(false)
 
   // Check attempts on mount
   useEffect(() => {
@@ -128,18 +130,53 @@ export default function ParticipationForm({ competition, questions }: Props) {
 
   const handleStartQuestions = (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate names (only Arabic/English letters, no numbers)
+    const nameRegex = /^[\u0600-\u06FFa-zA-Z\s]+$/
+    
     if (!firstName.trim() || !fatherName.trim() || !familyName.trim()) {
       alert('يرجى إدخال الاسم الثلاثي كاملاً')
       return
     }
+    
+    if (!nameRegex.test(firstName)) {
+      alert('الاسم الأول يجب أن يحتوي على حروف فقط (بدون أرقام)')
+      return
+    }
+    
+    if (!nameRegex.test(fatherName)) {
+      alert('اسم الأب يجب أن يحتوي على حروف فقط (بدون أرقام)')
+      return
+    }
+    
+    if (!nameRegex.test(familyName)) {
+      alert('اسم العائلة يجب أن يحتوي على حروف فقط (بدون أرقام)')
+      return
+    }
+    
     if (!gradeLevel.trim()) {
       alert('يرجى إدخال الصف')
       return
     }
+    
     if (!classNumber.trim()) {
       alert('يرجى إدخال الفصل')
       return
     }
+    
+    // Validate grade and class (only numbers)
+    const numberRegex = /^\d+$/
+    
+    if (!numberRegex.test(gradeLevel)) {
+      alert('الصف يجب أن يحتوي على أرقام فقط')
+      return
+    }
+    
+    if (!numberRegex.test(classNumber)) {
+      alert('الفصل يجب أن يحتوي على أرقام فقط')
+      return
+    }
+    
     setStep('questions')
   }
 
@@ -171,7 +208,55 @@ export default function ParticipationForm({ competition, questions }: Props) {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1)
     } else {
+      // Show warning before final submit
+      if (attemptInfo && attemptInfo.remainingAttempts <= attemptInfo.maxAttempts) {
+        const remainingAfterSubmit = attemptInfo.remainingAttempts - 1
+        const confirmMessage = remainingAfterSubmit > 0
+          ? `⚠️ تنبيه: محاولات محدودة\n\nلديك ${attemptInfo.remainingAttempts} محاولة متبقية من أصل ${attemptInfo.maxAttempts}.\nبعد الإرسال سيتبقى لديك ${remainingAfterSubmit} محاولة.\n\nهل أنت متأكد من إرسال إجاباتك الآن؟`
+          : `⚠️ تنبيه: هذه آخر محاولة!\n\nهذه هي محاولتك الأخيرة من أصل ${attemptInfo.maxAttempts} محاولات.\nبعد الإرسال لن تتمكن من المحاولة مرة أخرى.\n\nهل أنت متأكد من إرسال إجاباتك الآن؟`
+        
+        if (!confirm(confirmMessage)) {
+          return
+        }
+      }
       handleSubmit()
+    }
+  }
+
+  const handleResetAttempts = async () => {
+    if (resetCode.toUpperCase() !== 'LRC@RESET') {
+      alert('كود غير صحيح')
+      return
+    }
+
+    try {
+      const deviceFingerprint = getOrCreateFingerprint()
+      
+      const response = await fetch('/api/attempts/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          competitionId: competition.id,
+          deviceFingerprint,
+          resetCode: resetCode.toUpperCase(),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('فشل إعادة تعيين المحاولات')
+      }
+
+      const data = await response.json()
+      
+      alert('✅ تم إعادة تعيين المحاولات بنجاح!')
+      setAttemptInfo(data)
+      setResetCode('')
+      setShowResetInput(false)
+      
+      // Reload page to refresh
+      window.location.reload()
+    } catch (error) {
+      alert('حدث خطأ أثناء إعادة تعيين المحاولات')
     }
   }
 
@@ -268,21 +353,6 @@ export default function ParticipationForm({ competition, questions }: Props) {
 
     return (
       <div className="bg-white rounded-2xl shadow-sm p-8">
-        {attemptInfo && attemptInfo.remainingAttempts < attemptInfo.maxAttempts && (
-          <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl">
-            <div className="flex items-start gap-3">
-              <Icons.warning className="w-6 h-6 " />
-              <div>
-                <p className="font-bold text-amber-900 mb-1">تنبيه: محاولات محدودة</p>
-                <p className="text-sm text-amber-800">
-                  لديك <span className="font-bold">{attemptInfo.remainingAttempts}</span> محاولة متبقية من أصل {attemptInfo.maxAttempts}.
-                  تأكد من إجاباتك قبل الإرسال!
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
         <div className="mb-6">
           <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <Icons.user className="w-10 h-10 " />
@@ -296,7 +366,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
         <form onSubmit={handleStartQuestions} className="space-y-6">
           <div>
             <label className="block text-lg font-semibold text-neutral-800 mb-3">
-              الاسم الثلاثي *
+              الاسم الثلاثي * <span className="text-sm text-neutral-500">(حروف فقط، بدون أرقام)</span>
             </label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <input
@@ -328,7 +398,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
           
           <div>
             <label className="block text-lg font-semibold text-neutral-800 mb-3">
-              الصف والفصل *
+              الصف والفصل * <span className="text-sm text-neutral-500">(أرقام فقط)</span>
             </label>
             <div className="grid grid-cols-2 gap-4">
               <input
@@ -357,6 +427,53 @@ export default function ParticipationForm({ competition, questions }: Props) {
             ابدأ الإجابة على الأسئلة
           </button>
         </form>
+
+        {/* Reset Code Section - Only show if no attempts remaining */}
+        {attemptInfo && !attemptInfo.canAttempt && (
+          <div className="mt-6 pt-6 border-t-2 border-neutral-200">
+            {!showResetInput ? (
+              <button
+                type="button"
+                onClick={() => setShowResetInput(true)}
+                className="w-full text-sm text-neutral-500 hover:text-primary transition-colors"
+              >
+                لديك كود إعادة تعيين؟
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <label className="block text-sm font-semibold text-neutral-700">
+                  كود إعادة تعيين المحاولات (LRC)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={resetCode}
+                    onChange={e => setResetCode(e.target.value)}
+                    placeholder="أدخل الكود"
+                    className="flex-1 px-4 py-2 border-2 border-neutral-200 rounded-lg focus:border-primary focus:outline-none text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleResetAttempts}
+                    className="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-semibold rounded-lg transition-all text-sm"
+                  >
+                    تطبيق
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResetInput(false)
+                    setResetCode('')
+                  }}
+                  className="text-xs text-neutral-500 hover:text-neutral-700"
+                >
+                  إلغاء
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     )
   }
