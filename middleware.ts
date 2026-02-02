@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   try {
     const { pathname } = request.nextUrl
     
@@ -70,16 +70,16 @@ export async function proxy(request: NextRequest) {
     // Get user - ONLY check if user exists, nothing else
     const { data: { user }, error } = await supabase.auth.getUser()
 
-    // If there's an auth error, redirect to custom error page
-    if (error && !pathname.startsWith('/unauthorized') && !pathname.startsWith('/api-error')) {
-      console.error('Auth error in middleware:', error)
-      return NextResponse.redirect(new URL('/unauthorized', request.url))
+    // Don't redirect on auth errors - most pages are public
+    // Only log the error for debugging
+    if (error) {
+      console.log('Auth check (no user session):', error.message)
     }
 
     // Protected routes - ONLY check user existence
     if (pathname.startsWith('/dashboard')) {
       if (!user) {
-        return NextResponse.redirect(new URL('/unauthorized', request.url))
+        return NextResponse.redirect(new URL('/login', request.url))
       }
       // User exists - allow access, no role checks
       return response

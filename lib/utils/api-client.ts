@@ -35,7 +35,8 @@ export async function apiClient<T = any>(
       if (typeof window !== 'undefined') {
         switch (response.status) {
           case 401:
-            window.location.href = '/unauthorized'
+            // Don't auto-redirect - let the page handle it
+            console.log('Unauthorized API call')
             break
           case 404:
             // Let the page handle 404s

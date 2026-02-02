@@ -128,7 +128,13 @@ export default async function CompetitionParticipatePage({ params }: { params: P
             </div>
           ) : (
             <ParticipationForm 
-              competition={competition} 
+              competition={{
+                id: competition.id,
+                title: competition.title,
+                slug: competition.slug,
+                endAt: competition.endAt,
+                wheelSpinAt: competition.wheelSpinAt
+              }} 
               questions={questions}
             />
           )}

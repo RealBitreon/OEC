@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-const RESET_CODE = 'LRC@RESET'
+const RESET_CODE = '12311'
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify reset code
-    if (resetCode.toUpperCase() !== RESET_CODE) {
+    if (resetCode !== RESET_CODE) {
       console.log('[RESET ATTEMPTS] Invalid code provided')
       return NextResponse.json(
         { error: 'Invalid reset code' },

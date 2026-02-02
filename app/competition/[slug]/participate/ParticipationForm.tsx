@@ -6,6 +6,7 @@ import { getOrCreateFingerprint } from '@/lib/utils/device-fingerprint'
 import { applyCustomValidation } from '@/lib/utils/form-validation'
 import { useToast } from '@/components/ui/Toast'
 import Icons from '@/components/icons'
+import OutOfTriesModal from '@/components/OutOfTriesModal'
 
 interface Question {
   id: string
@@ -25,6 +26,8 @@ interface Competition {
   id: string
   title: string
   slug: string
+  endAt: string
+  wheelSpinAt?: string
 }
 
 interface Props {
@@ -51,7 +54,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
   const [attemptInfo, setAttemptInfo] = useState<{ canAttempt: boolean; remainingAttempts: number; maxAttempts: number } | null>(null)
   const [checkingAttempts, setCheckingAttempts] = useState(true)
   const [resetCode, setResetCode] = useState('')
-  const [showResetInput, setShowResetInput] = useState(false)
+  const [showOutOfTriesModal, setShowOutOfTriesModal] = useState(false)
 
   // Apply custom validation messages with toast
   useEffect(() => {
@@ -89,9 +92,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
         setAttemptInfo(data)
 
         if (!data.canAttempt) {
-          alert(`لقد استنفدت جميع المحاولات المتاحة (${data.maxAttempts} محاولات). سيتم إعادتك للصفحة الرئيسية.`)
-          // Use window.location for more reliable redirect
-          window.location.href = '/'
+          setShowOutOfTriesModal(true)
         }
       } catch (error) {
         console.error('[PARTICIPATION FORM] Error checking attempts:', error)
@@ -140,6 +141,11 @@ export default function ParticipationForm({ competition, questions }: Props) {
 
   const currentQuestion = questions[currentQuestionIndex]
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100
+
+  // Show modal if out of tries
+  if (showOutOfTriesModal && attemptInfo) {
+    return <OutOfTriesModal maxAttempts={attemptInfo.maxAttempts} />
+  }
 
   const handleStartQuestions = (e: React.FormEvent) => {
     e.preventDefault()
@@ -237,7 +243,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
   }
 
   const handleResetAttempts = async () => {
-    if (resetCode.toUpperCase() !== 'LRC@RESET') {
+    if (resetCode !== '12311') {
       showToast('كود غير صحيح', 'error')
       return
     }
@@ -251,7 +257,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
         body: JSON.stringify({
           competitionId: competition.id,
           deviceFingerprint,
-          resetCode: resetCode.toUpperCase(),
+          resetCode: resetCode,
         }),
       })
 
@@ -264,7 +270,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
       showToast('✅ تم إعادة تعيين المحاولات بنجاح!', 'success')
       setAttemptInfo(data)
       setResetCode('')
-      setShowResetInput(false)
+      setShowOutOfTriesModal(false)
       
       // Reload page to refresh
       setTimeout(() => window.location.reload(), 1500)
@@ -441,50 +447,51 @@ export default function ParticipationForm({ competition, questions }: Props) {
           </button>
         </form>
 
-        {/* Reset Code Section - Only show if no attempts remaining */}
+        {/* Reset Code Section - Prominent display when out of attempts */}
         {attemptInfo && !attemptInfo.canAttempt && (
-          <div className="mt-6 pt-6 border-t-2 border-neutral-200">
-            {!showResetInput ? (
-              <button
-                type="button"
-                onClick={() => setShowResetInput(true)}
-                className="w-full text-sm text-neutral-500 hover:text-primary transition-colors"
-              >
-                لديك كود إعادة تعيين؟
-              </button>
-            ) : (
+          <div className="mt-6 pt-6 border-t-2 border-amber-200">
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
+                  <Icons.key className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-amber-900">
+                  هل لديك كود إعادة تعيين من المعلم؟
+                </h3>
+              </div>
+              
+              <p className="text-amber-800 mb-4 text-sm leading-relaxed">
+                إذا كنت في مركز مصادر التعلم (LRC)، يمكنك الحصول على كود من معلمك لإعادة تعيين المحاولات
+              </p>
+
               <div className="space-y-3">
-                <label className="block text-sm font-semibold text-neutral-700">
-                  كود إعادة تعيين المحاولات (LRC)
+                <label className="block text-sm font-bold text-amber-900">
+                  أدخل كود إعادة التعيين
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={resetCode}
                     onChange={e => setResetCode(e.target.value)}
-                    placeholder="أدخل الكود"
-                    className="flex-1 px-4 py-2 border-2 border-neutral-200 rounded-lg focus:border-primary focus:outline-none text-sm"
+                    placeholder="12311"
+                    className="flex-1 px-4 py-3 border-2 border-amber-300 rounded-lg focus:border-amber-500 focus:outline-none font-mono font-bold text-center bg-white"
+                    maxLength={10}
                   />
                   <button
                     type="button"
                     onClick={handleResetAttempts}
-                    className="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-semibold rounded-lg transition-all text-sm"
+                    disabled={!resetCode.trim()}
+                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
-                    تطبيق
+                    ✓ تطبيق
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowResetInput(false)
-                    setResetCode('')
-                  }}
-                  className="text-xs text-neutral-500 hover:text-neutral-700"
-                >
-                  إلغاء
-                </button>
+                <p className="text-xs text-amber-700 flex items-center gap-2">
+                  <Icons.info className="w-4 h-4" />
+                  الكود متاح فقط لدى معلم مركز مصادر التعلم (LRC)
+                </p>
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>
@@ -690,6 +697,18 @@ export default function ParticipationForm({ competition, questions }: Props) {
     const allCorrect = result.correctCount === result.totalQuestions
     const someCorrect = result.correctCount > 0 && result.correctCount < result.totalQuestions
     const noneCorrect = result.correctCount === 0
+    
+    // Format competition end date
+    const endDate = new Date(competition.endAt)
+    const endDateStr = endDate.toLocaleDateString('ar-SA', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+    
+    // Check if user can retry (has remaining attempts)
+    const canRetry = attemptInfo && attemptInfo.canAttempt && !allCorrect
 
     return (
       <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
@@ -725,7 +744,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
           ) : (
             <>
               لا بأس، الأخطاء جزء من التعلم! 💪<br/>
-              يمكنك المحاولة مرة أخرى<br/>
+              {canRetry ? 'يمكنك المحاولة مرة أخرى' : 'لقد استنفدت جميع المحاولات'}<br/>
               استمر في التعلم وستنجح بإذن الله! 📚
             </>
           )}
@@ -733,23 +752,47 @@ export default function ParticipationForm({ competition, questions }: Props) {
 
         <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-primary/20 rounded-xl p-6 mb-6">
           <div className="mb-3"><Icons.target className="w-12 h-12" /></div>
-          <p className="text-lg font-bold text-neutral-800">
+          <p className="text-lg font-bold text-neutral-800 mb-4">
             النتيجة: {result.correctCount} / {result.totalQuestions}
           </p>
         </div>
 
-        <p className="text-sm text-neutral-500 mb-8">
-          {!allCorrect && 'يمكنك إعادة المحاولة مرة واحدة فقط'}
-        </p>
+        {/* Important Information Box */}
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-6 mb-6 text-right">
+          <div className="flex items-start gap-3 mb-4">
+            <Icons.info className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-blue-900 mb-2">معلومات مهمة</h3>
+              <div className="space-y-2 text-blue-800 text-sm leading-relaxed">
+                <p>
+                  📋 <strong>سيتم مراجعة الإجابة من معلم المصادر</strong> للتأكد من صحة الأدلة المقدمة
+                </p>
+                <p>
+                  📅 <strong>آخر موعد للمسابقة:</strong> {endDateStr}
+                </p>
+                <p>
+                  🎯 <strong>السحب على الجوائز:</strong> سيتم بعد انتهاء المسابقة
+                </p>
+                <p>
+                  🏆 <strong>التكريم:</strong> سيتم تكريم الفائزين في الطابور إن شاء الله
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {attemptInfo && !attemptInfo.canAttempt && !allCorrect && (
+          <p className="text-sm text-amber-600 mb-6 font-semibold bg-amber-50 border border-amber-200 rounded-lg p-3">
+            ⚠️ لقد استنفدت جميع المحاولات ({attemptInfo.maxAttempts} محاولات)
+          </p>
+        )}
         
-        <div className="flex gap-4 justify-center">
-          {!allCorrect && (
+        <div className="flex gap-4 justify-center flex-wrap">
+          {canRetry && (
             <button
               onClick={() => {
-                setStep('questions')
-                setCurrentQuestionIndex(0)
-                setAnswers({})
-                setEvidences({})
+                // Reload page to check attempts again
+                window.location.reload()
               }}
               className="px-8 py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg transition-all duration-200"
             >
@@ -759,7 +802,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
           <button
             onClick={() => router.push('/')}
             className={`px-8 py-3 font-bold rounded-lg transition-all duration-200 ${
-              allCorrect 
+              allCorrect || !canRetry
                 ? 'bg-primary hover:bg-primary-dark text-white'
                 : 'border-2 border-neutral-300 text-neutral-700 hover:bg-neutral-50'
             }`}

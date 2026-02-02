@@ -43,6 +43,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  padding-top: 120px; /* Space for fixed header + announcement bar */
 }
 
 /* Dark mode */
