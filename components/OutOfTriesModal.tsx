@@ -1,14 +1,72 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import Icons from '@/components/icons'
 
 interface OutOfTriesModalProps {
   maxAttempts: number
+  competitionId?: string
   onClose?: () => void
+  onSuccess?: () => void
 }
 
-export default function OutOfTriesModal({ maxAttempts, onClose }: OutOfTriesModalProps) {
+export default function OutOfTriesModal({ maxAttempts, competitionId, onClose, onSuccess }: OutOfTriesModalProps) {
+  const [resetCode, setResetCode] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+
+  const handleSubmitCode = async () => {
+    if (!resetCode.trim()) {
+      setError('الرجاء إدخال الكود')
+      return
+    }
+
+    if (!competitionId) {
+      setError('معرف المسابقة غير موجود')
+      return
+    }
+
+    setIsSubmitting(true)
+    setError('')
+
+    try {
+      // Get device fingerprint
+      const { getOrCreateFingerprint } = await import('@/lib/utils/device-fingerprint')
+      const deviceFingerprint = getOrCreateFingerprint()
+
+      const response = await fetch('/api/attempts/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          competitionId,
+          deviceFingerprint,
+          resetCode: resetCode.trim() 
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSuccess(true)
+        if (onSuccess) {
+          setTimeout(() => {
+            onSuccess()
+          }, 1500)
+        } else {
+          setTimeout(() => {
+            window.location.reload()
+          }, 1500)
+        }
+      } else {
+        setError(data.error || 'كود غير صحيح')
+      }
+    } catch (err) {
+      setError('حدث خطأ، حاول مرة أخرى')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-in">
@@ -76,11 +134,53 @@ export default function OutOfTriesModal({ maxAttempts, onClose }: OutOfTriesModa
                   3
                 </div>
                 <p className="text-neutral-700 pt-0.5">
-                  أدخل الكود في الصفحة السابقة وحاول مرة أخرى
+                  أدخل الكود أدناه وحاول مرة أخرى
                 </p>
               </div>
             </div>
           </div>
+
+          {/* Code Input Section */}
+          {success ? (
+            <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 text-center">
+              <div className="text-4xl mb-2">✅</div>
+              <p className="text-green-800 font-bold">تم إعادة تعيين المحاولات بنجاح!</p>
+              <p className="text-green-700 text-sm mt-1">جاري تحديث الصفحة...</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <label className="block">
+                <span className="text-sm font-bold text-neutral-800 mb-2 block">
+                  أدخل كود إعادة التعيين من LRC:
+                </span>
+                <input
+                  type="text"
+                  value={resetCode}
+                  onChange={(e) => {
+                    setResetCode(e.target.value)
+                    setError('')
+                  }}
+                  placeholder="أدخل الكود هنا"
+                  className="w-full px-4 py-3 border-2 border-neutral-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-center text-lg font-mono tracking-wider"
+                  disabled={isSubmitting}
+                />
+              </label>
+
+              {error && (
+                <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3 text-center">
+                  <p className="text-red-700 font-semibold text-sm">{error}</p>
+                </div>
+              )}
+
+              <button
+                onClick={handleSubmitCode}
+                disabled={isSubmitting || !resetCode.trim()}
+                className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-neutral-300 disabled:to-neutral-400 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'جاري التحقق...' : 'تأكيد الكود'}
+              </button>
+            </div>
+          )}
 
           {/* Buttons */}
           <div className="flex flex-col gap-2 pt-2">

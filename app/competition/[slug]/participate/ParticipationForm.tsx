@@ -145,7 +145,16 @@ export default function ParticipationForm({ competition, questions }: Props) {
 
   // Show modal if out of tries
   if (showOutOfTriesModal && attemptInfo) {
-    return <OutOfTriesModal maxAttempts={attemptInfo.maxAttempts} />
+    return (
+      <OutOfTriesModal 
+        maxAttempts={attemptInfo.maxAttempts} 
+        competitionId={competition.id}
+        onSuccess={() => {
+          setShowOutOfTriesModal(false)
+          window.location.reload()
+        }}
+      />
+    )
   }
 
   const handleStartQuestions = (e: React.FormEvent) => {
