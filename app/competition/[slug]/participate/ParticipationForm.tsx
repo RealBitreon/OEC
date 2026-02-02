@@ -160,7 +160,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
   const handleStartQuestions = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate names (only Arabic/English letters, no numbers)
+    // Validate names (only Arabic/English letters and spaces, no numbers or special characters)
     const nameRegex = /^[\u0600-\u06FFa-zA-Z\s]+$/
     
     if (!firstName.trim() || !fatherName.trim() || !familyName.trim()) {
@@ -168,18 +168,18 @@ export default function ParticipationForm({ competition, questions }: Props) {
       return
     }
     
-    if (!nameRegex.test(firstName)) {
-      showToast('الاسم الأول: يجب أن يحتوي على حروف فقط (بدون أرقام)', 'error')
+    if (!nameRegex.test(firstName.trim())) {
+      showToast('الاسم الأول: يجب أن يحتوي على حروف عربية أو إنجليزية فقط (بدون أرقام أو رموز)', 'error')
       return
     }
     
-    if (!nameRegex.test(fatherName)) {
-      showToast('اسم الأب: يجب أن يحتوي على حروف فقط (بدون أرقام)', 'error')
+    if (!nameRegex.test(fatherName.trim())) {
+      showToast('اسم الأب: يجب أن يحتوي على حروف عربية أو إنجليزية فقط (بدون أرقام أو رموز)', 'error')
       return
     }
     
-    if (!nameRegex.test(familyName)) {
-      showToast('اسم العائلة: يجب أن يحتوي على حروف فقط (بدون أرقام)', 'error')
+    if (!nameRegex.test(familyName.trim())) {
+      showToast('اسم العائلة: يجب أن يحتوي على حروف عربية أو إنجليزية فقط (بدون أرقام أو رموز)', 'error')
       return
     }
     
@@ -196,12 +196,12 @@ export default function ParticipationForm({ competition, questions }: Props) {
     // Validate grade and class (only numbers)
     const numberRegex = /^\d+$/
     
-    if (!numberRegex.test(gradeLevel)) {
+    if (!numberRegex.test(gradeLevel.trim())) {
       showToast('الصف: يجب أن يحتوي على أرقام فقط', 'error')
       return
     }
     
-    if (!numberRegex.test(classNumber)) {
+    if (!numberRegex.test(classNumber.trim())) {
       showToast('الفصل: يجب أن يحتوي على أرقام فقط', 'error')
       return
     }
@@ -237,12 +237,12 @@ export default function ParticipationForm({ competition, questions }: Props) {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1)
     } else {
-      // Show warning before final submit
+      // Show confirmation dialog before final submit
       if (attemptInfo && attemptInfo.remainingAttempts <= attemptInfo.maxAttempts) {
         const remainingAfterSubmit = attemptInfo.remainingAttempts - 1
         const confirmMessage = remainingAfterSubmit > 0
-          ? `⚠️ تنبيه: محاولات محدودة\n\nلديك ${attemptInfo.remainingAttempts} محاولة متبقية من أصل ${attemptInfo.maxAttempts}.\nبعد الإرسال سيتبقى لديك ${remainingAfterSubmit} محاولة.\n\nهل أنت متأكد من إرسال إجاباتك الآن؟`
-          : `⚠️ تنبيه: هذه آخر محاولة!\n\nهذه هي محاولتك الأخيرة من أصل ${attemptInfo.maxAttempts} محاولات.\nبعد الإرسال لن تتمكن من المحاولة مرة أخرى.\n\nهل أنت متأكد من إرسال إجاباتك الآن؟`
+          ? `⚠️ تأكيد الإرسال النهائي\n\n📊 المحاولات المتبقية: ${attemptInfo.remainingAttempts} من أصل ${attemptInfo.maxAttempts}\n📉 بعد الإرسال سيتبقى: ${remainingAfterSubmit} محاولة\n\n✅ هل أنت متأكد من إرسال إجاباتك الآن؟\n\n💡 تأكد من مراجعة جميع الإجابات والأدلة قبل الإرسال`
+          : `⚠️ تحذير: آخر محاولة!\n\n🚨 هذه هي محاولتك الأخيرة من أصل ${attemptInfo.maxAttempts} محاولات\n❌ بعد الإرسال لن تتمكن من المحاولة مرة أخرى\n\n✅ هل أنت متأكد تماماً من إرسال إجاباتك الآن؟\n\n💡 راجع جميع الإجابات والأدلة بعناية قبل التأكيد`
         
         if (!confirm(confirmMessage)) {
           return
@@ -252,34 +252,55 @@ export default function ParticipationForm({ competition, questions }: Props) {
     }
   }
 
-  const handleResetAttempts = () => {
-    // Client-side only validation - no API call needed
-    if (resetCode !== '12311') {
-      showToast('كود غير صحيح', 'error')
+  const handleResetAttempts = async () => {
+    // Validate reset code on client-side first
+    if (!resetCode.trim()) {
+      showToast('يرجى إدخال كود إعادة التعيين', 'error')
+      return
+    }
+
+    // Client-side validation - check if code matches expected format
+    if (resetCode.trim() !== '12311') {
+      showToast('❌ كود غير صحيح - يرجى التحقق من الكود مع المعلم', 'error')
       return
     }
 
     try {
       const deviceFingerprint = getOrCreateFingerprint()
-      const storageKey = `attempts_${competition.id}_${deviceFingerprint}`
       
-      // Clear the attempt tracking from localStorage
-      localStorage.removeItem(storageKey)
-      
+      // Call server-side API to verify and reset
+      const response = await fetch('/api/attempts/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          competitionId: competition.id,
+          deviceFingerprint,
+          resetCode: resetCode.trim()
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        showToast(data.error || 'فشل إعادة تعيين المحاولات', 'error')
+        return
+      }
+
+      // Success - update state and reload
       showToast('✅ تم إعادة تعيين المحاولات بنجاح!', 'success')
       
-      // Update state immediately
       setAttemptInfo({
         canAttempt: true,
-        remainingAttempts: competition.maxAttempts || 3,
-        maxAttempts: competition.maxAttempts || 3
+        remainingAttempts: data.maxAttempts,
+        maxAttempts: data.maxAttempts
       })
       setResetCode('')
       setShowOutOfTriesModal(false)
       
-      // Reload page to refresh
-      setTimeout(() => window.location.reload(), 1000)
+      // Reload page after short delay
+      setTimeout(() => window.location.reload(), 1500)
     } catch (error) {
+      console.error('Reset error:', error)
       showToast('حدث خطأ أثناء إعادة تعيين المحاولات', 'error')
     }
   }

@@ -11,9 +11,9 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ hover = false, padding = 'md', className = '', children, ...props }, ref) => {
     const paddings = {
       none: '',
-      sm: 'p-4',
-      md: 'p-6',
-      lg: 'p-8',
+      sm: 'p-3 sm:p-4',
+      md: 'p-4 sm:p-6',
+      lg: 'p-6 sm:p-8',
     };
 
     return (
@@ -37,19 +37,19 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
 Card.displayName = 'Card';
 
 export const CardHeader = ({ className = '', children, ...props }: HTMLAttributes<HTMLDivElement>) => (
-  <div className={`mb-4 ${className}`} {...props}>
+  <div className={`mb-3 sm:mb-4 ${className}`} {...props}>
     {children}
   </div>
 );
 
 export const CardTitle = ({ className = '', children, ...props }: HTMLAttributes<HTMLHeadingElement>) => (
-  <h3 className={`text-xl font-semibold text-neutral-900 ${className}`} {...props}>
+  <h3 className={`text-lg sm:text-xl font-semibold text-neutral-900 ${className}`} {...props}>
     {children}
   </h3>
 );
 
 export const CardDescription = ({ className = '', children, ...props }: HTMLAttributes<HTMLParagraphElement>) => (
-  <p className={`text-sm text-neutral-600 mt-1 ${className}`} {...props}>
+  <p className={`text-xs sm:text-sm text-neutral-600 mt-1 ${className}`} {...props}>
     {children}
   </p>
 );

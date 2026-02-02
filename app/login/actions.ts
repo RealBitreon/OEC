@@ -17,6 +17,6 @@ export async function loginAction(formData: FormData) {
     return { error: result.error }
   }
 
-  // Redirect to dashboard
-  redirect('/dashboard')
+  // Redirect to home page
+  redirect('/')
 }

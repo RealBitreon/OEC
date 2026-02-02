@@ -76,18 +76,9 @@ export async function proxy(request: NextRequest) {
       console.log('Auth check (no user session):', error.message)
     }
 
-    // Protected routes - ONLY check user existence
-    if (pathname.startsWith('/dashboard')) {
-      if (!user) {
-        return NextResponse.redirect(new URL('/login', request.url))
-      }
-      // User exists - allow access, no role checks
-      return response
-    }
-
-    // Redirect to dashboard if already logged in
+    // Redirect to home if already logged in
     if ((pathname === '/login' || pathname === '/signup') && user) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+      return NextResponse.redirect(new URL('/', request.url))
     }
 
     return response

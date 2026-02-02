@@ -27,6 +27,12 @@ export default function OutOfTriesModal({ maxAttempts, competitionId, onClose, o
       return
     }
 
+    // Client-side validation first
+    if (resetCode.trim() !== '12311') {
+      setError('❌ كود غير صحيح - يرجى التحقق من الكود مع المعلم')
+      return
+    }
+
     setIsSubmitting(true)
     setError('')
 
@@ -59,7 +65,7 @@ export default function OutOfTriesModal({ maxAttempts, competitionId, onClose, o
           }, 1500)
         }
       } else {
-        setError(data.error || 'كود غير صحيح')
+        setError(data.error || 'كود غير صحيح - يرجى التحقق من الكود مع المعلم')
       }
     } catch (err) {
       setError('حدث خطأ، حاول مرة أخرى')
@@ -96,8 +102,8 @@ export default function OutOfTriesModal({ maxAttempts, competitionId, onClose, o
                   هل تريد المحاولة مرة أخرى؟
                 </h3>
                 <p className="text-blue-800 text-sm leading-relaxed">
-                  إذا كنت في <span className="font-bold">مركز مصادر التعلم (LRC)</span>، 
-                  يمكنك طلب إعادة تعيين المحاولات من معلمك
+                  إذا كنت في <span className="font-bold">مركز مصادر التعلم (LRC)</span> أو <span className="font-bold">معمل الحاسب</span> في المدرسة، 
+                  يجب عليك طلب المعلم للحضور وإدخال الكود السري لإعادة تعيين المحاولات
                 </p>
               </div>
             </div>
@@ -116,7 +122,7 @@ export default function OutOfTriesModal({ maxAttempts, competitionId, onClose, o
                   1
                 </div>
                 <p className="text-neutral-700 pt-0.5">
-                  اذهب إلى <span className="font-bold text-primary">معلمك في مركز مصادر التعلم (LRC)</span>
+                  اطلب من <span className="font-bold text-primary">المعلم في مركز مصادر التعلم (LRC)</span> أو <span className="font-bold text-primary">معمل الحاسب</span> الحضور
                 </p>
               </div>
 
@@ -125,7 +131,7 @@ export default function OutOfTriesModal({ maxAttempts, competitionId, onClose, o
                   2
                 </div>
                 <p className="text-neutral-700 pt-0.5">
-                  اطلب منه <span className="font-bold text-primary">كود إعادة تعيين المحاولات</span>
+                  سيقوم المعلم بإدخال <span className="font-bold text-primary">الكود السري</span> لإعادة تعيين محاولاتك
                 </p>
               </div>
 
@@ -134,7 +140,7 @@ export default function OutOfTriesModal({ maxAttempts, competitionId, onClose, o
                   3
                 </div>
                 <p className="text-neutral-700 pt-0.5">
-                  أدخل الكود أدناه وحاول مرة أخرى
+                  بعد إدخال الكود، ستتمكن من المحاولة مرة أخرى
                 </p>
               </div>
             </div>
@@ -151,16 +157,16 @@ export default function OutOfTriesModal({ maxAttempts, competitionId, onClose, o
             <div className="space-y-3">
               <label className="block">
                 <span className="text-sm font-bold text-neutral-800 mb-2 block">
-                  أدخل كود إعادة التعيين من LRC:
+                  كود إعادة التعيين (للمعلم فقط):
                 </span>
                 <input
-                  type="text"
+                  type="password"
                   value={resetCode}
                   onChange={(e) => {
                     setResetCode(e.target.value)
                     setError('')
                   }}
-                  placeholder="أدخل الكود هنا"
+                  placeholder="يُدخله المعلم فقط"
                   className="w-full px-4 py-3 border-2 border-neutral-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-center text-lg font-mono tracking-wider"
                   disabled={isSubmitting}
                 />

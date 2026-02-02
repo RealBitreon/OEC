@@ -82,7 +82,7 @@ function DashboardContent({ children }: { children?: React.ReactNode }) {
           onMenuClick={() => setSidebarOpen(true)}
         />
 
-        <main className="p-4 lg:p-8 animate-fade-in">
+        <main className="p-3 sm:p-4 md:p-6 lg:p-8 animate-fade-in">
           {isSubRoute ? children : renderSection()}
         </main>
       </div>
