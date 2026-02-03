@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import AnnouncementBar from './AnnouncementBar'
 import { config } from '@/lib/config/site'
+import { useAuth } from '@/lib/auth/AuthProvider'
 
 export default function HeaderClient() {
+  const { user } = useAuth()
   const [isScrolled, setIsScrolled] = useState(false)
   const [announcementVisible, setAnnouncementVisible] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -87,12 +89,21 @@ export default function HeaderClient() {
 
           {/* Right side buttons */}
           <div className="flex items-center gap-2 md:gap-3">
-            <Link
-              href="/login"
-              className="px-3 py-1.5 md:px-4 md:py-2 bg-primary text-white rounded-lg font-medium text-xs md:text-sm hover:bg-primary/90 transition-colors shadow-sm hover:shadow-md"
-            >
-              تسجيل الدخول
-            </Link>
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="px-3 py-1.5 md:px-4 md:py-2 bg-primary text-white rounded-lg font-medium text-xs md:text-sm hover:bg-primary/90 transition-colors shadow-sm hover:shadow-md"
+              >
+                اذهب للداشبورد
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="px-3 py-1.5 md:px-4 md:py-2 bg-primary text-white rounded-lg font-medium text-xs md:text-sm hover:bg-primary/90 transition-colors shadow-sm hover:shadow-md"
+              >
+                تسجيل الدخول
+              </Link>
+            )}
             
             {/* Mobile Menu Button */}
             <button
@@ -165,6 +176,27 @@ export default function HeaderClient() {
             >
               عن المسابقة
             </Link>
+            
+            {/* Login/Dashboard Button in Mobile Menu */}
+            <div className="pt-4 border-t border-neutral-200">
+              {user ? (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-3 bg-primary text-white font-semibold rounded-lg text-center hover:bg-primary/90 transition-colors"
+                >
+                  اذهب للداشبورد
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-3 bg-primary text-white font-semibold rounded-lg text-center hover:bg-primary/90 transition-colors"
+                >
+                  تسجيل الدخول
+                </Link>
+              )}
+            </div>
           </div>
         </nav>
       </div>
