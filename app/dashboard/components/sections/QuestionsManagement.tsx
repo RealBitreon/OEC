@@ -52,13 +52,12 @@ export default function QuestionsManagement({ profile, mode = 'training' }: Ques
       let questionsData: Question[]
       
       if (mode === 'bank') {
-        // Library: DRAFT questions with competition_id = NULL and is_training = false
+        // Library: Show ALL questions with usage indicators
         const result = await getQuestions({ 
-          is_training: false,
           search: filters.search,
           type: filters.type
         })
-        questionsData = result.questions.filter(q => q.competition_id === null && q.status === 'DRAFT')
+        questionsData = result.questions
       } else {
         // Training: PUBLISHED questions with is_training = true and competition_id = NULL
         const result = await getQuestions({ 
@@ -220,11 +219,11 @@ export default function QuestionsManagement({ profile, mode = 'training' }: Ques
           <span className="text-2xl">ℹ️</span>
           <div>
             <h3 className="font-bold text-blue-900 mb-1">
-              {mode === 'bank' ? 'مكتبة الأسئلة (مسودات)' : 'الأسئلة التدريبية'}
+              {mode === 'bank' ? 'مكتبة الأسئلة - جميع الأسئلة' : 'الأسئلة التدريبية'}
             </h3>
             <p className="text-sm text-blue-700">
               {mode === 'bank'
-                ? 'الأسئلة المحفوظة هنا لن تُضاف تلقائياً لأي مسابقة. يمكنك نشرها كأسئلة تدريبية أو إضافتها للمسابقات لاحقاً.'
+                ? 'جميع الأسئلة في النظام. يمكنك رؤية أين يُستخدم كل سؤال (تدريب، مسابقة، أو كليهما).'
                 : 'الأسئلة المنشورة هنا متاحة لجميع الطلاب للتدريب. لإضافة أسئلة لمسابقة معينة، استخدم صفحة إدارة المسابقة.'
               }
             </p>
@@ -284,7 +283,7 @@ export default function QuestionsManagement({ profile, mode = 'training' }: Ques
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
                     <span className={`
                       px-3 py-1 rounded-full text-xs font-medium
                       ${question.type === 'mcq' ? 'bg-blue-100 text-blue-700' : ''}
@@ -293,11 +292,35 @@ export default function QuestionsManagement({ profile, mode = 'training' }: Ques
                     `}>
                       {getTypeLabel(question.type)}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      question.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {question.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
-                    </span>
+                    
+                    {/* Usage Indicators */}
+                    {mode === 'bank' && (
+                      <>
+                        {question.is_training && question.competition_id === null && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                            📚 تدريب
+                          </span>
+                        )}
+                        {question.competition_id !== null && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                            🏆 مسابقة
+                          </span>
+                        )}
+                        {!question.is_training && question.competition_id === null && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                            💾 مسودة
+                          </span>
+                        )}
+                      </>
+                    )}
+                    
+                    {mode === 'training' && (
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        question.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {question.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
+                      </span>
+                    )}
                   </div>
                   <p className="text-neutral-900 font-medium">{question.question_text}</p>
                 </div>

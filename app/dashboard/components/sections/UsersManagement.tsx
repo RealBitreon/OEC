@@ -9,13 +9,13 @@ interface UserData {
   username: string
   email: string
   display_name: string
-  role: 'STUDENT' | 'LRC_MANAGER' | 'CEO'
+  role: 'user' | 'LRC_MANAGER' | 'CEO'
   phone?: string
   created_at: string
 }
 
 const ROLE_LABELS = {
-  STUDENT: { label: 'طالب', icon: '👤', color: 'blue' },
+  user: { label: 'مستخدم', icon: '👤', color: 'blue' },
   LRC_MANAGER: { label: 'مدير مسابقة', icon: '👨‍💼', color: 'green' },
   CEO: { label: 'مدير تنفيذي', icon: '👑', color: 'purple' }
 }
@@ -123,13 +123,25 @@ export default function UsersManagement({ profile }: { profile: User }) {
           <h1 className="text-3xl font-bold text-neutral-900">إدارة المستخدمين</h1>
           <p className="text-neutral-600 mt-1">إدارة حسابات المستخدمين والصلاحيات</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
-        >
-          <span>+</span>
-          إضافة مستخدم
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={async () => {
+              setLoading(true)
+              await loadData()
+            }}
+            className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 hover:bg-neutral-50 rounded-lg transition-colors flex items-center gap-2"
+          >
+            <span>🔄</span>
+            <span>تحديث</span>
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+          >
+            <span>+</span>
+            إضافة مستخدم
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -140,7 +152,7 @@ export default function UsersManagement({ profile }: { profile: User }) {
         </div>
         <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-200 bg-blue-50">
           <div className="text-3xl font-bold text-blue-700 mb-1">{stats.students}</div>
-          <div className="text-sm text-blue-700">طلاب</div>
+          <div className="text-sm text-blue-700">مستخدمون</div>
         </div>
         <div className="bg-white rounded-xl p-6 shadow-sm border border-green-200 bg-green-50">
           <div className="text-3xl font-bold text-green-700 mb-1">{stats.managers}</div>
@@ -178,7 +190,7 @@ export default function UsersManagement({ profile }: { profile: User }) {
               className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">الكل</option>
-              <option value="STUDENT">طالب</option>
+              <option value="user">مستخدم</option>
               <option value="LRC_MANAGER">مدير مسابقة</option>
               <option value="CEO">مدير تنفيذي</option>
             </select>
@@ -331,7 +343,7 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
     email: '',
     password: '',
     display_name: '',
-    role: 'STUDENT' as 'STUDENT' | 'LRC_MANAGER' | 'CEO',
+    role: 'user' as 'user' | 'LRC_MANAGER' | 'CEO',
     phone: ''
   })
   const [submitting, setSubmitting] = useState(false)
@@ -425,7 +437,7 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                 onChange={e => setFormData({ ...formData, role: e.target.value as any })}
                 className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                <option value="STUDENT">طالب</option>
+                <option value="user">مستخدم</option>
                 <option value="LRC_MANAGER">مدير مسابقة</option>
                 <option value="CEO">مدير تنفيذي</option>
               </select>
@@ -553,7 +565,7 @@ function EditUserModal({ user, onClose, onSuccess }: { user: UserData; onClose: 
                 onChange={e => setFormData({ ...formData, role: e.target.value as any })}
                 className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                <option value="STUDENT">طالب</option>
+                <option value="user">مستخدم</option>
                 <option value="LRC_MANAGER">مدير مسابقة</option>
                 <option value="CEO">مدير تنفيذي</option>
               </select>

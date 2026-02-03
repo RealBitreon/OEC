@@ -17,7 +17,7 @@ export async function getAuditLogs(filters: AuditFilters = {}, page = 1, limit =
     .from('audit_logs')
     .select(`
       *,
-      user:student_participants!audit_logs_user_id_fkey(id, username, display_name, role)
+      user:users!audit_logs_user_id_fkey(id, username, display_name, role)
     `, { count: 'exact' })
     .order('created_at', { ascending: false })
   
@@ -104,20 +104,20 @@ export async function getUniqueActions() {
 }
 
 export async function exportAuditLogs(filters: AuditFilters = {}) {
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('student_id')?.value
+  const supabase = await createClient()
   
-  if (!userId) {
+  // Get current user from auth
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  
+  if (!authUser) {
     throw new Error('غير مصرح')
   }
-
-  const supabase = await createClient()
   
   // Verify user role
   const { data: user } = await supabase
-    .from('student_participants')
+    .from('users')
     .select('role')
-    .eq('id', userId)
+    .eq('auth_id', authUser.id)
     .single()
   
   if (!user || user.role !== 'CEO') {
@@ -129,7 +129,7 @@ export async function exportAuditLogs(filters: AuditFilters = {}) {
     .from('audit_logs')
     .select(`
       *,
-      user:student_participants!audit_logs_user_id_fkey(username, display_name)
+      user:users!audit_logs_user_id_fkey(username, display_name)
     `)
     .order('created_at', { ascending: false })
   

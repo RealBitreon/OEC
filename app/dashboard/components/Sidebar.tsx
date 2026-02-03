@@ -4,7 +4,7 @@
 // SIDEBAR - NAVIGATION
 // ============================================
 
-import { useRouter, usePathname } from 'next/navigation'
+// Navigation handled via onSectionChange callback
 import { User, DashboardSection } from '../core/types'
 import { canAccessSection } from '../core/permissions'
 
@@ -41,17 +41,21 @@ export default function Sidebar({
   isOpen,
   onClose,
 }: SidebarProps) {
-  const router = useRouter()
-  const pathname = usePathname()
-  
   const visibleItems = NAV_ITEMS.filter(item => 
     canAccessSection(profile.role, item.id)
   )
 
   const handleNavigation = (section: DashboardSection) => {
-    // FIXED: Use onSectionChange instead of router.push to avoid full page reload
-    // This keeps the component mounted and preserves all state
+    // Update section and URL
     onSectionChange(section)
+    
+    // Update URL without page reload
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      url.searchParams.set('section', section)
+      window.history.pushState({}, '', url.toString())
+    }
+    
     onClose()
   }
 

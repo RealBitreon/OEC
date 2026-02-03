@@ -8,61 +8,48 @@ import crypto from 'crypto'
 export async function getEligibleStudents(competitionId: string) {
   const supabase = await createClient()
   
-  // Get all tickets for this competition
-  const { data: tickets, error } = await supabase
-    .from('tickets')
+  // Get all submissions marked as winners for this competition
+  const { data: submissions, error } = await supabase
+    .from('submissions')
     .select(`
-      *,
-      user:student_participants!tickets_user_id_fkey(id, username, display_name, class)
+      id,
+      participant_name,
+      participant_email,
+      first_name,
+      father_name,
+      family_name,
+      grade,
+      score,
+      total_questions
     `)
     .eq('competition_id', competitionId)
+    .eq('is_winner', true)
   
   if (error) {
-    console.error('Error fetching tickets:', error)
+    console.error('Error fetching winners:', error)
     return []
   }
   
-  if (!tickets || tickets.length === 0) {
+  if (!submissions || submissions.length === 0) {
     return []
   }
   
-  // Group by user with enhanced data
-  const userMap = new Map<string, { 
-    user: any
-    totalTickets: number
-    sources: Array<{ reason: string; count: number; timestamp?: string }>
-    probability: number
-  }>()
-  
-  tickets.forEach(ticket => {
-    const userId = ticket.user_id
-    if (!userMap.has(userId)) {
-      userMap.set(userId, {
-        user: ticket.user,
-        totalTickets: 0,
-        sources: [],
-        probability: 0
-      })
-    }
-    
-    const entry = userMap.get(userId)!
-    entry.totalTickets += ticket.count
-    entry.sources.push({
-      reason: ticket.reason,
-      count: ticket.count,
-      timestamp: ticket.created_at
-    })
-  })
-  
-  // Calculate probabilities
-  const totalTickets = Array.from(userMap.values()).reduce((sum, u) => sum + u.totalTickets, 0)
-  userMap.forEach(entry => {
-    entry.probability = totalTickets > 0 ? (entry.totalTickets / totalTickets) * 100 : 0
-  })
-  
-  return Array.from(userMap.values())
-    .filter(u => u.totalTickets > 0)
-    .sort((a, b) => b.totalTickets - a.totalTickets) // Sort by tickets descending
+  // Transform submissions to match expected format
+  // Each winner gets 1 ticket (equal probability)
+  return submissions.map(submission => ({
+    user: {
+      id: submission.id,
+      username: submission.participant_email || submission.id,
+      display_name: submission.participant_name,
+      class: submission.grade
+    },
+    totalTickets: 1,
+    sources: [{
+      reason: 'فائز في المسابقة',
+      count: 1
+    }],
+    probability: submissions.length > 0 ? (1 / submissions.length) * 100 : 0
+  }))
 }
 
 export async function lockSnapshot(competitionId: string) {

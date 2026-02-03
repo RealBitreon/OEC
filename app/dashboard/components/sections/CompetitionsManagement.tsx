@@ -79,6 +79,17 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
     }
   }
 
+  const handleArchive = async (id: string) => {
+    if (!confirm('هل تريد أرشفة هذه المسابقة؟')) return
+    
+    try {
+      await updateCompetition(id, { status: 'archived' })
+      await loadCompetitions()
+    } catch (error) {
+      alert('فشل أرشفة المسابقة')
+    }
+  }
+
   const handleDelete = async (id: string) => {
     if (!confirm('هل تريد حذف هذه المسابقة؟ سيتم نقل الأسئلة إلى التدريب.')) return
     
@@ -200,6 +211,14 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
                     className="px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
                   >
                     تفعيل
+                  </button>
+                )}
+                {competition.status === 'active' && (
+                  <button
+                    onClick={() => handleArchive(competition.id)}
+                    className="px-4 py-2 text-sm font-medium text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors"
+                  >
+                    أرشفة
                   </button>
                 )}
                 {profile.role === 'CEO' && (

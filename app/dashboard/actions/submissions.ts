@@ -7,7 +7,7 @@ import { cookies } from 'next/headers'
 export interface SubmissionFilters {
   competition_id?: string
   participant_name?: string
-  status?: 'pending' | 'under_review' | 'approved' | 'rejected'
+  status?: 'winner' | 'loser' | 'not_reviewed'
   search?: string
 }
 
@@ -31,7 +31,13 @@ export async function getSubmissions(filters: SubmissionFilters = {}, page = 1, 
   }
   
   if (filters.status) {
-    query = query.eq('status', filters.status)
+    if (filters.status === 'winner') {
+      query = query.eq('is_winner', true)
+    } else if (filters.status === 'loser') {
+      query = query.eq('is_winner', false)
+    } else if (filters.status === 'not_reviewed') {
+      query = query.is('is_winner', null)
+    }
   }
   
   if (filters.search) {
@@ -186,7 +192,7 @@ export async function getSubmissionStats(competitionId?: string) {
   
   let query = supabase
     .from('submissions')
-    .select('status, score, total_questions', { count: 'exact' })
+    .select('is_winner, score, total_questions', { count: 'exact' })
   
   if (competitionId) {
     query = query.eq('competition_id', competitionId)
@@ -194,10 +200,9 @@ export async function getSubmissionStats(competitionId?: string) {
   
   const { data, count } = await query
   
-  const pending = data?.filter(s => s.status === 'pending').length || 0
-  const underReview = data?.filter(s => s.status === 'under_review').length || 0
-  const approved = data?.filter(s => s.status === 'approved').length || 0
-  const rejected = data?.filter(s => s.status === 'rejected').length || 0
+  const winners = data?.filter(s => s.is_winner === true).length || 0
+  const losers = data?.filter(s => s.is_winner === false).length || 0
+  const notReviewed = data?.filter(s => s.is_winner === null).length || 0
   
   // Calculate average score
   const totalScore = data?.reduce((sum, s) => sum + (s.score || 0), 0) || 0
@@ -206,10 +211,9 @@ export async function getSubmissionStats(competitionId?: string) {
   
   return {
     total: count || 0,
-    pending,
-    underReview,
-    approved,
-    rejected,
+    winners,
+    losers,
+    notReviewed,
     averageScore
   }
 }

@@ -28,10 +28,22 @@ function DashboardContent({ children }: { children?: React.ReactNode }) {
   // Update active section based on URL search params
   useEffect(() => {
     const section = searchParams.get('section') as DashboardSection
-    if (section) {
+    if (section && section !== activeSection) {
       setActiveSection(section)
     }
   }, [searchParams])
+  
+  // Update URL when section changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !isSubRoute) {
+      const currentSection = searchParams.get('section')
+      if (currentSection !== activeSection) {
+        const url = new URL(window.location.href)
+        url.searchParams.set('section', activeSection)
+        window.history.replaceState({}, '', url.toString())
+      }
+    }
+  }, [activeSection, isSubRoute, searchParams])
 
   // Always render dashboard - auth is checked at layout level
   // Use profile from AuthProvider (passed as initialUser from server)

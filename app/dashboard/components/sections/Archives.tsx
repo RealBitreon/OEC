@@ -8,6 +8,7 @@ import { getCompetitions } from '../../actions/competitions'
 export default function Archives({ profile }: { profile: User }) {
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'date' | 'title'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
@@ -18,14 +19,20 @@ export default function Archives({ profile }: { profile: User }) {
     
     const fetchCompetitions = async () => {
       try {
+        setError(null)
         const data = await getCompetitions()
+        
         // Filter only archived competitions
         const archived = data.filter((c) => c.status === 'archived')
+        
         if (mounted) {
           setCompetitions(archived)
         }
       } catch (error) {
         console.error('Failed to load archived competitions:', error)
+        if (mounted) {
+          setError('فشل تحميل المسابقات المؤرشفة. يرجى المحاولة مرة أخرى.')
+        }
       } finally {
         if (mounted) {
           setLoading(false)
@@ -93,6 +100,25 @@ export default function Archives({ profile }: { profile: User }) {
     )
   }
 
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold text-neutral-900">الإصدارات السابقة</h1>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <span className="text-4xl mb-4 block">⚠️</span>
+          <h2 className="text-xl font-bold text-red-900 mb-2">حدث خطأ</h2>
+          <p className="text-red-700 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (selectedCompetition) {
     return (
       <CompetitionDetailsModal
@@ -110,8 +136,30 @@ export default function Archives({ profile }: { profile: User }) {
           <h1 className="text-3xl font-bold text-neutral-900">الإصدارات السابقة</h1>
           <p className="text-neutral-600 mt-1">استعراض المسابقات المنتهية والأرشيف</p>
         </div>
-        <div className="text-2xl font-bold text-blue-600">
-          {filteredAndSortedCompetitions.length} مسابقة
+        <div className="flex items-center gap-3">
+          <button
+            onClick={async () => {
+              setLoading(true)
+              try {
+                const data = await getCompetitions()
+                const archived = data.filter((c) => c.status === 'archived')
+                setCompetitions(archived)
+                setError(null)
+              } catch (error) {
+                console.error('Failed to refresh:', error)
+                setError('فشل تحديث البيانات')
+              } finally {
+                setLoading(false)
+              }
+            }}
+            className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 hover:bg-neutral-50 rounded-lg transition-colors flex items-center gap-2"
+          >
+            <span>🔄</span>
+            <span>تحديث</span>
+          </button>
+          <div className="text-2xl font-bold text-blue-600">
+            {filteredAndSortedCompetitions.length} مسابقة
+          </div>
         </div>
       </div>
 
@@ -174,11 +222,30 @@ export default function Archives({ profile }: { profile: User }) {
       {/* Competitions Grid */}
       {filteredAndSortedCompetitions.length === 0 ? (
         <div className="bg-white rounded-xl p-12 shadow-sm border border-neutral-200 text-center">
-          <span className="text-4xl mb-4 block">📦</span>
-          <h2 className="text-xl font-bold text-neutral-900 mb-2">لا توجد مسابقات مؤرشفة</h2>
-          <p className="text-neutral-600">
-            {searchQuery ? 'لا توجد نتائج تطابق البحث' : 'لم يتم أرشفة أي مسابقات بعد'}
+          <span className="text-6xl mb-4 block">📦</span>
+          <h2 className="text-2xl font-bold text-neutral-900 mb-3">
+            {searchQuery ? 'لا توجد نتائج' : 'لا توجد مسابقات مؤرشفة'}
+          </h2>
+          <p className="text-neutral-600 mb-6 max-w-md mx-auto">
+            {searchQuery 
+              ? 'لا توجد مسابقات تطابق معايير البحث. جرب كلمات بحث مختلفة.'
+              : 'لم يتم أرشفة أي مسابقات بعد. عندما تنتهي المسابقات وتُؤرشف، ستظهر هنا.'}
           </p>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              مسح البحث
+            </button>
+          )}
+          {!searchQuery && competitions.length === 0 && (
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-right">
+              <p className="text-sm text-blue-800">
+                <strong>💡 نصيحة:</strong> لأرشفة مسابقة، انتقل إلى قسم "إدارة المسابقات" وقم بتغيير حالة المسابقة إلى "مؤرشفة".
+              </p>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

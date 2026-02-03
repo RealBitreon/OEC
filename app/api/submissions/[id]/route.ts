@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const supabase = await createClient()
@@ -31,7 +31,16 @@ export async function DELETE(
       )
     }
 
-    const submissionId = params.id
+    // Handle params as Promise in Next.js 15+
+    const resolvedParams = await Promise.resolve(params)
+    const submissionId = resolvedParams.id
+
+    if (!submissionId) {
+      return NextResponse.json(
+        { error: 'معرف الإجابة مطلوب' },
+        { status: 400 }
+      )
+    }
 
     // Delete the submission
     const { error: deleteError } = await supabase
@@ -42,16 +51,16 @@ export async function DELETE(
     if (deleteError) {
       console.error('Error deleting submission:', deleteError)
       return NextResponse.json(
-        { error: 'فشل حذف الإجابة' },
+        { error: 'فشل حذف الإجابة: ' + deleteError.message },
         { status: 500 }
       )
     }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in DELETE /api/submissions/[id]:', error)
     return NextResponse.json(
-      { error: 'حدث خطأ في الخادم' },
+      { error: 'حدث خطأ في الخادم: ' + (error?.message || 'خطأ غير معروف') },
       { status: 500 }
     )
   }

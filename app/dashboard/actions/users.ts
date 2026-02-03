@@ -13,7 +13,7 @@ export async function getUsers(filters: UserFilters = {}, page = 1, limit = 20) 
   const supabase = await createClient()
   
   let query = supabase
-    .from('student_participants')
+    .from('users')
     .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
   
@@ -46,7 +46,7 @@ export async function getUserStats() {
   const supabase = await createClient()
   
   const { data: users } = await supabase
-    .from('student_participants')
+    .from('users')
     .select('role, created_at')
   
   if (!users) {
@@ -64,7 +64,7 @@ export async function getUserStats() {
   
   return {
     total: users.length,
-    students: users.filter(u => u.role === 'STUDENT').length,
+    students: users.filter(u => u.role === 'user').length,
     managers: users.filter(u => u.role === 'LRC_MANAGER').length,
     ceos: users.filter(u => u.role === 'CEO').length,
     thisMonth: users.filter(u => new Date(u.created_at) >= monthStart).length
@@ -76,22 +76,24 @@ export async function createUser(userData: {
   email: string
   password: string
   display_name: string
-  role: 'STUDENT' | 'LRC_MANAGER' | 'CEO'
+  role: 'user' | 'LRC_MANAGER' | 'CEO'
   phone?: string
 }) {
   const supabase = await createClient()
   const cookieStore = await cookies()
-  const userId = cookieStore.get('student_id')?.value
   
-  if (!userId) {
+  // Get current user from auth
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  
+  if (!authUser) {
     throw new Error('غير مصرح')
   }
 
   // Verify user role
   const { data: user } = await supabase
-    .from('student_participants')
+    .from('users')
     .select('role')
-    .eq('id', userId)
+    .eq('auth_id', authUser.id)
     .single()
   
   if (!user || user.role !== 'CEO') {
@@ -100,22 +102,33 @@ export async function createUser(userData: {
   
   // Check if username or email already exists
   const { data: existing } = await supabase
-    .from('student_participants')
+    .from('users')
     .select('id')
     .or(`username.eq.${userData.username},email.eq.${userData.email}`)
-    .single()
+    .maybeSingle()
   
   if (existing) {
     throw new Error('اسم المستخدم أو البريد الإلكتروني مستخدم بالفعل')
   }
   
-  // Create user
+  // Create auth user first
+  const { data: newAuthUser, error: authError } = await supabase.auth.admin.createUser({
+    email: userData.email,
+    password: userData.password,
+    email_confirm: true
+  })
+  
+  if (authError || !newAuthUser.user) {
+    throw new Error(authError?.message || 'فشل إنشاء حساب المصادقة')
+  }
+  
+  // Create user profile
   const { data: newUser, error } = await supabase
-    .from('student_participants')
+    .from('users')
     .insert({
+      auth_id: newAuthUser.user.id,
       username: userData.username,
       email: userData.email,
-      password_hash: userData.password, // In production, hash this properly
       display_name: userData.display_name,
       role: userData.role,
       phone: userData.phone || null
@@ -124,12 +137,14 @@ export async function createUser(userData: {
     .single()
   
   if (error) {
+    // Rollback auth user if profile creation fails
+    await supabase.auth.admin.deleteUser(newAuthUser.user.id)
     throw new Error(error.message)
   }
   
   // Log audit
   await supabase.from('audit_logs').insert({
-    user_id: userId,
+    user_id: user.id,
     action: 'user_created',
     details: { 
       new_user_id: newUser.id,
@@ -148,22 +163,23 @@ export async function updateUser(
     display_name?: string
     email?: string
     phone?: string
-    role?: 'STUDENT' | 'LRC_MANAGER' | 'CEO'
+    role?: 'user' | 'LRC_MANAGER' | 'CEO'
   }
 ) {
   const supabase = await createClient()
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('student_id')?.value
   
-  if (!userId) {
+  // Get current user from auth
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  
+  if (!authUser) {
     throw new Error('غير مصرح')
   }
 
   // Verify user role
   const { data: user } = await supabase
-    .from('student_participants')
-    .select('role')
-    .eq('id', userId)
+    .from('users')
+    .select('id, role')
+    .eq('auth_id', authUser.id)
     .single()
   
   if (!user || user.role !== 'CEO') {
@@ -172,7 +188,7 @@ export async function updateUser(
   
   // Update user
   const { error } = await supabase
-    .from('student_participants')
+    .from('users')
     .update(updates)
     .eq('id', targetUserId)
   
@@ -182,7 +198,7 @@ export async function updateUser(
   
   // Log audit
   await supabase.from('audit_logs').insert({
-    user_id: userId,
+    user_id: user.id,
     action: 'user_updated',
     details: { 
       target_user_id: targetUserId,
@@ -195,18 +211,19 @@ export async function updateUser(
 
 export async function deleteUser(targetUserId: string) {
   const supabase = await createClient()
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('student_id')?.value
   
-  if (!userId) {
+  // Get current user from auth
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  
+  if (!authUser) {
     throw new Error('غير مصرح')
   }
 
   // Verify user role
   const { data: user } = await supabase
-    .from('student_participants')
-    .select('role')
-    .eq('id', userId)
+    .from('users')
+    .select('id, role')
+    .eq('auth_id', authUser.id)
     .single()
   
   if (!user || user.role !== 'CEO') {
@@ -214,20 +231,20 @@ export async function deleteUser(targetUserId: string) {
   }
   
   // Prevent self-deletion
-  if (userId === targetUserId) {
+  if (user.id === targetUserId) {
     throw new Error('لا يمكنك حذف حسابك الخاص')
   }
   
   // Get user info before deletion
   const { data: targetUser } = await supabase
-    .from('student_participants')
-    .select('username, role')
+    .from('users')
+    .select('username, role, auth_id')
     .eq('id', targetUserId)
     .single()
   
-  // Delete user
+  // Delete user from users table
   const { error } = await supabase
-    .from('student_participants')
+    .from('users')
     .delete()
     .eq('id', targetUserId)
   
@@ -235,9 +252,14 @@ export async function deleteUser(targetUserId: string) {
     throw new Error(error.message)
   }
   
+  // Delete auth user if exists
+  if (targetUser?.auth_id) {
+    await supabase.auth.admin.deleteUser(targetUser.auth_id)
+  }
+  
   // Log audit
   await supabase.from('audit_logs').insert({
-    user_id: userId,
+    user_id: user.id,
     action: 'user_deleted',
     details: { 
       deleted_user_id: targetUserId,
@@ -251,29 +273,41 @@ export async function deleteUser(targetUserId: string) {
 
 export async function resetUserPassword(targetUserId: string, newPassword: string) {
   const supabase = await createClient()
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('student_id')?.value
   
-  if (!userId) {
+  // Get current user from auth
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  
+  if (!authUser) {
     throw new Error('غير مصرح')
   }
 
   // Verify user role
   const { data: user } = await supabase
-    .from('student_participants')
-    .select('role')
-    .eq('id', userId)
+    .from('users')
+    .select('id, role')
+    .eq('auth_id', authUser.id)
     .single()
   
   if (!user || user.role !== 'CEO') {
     throw new Error('غير مصرح - يتطلب صلاحيات المدير التنفيذي')
   }
   
-  // Update password (in production, hash this properly)
-  const { error } = await supabase
-    .from('student_participants')
-    .update({ password_hash: newPassword })
+  // Get target user's auth_id
+  const { data: targetUser } = await supabase
+    .from('users')
+    .select('auth_id')
     .eq('id', targetUserId)
+    .single()
+  
+  if (!targetUser?.auth_id) {
+    throw new Error('المستخدم غير موجود')
+  }
+  
+  // Update password using Supabase Auth Admin API
+  const { error } = await supabase.auth.admin.updateUserById(
+    targetUser.auth_id,
+    { password: newPassword }
+  )
   
   if (error) {
     throw new Error(error.message)
@@ -281,7 +315,7 @@ export async function resetUserPassword(targetUserId: string, newPassword: strin
   
   // Log audit
   await supabase.from('audit_logs').insert({
-    user_id: userId,
+    user_id: user.id,
     action: 'password_reset',
     details: { 
       target_user_id: targetUserId

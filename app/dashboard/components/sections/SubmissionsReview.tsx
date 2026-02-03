@@ -33,14 +33,7 @@ interface Submission {
   proofs?: Record<string, string>
   score: number
   total_questions: number
-  tickets_earned: number
-  status: 'pending' | 'approved' | 'rejected' | 'under_review'
   submitted_at: string
-  reviewed_at: string | null
-  reviewed_by: string | null
-  review_notes?: string
-  retry_allowed: boolean
-  is_retry: boolean
   is_winner?: boolean | null
   competition?: {
     id: string
@@ -50,10 +43,9 @@ interface Submission {
 
 interface Stats {
   total: number
-  pending: number
-  approved: number
-  rejected: number
-  underReview: number
+  winners: number
+  losers: number
+  notReviewed: number
   averageScore: number
 }
 
@@ -64,7 +56,6 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [filters, setFilters] = useState<SubmissionFilters>(
     competitionId ? { competition_id: competitionId } : {}
   )
@@ -81,7 +72,6 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
   const [editAnswers, setEditAnswers] = useState<Record<string, string>>({})
   const [editProofs, setEditProofs] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
-  const [bulkAction, setBulkAction] = useState<'approved' | 'rejected' | null>(null)
   const [competitions, setCompetitions] = useState<Array<{ id: string; title: string }>>([])
 
   const loadData = useCallback(async () => {
@@ -126,60 +116,23 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
     loadData()
   }, [loadData])
 
-  const handleReview = async (submissionId: string, result: 'approved' | 'rejected') => {
+  const handleMarkWinner = async (submissionId: string, isWinner: boolean) => {
     try {
-      await reviewSubmission(submissionId, result)
-      showToast('تم مراجعة الإجابة بنجاح', 'success')
-      setReviewModal({ open: false, submission: null })
-      loadData()
-      setSelectedIds(new Set())
-    } catch (error: any) {
-      showToast(error.message || 'فشل مراجعة الإجابة', 'error')
-    }
-  }
-
-  const handleBulkReview = async () => {
-    if (!bulkAction || selectedIds.size === 0) return
-    
-    try {
-      await bulkReview(Array.from(selectedIds), bulkAction)
-      showToast(`تم مراجعة ${selectedIds.size} إجابة بنجاح`, 'success')
-      setBulkAction(null)
-      setSelectedIds(new Set())
-      loadData()
-    } catch (error: any) {
-      showToast(error.message || 'فشل المراجعة الجماعية', 'error')
-    }
-  }
-
-  const handleAllowRetry = async (submissionId: string) => {
-    try {
-      await allowRetry(submissionId)
-      showToast('تم السماح بإعادة المحاولة', 'success')
-      loadData()
-    } catch (error: any) {
-      showToast(error.message || 'فشل السماح بإعادة المحاولة', 'error')
-    }
-  }
-
-  const handleRemoveSubmission = async (submissionId: string, participantName: string) => {
-    if (!confirm(`هل أنت متأكد من حذف إجابة ${participantName}؟ لا يمكن التراجع عن هذا الإجراء.`)) {
-      return
-    }
-    
-    try {
-      const response = await fetch(`/api/submissions/${submissionId}`, {
-        method: 'DELETE'
+      const response = await fetch('/api/submissions/mark-winner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submissionId, isWinner })
       })
-      
+
       if (!response.ok) {
-        throw new Error('فشل حذف الإجابة')
+        throw new Error('فشل تحديث الحالة')
       }
-      
-      showToast('تم حذف الإجابة بنجاح', 'success')
+
+      showToast(isWinner ? 'تم تحديد الطالب كفائز 🎉' : 'تم تحديد الطالب كخاسر', 'success')
       loadData()
+      setReviewModal({ open: false, submission: null })
     } catch (error: any) {
-      showToast(error.message || 'فشل حذف الإجابة', 'error')
+      showToast(error.message || 'فشل تحديث الحالة', 'error')
     }
   }
 
@@ -241,37 +194,13 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
     }
   }
 
-  const toggleSelection = (id: string) => {
-    const newSelected = new Set(selectedIds)
-    if (newSelected.has(id)) {
-      newSelected.delete(id)
-    } else {
-      newSelected.add(id)
-    }
-    setSelectedIds(newSelected)
-  }
-
-  const toggleSelectAll = () => {
-    if (!submissions || !Array.isArray(submissions)) return
-    
-    if (selectedIds.size === submissions.length) {
-      setSelectedIds(new Set())
-    } else {
-      setSelectedIds(new Set(submissions.map(s => s.id)))
-    }
-  }
-
   const getStatusBadge = (submission: Submission) => {
-    switch (submission.status) {
-      case 'approved':
-        return <Badge variant="success">مقبولة ✓</Badge>
-      case 'rejected':
-        return <Badge variant="danger">مرفوضة ✗</Badge>
-      case 'under_review':
-        return <Badge variant="warning">قيد المراجعة</Badge>
-      case 'pending':
-      default:
-        return <Badge variant="info">قيد الانتظار</Badge>
+    if (submission.is_winner === true) {
+      return <Badge variant="success">🏆 فائز</Badge>
+    } else if (submission.is_winner === false) {
+      return <Badge variant="danger">خاسر</Badge>
+    } else {
+      return <Badge variant="info">لم تتم المراجعة</Badge>
     }
   }
 
@@ -294,30 +223,22 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg p-4 shadow-sm border border-neutral-200">
             <div className="text-2xl font-bold text-neutral-900">{stats.total}</div>
             <div className="text-sm text-neutral-600">إجمالي الإجابات</div>
           </div>
-          <div className="bg-blue-50 rounded-lg p-4 shadow-sm border border-blue-200">
-            <div className="text-2xl font-bold text-blue-900">{stats.pending}</div>
-            <div className="text-sm text-blue-700">قيد الانتظار</div>
-          </div>
-          <div className="bg-yellow-50 rounded-lg p-4 shadow-sm border border-yellow-200">
-            <div className="text-2xl font-bold text-yellow-900">{stats.underReview}</div>
-            <div className="text-sm text-yellow-700">قيد المراجعة</div>
-          </div>
           <div className="bg-green-50 rounded-lg p-4 shadow-sm border border-green-200">
-            <div className="text-2xl font-bold text-green-900">{stats.approved}</div>
-            <div className="text-sm text-green-700">مقبولة</div>
+            <div className="text-2xl font-bold text-green-900">{stats.winners}</div>
+            <div className="text-sm text-green-700">🏆 الفائزون</div>
           </div>
           <div className="bg-red-50 rounded-lg p-4 shadow-sm border border-red-200">
-            <div className="text-2xl font-bold text-red-900">{stats.rejected}</div>
-            <div className="text-sm text-red-700">مرفوضة</div>
+            <div className="text-2xl font-bold text-red-900">{stats.losers}</div>
+            <div className="text-sm text-red-700">الخاسرون</div>
           </div>
-          <div className="bg-purple-50 rounded-lg p-4 shadow-sm border border-purple-200">
-            <div className="text-2xl font-bold text-purple-900">{stats.averageScore}%</div>
-            <div className="text-sm text-purple-700">متوسط الدرجات</div>
+          <div className="bg-blue-50 rounded-lg p-4 shadow-sm border border-blue-200">
+            <div className="text-2xl font-bold text-blue-900">{stats.notReviewed}</div>
+            <div className="text-sm text-blue-700">لم تتم المراجعة</div>
           </div>
         </div>
       )}
@@ -342,10 +263,9 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
             onChange={(e) => setFilters({ ...filters, status: e.target.value as any || undefined })}
           >
             <option value="">كل الحالات</option>
-            <option value="pending">قيد الانتظار</option>
-            <option value="under_review">قيد المراجعة</option>
-            <option value="approved">مقبولة</option>
-            <option value="rejected">مرفوضة</option>
+            <option value="winner">🏆 الفائزون</option>
+            <option value="loser">الخاسرون</option>
+            <option value="not_reviewed">لم تتم المراجعة</option>
           </Select>
 
           <Input
@@ -367,37 +287,7 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
         </div>
       </div>
 
-      {/* Bulk Actions */}
-      {selectedIds.size > 0 && (
-        <div className="bg-blue-50 rounded-lg p-4 shadow-sm border border-blue-200 flex items-center justify-between">
-          <div className="text-blue-900 font-medium">
-            تم تحديد {selectedIds.size} إجابة
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setBulkAction('approved')}
-              variant="primary"
-              size="sm"
-            >
-              ✓ قبول
-            </Button>
-            <Button
-              onClick={() => setBulkAction('rejected')}
-              variant="danger"
-              size="sm"
-            >
-              ✗ رفض
-            </Button>
-            <Button
-              onClick={() => setSelectedIds(new Set())}
-              variant="secondary"
-              size="sm"
-            >
-              إلغاء التحديد
-            </Button>
-          </div>
-        </div>
-      )}
+
 
       {/* Submissions Table */}
       <div className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
@@ -405,16 +295,9 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
           <table className="w-full">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                <th className="px-4 py-3 text-right">
-                  <Checkbox
-                    checked={submissions && submissions.length > 0 && selectedIds.size === submissions.length}
-                    onChange={toggleSelectAll}
-                  />
-                </th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">المشارك</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">المسابقة</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">الدرجة</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">التذاكر</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">الحالة</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">التاريخ</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">الإجراءات</th>
@@ -423,25 +306,19 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
             <tbody className="divide-y divide-neutral-200">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-neutral-600">
+                  <td colSpan={6} className="px-4 py-12 text-center text-neutral-600">
                     ⏳ جاري التحميل...
                   </td>
                 </tr>
               ) : !submissions || submissions.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-neutral-600">
+                  <td colSpan={6} className="px-4 py-12 text-center text-neutral-600">
                     📝 لا توجد إجابات
                   </td>
                 </tr>
               ) : (
                 submissions.map((submission) => (
                   <tr key={submission.id} className="hover:bg-neutral-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <Checkbox
-                        checked={selectedIds.has(submission.id)}
-                        onChange={() => toggleSelection(submission.id)}
-                      />
-                    </td>
                     <td className="px-4 py-3">
                       <div className="text-sm font-medium text-neutral-900">
                         {submission.participant_name}
@@ -456,16 +333,6 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                           الصف: {submission.grade}
                         </div>
                       )}
-                      {submission.is_winner === true && (
-                        <div className="mt-1">
-                          <Badge variant="success">🏆 فائز</Badge>
-                        </div>
-                      )}
-                      {submission.is_winner === false && (
-                        <div className="mt-1">
-                          <Badge variant="default">خاسر</Badge>
-                        </div>
-                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-sm text-neutral-900">
@@ -475,16 +342,6 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                     <td className="px-4 py-3">
                       <div className="text-lg font-bold text-neutral-900">
                         {submission.score} / {submission.total_questions}
-                      </div>
-                      <div className="text-xs text-neutral-500">
-                        {submission.total_questions > 0 
-                          ? Math.round((submission.score / submission.total_questions) * 100) 
-                          : 0}%
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-lg font-bold text-purple-900">
-                        {submission.tickets_earned} 🎟️
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -500,17 +357,11 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                           minute: '2-digit'
                         })}
                       </div>
-                      {submission.reviewed_at && (
-                        <div className="text-xs text-neutral-500 mt-1">
-                          تمت المراجعة: {new Date(submission.reviewed_at).toLocaleDateString('ar-EG')}
-                        </div>
-                      )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Button
                           onClick={async () => {
-                            // Load questions for this submission's competition
                             let questions: any[] = []
                             if (submission.competition_id) {
                               try {
@@ -525,30 +376,59 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                           variant="primary"
                           size="sm"
                         >
-                          عرض التفاصيل
+                          عرض
                         </Button>
                         <Button
                           onClick={() => handleEditSubmission(submission)}
                           variant="secondary"
                           size="sm"
                         >
-                          ✏️ تعديل
+                          ✏️
                         </Button>
-                        {submission.status === 'rejected' && !submission.retry_allowed && (
+                        {submission.is_winner === true ? (
                           <Button
-                            onClick={() => handleAllowRetry(submission.id)}
-                            variant="secondary"
+                            onClick={() => handleMarkWinner(submission.id, false)}
+                            variant="danger"
                             size="sm"
+                            title="تحويل إلى خاسر"
                           >
-                            السماح بإعادة المحاولة
+                            ❌
                           </Button>
+                        ) : submission.is_winner === false ? (
+                          <Button
+                            onClick={() => handleMarkWinner(submission.id, true)}
+                            variant="primary"
+                            size="sm"
+                            title="تحويل إلى فائز"
+                          >
+                            🏆
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              onClick={() => handleMarkWinner(submission.id, true)}
+                              variant="primary"
+                              size="sm"
+                              title="فائز"
+                            >
+                              🏆
+                            </Button>
+                            <Button
+                              onClick={() => handleMarkWinner(submission.id, false)}
+                              variant="danger"
+                              size="sm"
+                              title="خاسر"
+                            >
+                              ❌
+                            </Button>
+                          </>
                         )}
                         <Button
                           onClick={() => handleDeleteSubmission(submission.id, submission.participant_name)}
                           variant="danger"
                           size="sm"
                         >
-                          🗑️ حذف
+                          🗑️
                         </Button>
                       </div>
                     </td>
@@ -614,7 +494,7 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">الدرجة</label>
                 <div className="text-lg font-bold text-blue-900 bg-blue-50 p-3 rounded-lg text-center">
@@ -623,18 +503,9 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">النسبة</label>
-                <div className="text-lg font-bold text-green-900 bg-green-50 p-3 rounded-lg text-center">
-                  {reviewModal.submission.total_questions > 0 
-                    ? Math.round((reviewModal.submission.score / reviewModal.submission.total_questions) * 100) 
-                    : 0}%
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">التذاكر</label>
-                <div className="text-lg font-bold text-purple-900 bg-purple-50 p-3 rounded-lg text-center">
-                  {reviewModal.submission.tickets_earned} 🎟️
+                <label className="block text-sm font-medium text-neutral-700 mb-1">الحالة</label>
+                <div className="p-3 rounded-lg text-center">
+                  {getStatusBadge(reviewModal.submission)}
                 </div>
               </div>
             </div>
@@ -660,6 +531,10 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                     const isCorrect = question.correct_answer === studentAnswer
                     const studentProof = reviewModal.submission.proofs?.[questionId] || ''
                     
+                    // Check if answer or proof is missing
+                    const missingAnswer = !studentAnswer || studentAnswer.trim() === ''
+                    const missingProof = !studentProof || studentProof.trim() === ''
+                    
                     return (
                       <div key={questionId} className="bg-white border border-neutral-200 rounded-lg p-4">
                         <div className="flex items-start gap-3 mb-3">
@@ -668,6 +543,18 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                           </span>
                           <div className="flex-1">
                             <p className="text-neutral-900 font-medium mb-3">{question.question_text}</p>
+                            
+                            {/* Warning if answer or proof is missing */}
+                            {(missingAnswer || missingProof) && (
+                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+                                <div className="text-sm font-bold text-red-900 mb-1">⚠️ بيانات ناقصة</div>
+                                <div className="text-sm text-red-700">
+                                  {missingAnswer && missingProof && 'الإجابة والدليل غير موجودين'}
+                                  {missingAnswer && !missingProof && 'الإجابة غير موجودة'}
+                                  {!missingAnswer && missingProof && 'الدليل غير موجود'}
+                                </div>
+                              </div>
+                            )}
                             
                             {/* Student's Evidence/Proof */}
                             {studentProof && (
@@ -701,11 +588,19 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                             </div>
                           </div>
                           
-                          <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
-                            <div className="text-sm font-bold mb-2 text-blue-700">
+                          <div className={`border rounded-lg p-4 ${
+                            missingAnswer 
+                              ? 'bg-red-50 border-red-200' 
+                              : 'bg-blue-50 border-blue-200'
+                          }`}>
+                            <div className={`text-sm font-bold mb-2 ${
+                              missingAnswer ? 'text-red-700' : 'text-blue-700'
+                            }`}>
                               📝 إجابة الطالب
                             </div>
-                            <div className="text-base font-semibold text-blue-900">
+                            <div className={`text-base font-semibold ${
+                              missingAnswer ? 'text-red-900' : 'text-blue-900'
+                            }`}>
                               {studentAnswer || 'لم يجب'}
                             </div>
                           </div>
@@ -736,134 +631,46 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
               </div>
             </div>
 
-            {reviewModal.submission.review_notes && (
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">ملاحظات المراجعة</label>
-                <div className="text-neutral-900 bg-neutral-50 p-3 rounded-lg">
-                  {reviewModal.submission.review_notes}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-4">
-              {reviewModal.submission.status === 'pending' && (
-                <>
-                  <Button
-                    onClick={() => handleReview(reviewModal.submission!.id, 'approved')}
-                    variant="primary"
-                    className="flex-1"
-                  >
-                    ✓ قبول
-                  </Button>
-                  <Button
-                    onClick={() => handleReview(reviewModal.submission!.id, 'rejected')}
-                    variant="danger"
-                    className="flex-1"
-                  >
-                    ✗ رفض
-                  </Button>
-                </>
-              )}
-              <Button
-                onClick={() => setReviewModal({ open: false, submission: null })}
-                variant="secondary"
-              >
-                إغلاق
-              </Button>
-            </div>
-
             {/* Winner/Loser Status Buttons */}
             <div className="border-t border-neutral-200 pt-4 mt-4">
               <label className="block text-sm font-medium text-neutral-700 mb-3">
-                حالة الفوز في السحب
+                تحديد حالة المشارك
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <Button
-                  onClick={async () => {
-                    try {
-                      await fetch('/api/submissions/mark-winner', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          submissionId: reviewModal.submission!.id,
-                          isWinner: true
-                        })
-                      })
-                      showToast('تم تحديد الطالب كفائز 🎉', 'success')
-                      loadData()
-                      setReviewModal({ open: false, submission: null })
-                    } catch (error) {
-                      showToast('فشل تحديث حالة الفوز', 'error')
-                    }
-                  }}
+                  onClick={() => handleMarkWinner(reviewModal.submission!.id, true)}
                   variant="primary"
                   className="bg-green-600 hover:bg-green-700 text-white font-bold py-3"
                 >
                   🏆 فائز
                 </Button>
                 <Button
-                  onClick={async () => {
-                    try {
-                      await fetch('/api/submissions/mark-winner', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          submissionId: reviewModal.submission!.id,
-                          isWinner: false
-                        })
-                      })
-                      showToast('تم تحديد الطالب كخاسر', 'success')
-                      loadData()
-                      setReviewModal({ open: false, submission: null })
-                    } catch (error) {
-                      showToast('فشل تحديث حالة الفوز', 'error')
-                    }
-                  }}
-                  variant="secondary"
-                  className="bg-neutral-600 hover:bg-neutral-700 text-white font-bold py-3"
+                  onClick={() => handleMarkWinner(reviewModal.submission!.id, false)}
+                  variant="danger"
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-3"
                 >
-                  خاسر
+                  ❌ خاسر
                 </Button>
               </div>
               <p className="text-xs text-neutral-500 mt-2 text-center">
-                استخدم هذه الأزرار لتحديد الفائزين بعد إجراء السحب على عجلة الحظ
+                الفائزون سيظهرون في عجلة الحظ تلقائياً
               </p>
             </div>
-          </div>
-        </Modal>
-      )}
 
-      {/* Bulk Action Confirmation Modal */}
-      {bulkAction && (
-        <Modal
-          isOpen={!!bulkAction}
-          onClose={() => setBulkAction(null)}
-          title="تأكيد المراجعة الجماعية"
-        >
-          <div className="space-y-4">
-            <p className="text-neutral-700">
-              هل أنت متأكد من وضع علامة <strong>{bulkAction === 'approved' ? 'مقبولة' : 'مرفوضة'}</strong> على {selectedIds.size} إجابة؟
-            </p>
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-4 border-t border-neutral-200 mt-4">
               <Button
-                onClick={handleBulkReview}
-                variant={bulkAction === 'approved' ? 'primary' : 'danger'}
+                onClick={() => setReviewModal({ open: false, submission: null })}
+                variant="secondary"
                 className="flex-1"
               >
-                تأكيد
-              </Button>
-              <Button
-                onClick={() => setBulkAction(null)}
-                variant="secondary"
-              >
-                إلغاء
+                إغلاق
               </Button>
             </div>
           </div>
         </Modal>
       )}
 
-      {/* Edit Submission Modal */}
+{/* Edit Submission Modal */}
       {editModal.open && editModal.submission && (
         <Modal
           isOpen={editModal.open}

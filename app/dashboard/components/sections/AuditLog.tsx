@@ -167,14 +167,26 @@ export default function AuditLog({ profile }: { profile: User }) {
           <h1 className="text-3xl font-bold text-neutral-900">سجل التدقيق</h1>
           <p className="text-neutral-600 mt-1">تتبع جميع الإجراءات والتغييرات في النظام</p>
         </div>
-        <button
-          onClick={handleExport}
-          disabled={exporting}
-          className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 hover:bg-neutral-50 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-        >
-          <span>📥</span>
-          {exporting ? 'جاري التصدير...' : 'تصدير CSV'}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={async () => {
+              setLoading(true)
+              await loadData()
+            }}
+            className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 hover:bg-neutral-50 rounded-lg transition-colors flex items-center gap-2"
+          >
+            <span>🔄</span>
+            <span>تحديث</span>
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 hover:bg-neutral-50 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <span>📥</span>
+            {exporting ? 'جاري التصدير...' : 'تصدير CSV'}
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
