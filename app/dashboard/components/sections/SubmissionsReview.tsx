@@ -219,6 +219,28 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
     }
   }
 
+  const handleDeleteSubmission = async (submissionId: string, participantName: string) => {
+    if (!confirm(`هل أنت متأكد من حذف إجابة ${participantName}؟\n\nهذا الإجراء لا يمكن التراجع عنه.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'فشل حذف الإجابة')
+      }
+
+      showToast('تم حذف الإجابة بنجاح', 'success')
+      loadData()
+    } catch (error: any) {
+      showToast(error.message || 'فشل حذف الإجابة', 'error')
+    }
+  }
+
   const toggleSelection = (id: string) => {
     const newSelected = new Set(selectedIds)
     if (newSelected.has(id)) {
@@ -522,11 +544,11 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                           </Button>
                         )}
                         <Button
-                          onClick={() => handleRemoveSubmission(submission.id, submission.participant_name)}
+                          onClick={() => handleDeleteSubmission(submission.id, submission.participant_name)}
                           variant="danger"
                           size="sm"
                         >
-                          حذف
+                          🗑️ حذف
                         </Button>
                       </div>
                     </td>
@@ -626,6 +648,7 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                     if (!question) return null
                     
                     const isCorrect = question.correct_answer === studentAnswer
+                    const studentProof = reviewModal.submission.proofs?.[questionId] || ''
                     
                     return (
                       <div key={questionId} className="bg-white border border-neutral-200 rounded-lg p-4">
@@ -635,12 +658,24 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                           </span>
                           <div className="flex-1">
                             <p className="text-neutral-900 font-medium mb-3">{question.question_text}</p>
+                            
+                            {/* Student's Evidence/Proof */}
+                            {studentProof && (
+                              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                                <div className="text-sm font-bold text-amber-900 mb-2">� دليل الطالب من المصدر:</div>
+                                <div className="text-base text-amber-800 font-semibold">
+                                  {studentProof}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Question Source Reference (for teacher reference) */}
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                              <div className="text-sm font-bold text-blue-900 mb-2">📍 موقع السؤال في المصدر:</div>
-                              <div className="text-base text-blue-800 flex flex-wrap items-center gap-4">
-                                <span className="font-semibold">📚 المجلد: {question.volume}</span>
-                                <span className="font-semibold">📄 الصفحة: {question.page}</span>
-                                <span className="font-semibold">📝 السطور: {question.line_from}-{question.line_to}</span>
+                              <div className="text-xs font-bold text-blue-700 mb-1">📍 الموقع الصحيح في المصدر (للمراجعة):</div>
+                              <div className="text-sm text-blue-700 flex flex-wrap items-center gap-3">
+                                <span>📚 المجلد: {question.volume}</span>
+                                <span>📄 الصفحة: {question.page}</span>
+                                <span>📝 السطور: {question.line_from}-{question.line_to}</span>
                               </div>
                             </div>
                           </div>
@@ -683,43 +718,6 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                 )}
               </div>
             </div>
-
-            {reviewModal.submission.proofs && Object.keys(reviewModal.submission.proofs).length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">الإثباتات (الدليل من المصدر)</label>
-                <div className="space-y-3">
-                  {reviewModal.questions && reviewModal.questions.length > 0 ? (
-                    Object.entries(reviewModal.submission.proofs).map(([questionId, proof], index) => {
-                      const question = reviewModal.questions?.find(q => q.id === questionId)
-                      if (!question) return null
-                      
-                      return (
-                        <div key={questionId} className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                          <div className="flex items-start gap-3">
-                            <span className="flex-shrink-0 w-8 h-8 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center font-bold text-sm">
-                              {index + 1}
-                            </span>
-                            <div className="flex-1">
-                              <p className="text-neutral-900 font-medium mb-2 text-sm">{question.question_text}</p>
-                              <div className="bg-white border border-amber-200 rounded p-3">
-                                <div className="text-xs font-medium text-amber-700 mb-1">📖 الدليل المقدم من الطالب</div>
-                                <div className="text-sm text-neutral-900">{proof}</div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })
-                  ) : (
-                    <div className="bg-neutral-50 p-3 rounded-lg">
-                      <pre className="text-sm text-neutral-900 whitespace-pre-wrap">
-                        {JSON.stringify(reviewModal.submission.proofs, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">الحالة الحالية</label>

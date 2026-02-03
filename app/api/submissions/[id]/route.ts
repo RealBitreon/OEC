@@ -17,16 +17,16 @@ export async function DELETE(
       )
     }
 
-    // Check if user is admin
+    // Check if user is admin (CEO or LRC_MANAGER)
     const { data: profile } = await supabase
       .from('users')
       .select('role')
-      .eq('id', user.id)
+      .eq('auth_id', user.id)
       .single()
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || !['CEO', 'LRC_MANAGER'].includes(profile.role)) {
       return NextResponse.json(
-        { error: 'غير مصرح - يجب أن تكون مسؤولاً' },
+        { error: 'غير مصرح - يتطلب صلاحيات مدير' },
         { status: 403 }
       )
     }
