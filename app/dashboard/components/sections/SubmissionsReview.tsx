@@ -554,34 +554,37 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                             {index + 1}
                           </span>
                           <div className="flex-1">
-                            <p className="text-neutral-900 font-medium mb-2">{question.question_text}</p>
-                            <div className="text-xs text-neutral-500 flex items-center gap-3">
-                              <span>📚 المجلد {question.volume}</span>
-                              <span>📄 ص {question.page}</span>
-                              <span>📝 س {question.line_from}-{question.line_to}</span>
+                            <p className="text-neutral-900 font-medium mb-3">{question.question_text}</p>
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                              <div className="text-sm font-bold text-blue-900 mb-2">📍 موقع السؤال في المصدر:</div>
+                              <div className="text-base text-blue-800 flex flex-wrap items-center gap-4">
+                                <span className="font-semibold">📚 المجلد: {question.volume}</span>
+                                <span className="font-semibold">📄 الصفحة: {question.page}</span>
+                                <span className="font-semibold">📝 السطور: {question.line_from}-{question.line_to}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mr-11">
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                            <div className="text-xs font-medium text-green-700 mb-1">✓ الإجابة الصحيحة</div>
-                            <div className="text-sm text-green-900 font-medium">
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div className="text-sm font-bold text-green-700 mb-2">✓ الإجابة الصحيحة</div>
+                            <div className="text-base text-green-900 font-semibold">
                               {question.correct_answer || 'غير محددة'}
                             </div>
                           </div>
                           
-                          <div className={`border rounded-lg p-3 ${
+                          <div className={`border rounded-lg p-4 ${
                             isCorrect 
                               ? 'bg-green-50 border-green-200' 
                               : 'bg-red-50 border-red-200'
                           }`}>
-                            <div className={`text-xs font-medium mb-1 ${
+                            <div className={`text-sm font-bold mb-2 ${
                               isCorrect ? 'text-green-700' : 'text-red-700'
                             }`}>
                               {isCorrect ? '✓ إجابة الطالب (صحيحة)' : '✗ إجابة الطالب (خاطئة)'}
                             </div>
-                            <div className={`text-sm font-medium ${
+                            <div className={`text-base font-semibold ${
                               isCorrect ? 'text-green-900' : 'text-red-900'
                             }`}>
                               {studentAnswer || 'لم يجب'}
