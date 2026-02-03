@@ -191,8 +191,31 @@ export default function ParticipationForm({ competition, questions }: Props) {
     }
   }
 
-  // Step 1: Participant Info
-  if (step === 'info') {
+  // DISABLED: Student participation is now disabled
+  // Teachers must enter answers through the dashboard
+  return (
+    <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-8 text-center">
+      <div className="w-24 h-24 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+        <span className="text-6xl">🚫</span>
+      </div>
+      <h2 className="text-3xl font-bold text-red-700 dark:text-red-400 mb-4">
+        المشاركة المباشرة معطلة
+      </h2>
+      <p className="text-xl text-neutral-700 dark:text-neutral-300 mb-6 leading-relaxed">
+        لم يعد بإمكان الطلاب إدخال الإجابات مباشرة.<br/>
+        يجب على المعلم إدخال الإجابات من خلال لوحة التحكم.
+      </p>
+      <button
+        onClick={() => router.push('/dashboard')}
+        className="px-8 py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg transition-all duration-200"
+      >
+        العودة للوحة التحكم
+      </button>
+    </div>
+  )
+
+  // OLD CODE - DISABLED
+  if (false && step === 'info') {
     return (
       <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-8">
         <div className="mb-6">

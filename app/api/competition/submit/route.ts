@@ -218,14 +218,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Calculate tickets
-    const submittedAt = new Date()
-    const ticketsEarned = computeTickets(
-      competition.rules,
-      score,
-      totalQuestions,
-      submittedAt
-    )
+    // Calculate tickets - DISABLED: Tickets functionality removed
+    // Teachers will manually review and approve submissions
+    const ticketsEarned = 0
 
     // Create submission
     const submissionId = randomUUID()
@@ -320,25 +315,8 @@ export async function POST(request: NextRequest) {
       console.log(`[${correlationId}] Attempt count incremented to ${currentAttempts + 1}`)
     }
 
-    // ✅ FIX: Actually create tickets if earned
-    if (ticketsEarned > 0) {
-      const { error: ticketError } = await supabase
-        .from('tickets')
-        .insert({
-          user_id: null, // Anonymous submission
-          competition_id,
-          count: ticketsEarned,
-          reason: `submission_${submissionId}`,
-          created_at: submittedAt.toISOString()
-        })
-      
-      if (ticketError) {
-        console.error(`[${correlationId}] Failed to create tickets:`, ticketError)
-        // Don't fail the whole request, but log it
-      } else {
-        console.log(`[${correlationId}] Created ${ticketsEarned} tickets for submission ${submissionId}`)
-      }
-    }
+    // REMOVED: Ticket creation - tickets functionality has been removed
+    // Teachers will manually review submissions instead
 
     console.log(`[${correlationId}] Submission created successfully: ${submissionId}, score: ${score}/${totalQuestions}, tickets: ${ticketsEarned}`)
 

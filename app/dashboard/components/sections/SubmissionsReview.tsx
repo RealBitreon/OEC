@@ -10,6 +10,7 @@ import {
   allowRetry,
   type SubmissionFilters 
 } from '../../actions/submissions'
+import { updateSubmissionAnswers } from '../../actions/submissions-edit'
 import { getQuestions } from '../../actions/questions'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -72,6 +73,14 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
     submission: null,
     questions: []
   })
+  const [editModal, setEditModal] = useState<{ open: boolean; submission: Submission | null; questions?: any[] }>({
+    open: false,
+    submission: null,
+    questions: []
+  })
+  const [editAnswers, setEditAnswers] = useState<Record<string, string>>({})
+  const [editProofs, setEditProofs] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState(false)
   const [bulkAction, setBulkAction] = useState<'approved' | 'rejected' | null>(null)
   const [competitions, setCompetitions] = useState<Array<{ id: string; title: string }>>([])
 
@@ -150,6 +159,63 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
       loadData()
     } catch (error: any) {
       showToast(error.message || 'فشل السماح بإعادة المحاولة', 'error')
+    }
+  }
+
+  const handleRemoveSubmission = async (submissionId: string, participantName: string) => {
+    if (!confirm(`هل أنت متأكد من حذف إجابة ${participantName}؟ لا يمكن التراجع عن هذا الإجراء.`)) {
+      return
+    }
+    
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}`, {
+        method: 'DELETE'
+      })
+      
+      if (!response.ok) {
+        throw new Error('فشل حذف الإجابة')
+      }
+      
+      showToast('تم حذف الإجابة بنجاح', 'success')
+      loadData()
+    } catch (error: any) {
+      showToast(error.message || 'فشل حذف الإجابة', 'error')
+    }
+  }
+
+  const handleEditSubmission = async (submission: Submission) => {
+    // Load questions for this submission's competition
+    let questions: any[] = []
+    if (submission.competition_id) {
+      try {
+        const result = await getQuestions({ competition_id: submission.competition_id })
+        questions = result.questions || []
+      } catch (error) {
+        console.error('Failed to load questions:', error)
+      }
+    }
+    setEditAnswers(submission.answers || {})
+    setEditProofs(submission.proofs || {})
+    setEditModal({ open: true, submission, questions })
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editModal.submission) return
+    
+    setSaving(true)
+    try {
+      await updateSubmissionAnswers(
+        editModal.submission.id,
+        editAnswers,
+        editProofs
+      )
+      showToast('تم تحديث الإجابات بنجاح', 'success')
+      setEditModal({ open: false, submission: null })
+      loadData()
+    } catch (error: any) {
+      showToast(error.message || 'فشل تحديث الإجابات', 'error')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -439,6 +505,13 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                         >
                           عرض التفاصيل
                         </Button>
+                        <Button
+                          onClick={() => handleEditSubmission(submission)}
+                          variant="secondary"
+                          size="sm"
+                        >
+                          ✏️ تعديل
+                        </Button>
                         {submission.status === 'rejected' && !submission.retry_allowed && (
                           <Button
                             onClick={() => handleAllowRetry(submission.id)}
@@ -448,6 +521,13 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                             السماح بإعادة المحاولة
                           </Button>
                         )}
+                        <Button
+                          onClick={() => handleRemoveSubmission(submission.id, submission.participant_name)}
+                          variant="danger"
+                          size="sm"
+                        >
+                          حذف
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -548,55 +628,43 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                     const isCorrect = question.correct_answer === studentAnswer
                     
                     return (
-                      <div key={questionId} className="bg-white border-2 border-neutral-300 rounded-lg p-5 shadow-sm">
-                        {/* Question Number and Text */}
-                        <div className="flex items-start gap-3 mb-4">
-                          <span className="flex-shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-base">
+                      <div key={questionId} className="bg-white border border-neutral-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3 mb-3">
+                          <span className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">
                             {index + 1}
                           </span>
                           <div className="flex-1">
-                            <p className="text-neutral-900 font-bold text-lg mb-1">{question.question_text}</p>
-                          </div>
-                        </div>
-
-                        {/* Folder Structure Display */}
-                        <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-4 mb-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-blue-900 font-bold text-base">📁 Folder:</span>
-                              <span className="text-blue-900 font-bold text-lg">
-                                {question.volume} {question.page} {question.line_from} {question.line_to}
-                              </span>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <span className="text-blue-900 font-bold text-base whitespace-nowrap">❓ Question as student answered:</span>
-                              <span className="text-blue-900 font-bold text-lg">
-                                {studentAnswer || 'لم يجب الطالب'}
-                              </span>
+                            <p className="text-neutral-900 font-medium mb-3">{question.question_text}</p>
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                              <div className="text-sm font-bold text-blue-900 mb-2">📍 موقع السؤال في المصدر:</div>
+                              <div className="text-base text-blue-800 flex flex-wrap items-center gap-4">
+                                <span className="font-semibold">📚 المجلد: {question.volume}</span>
+                                <span className="font-semibold">📄 الصفحة: {question.page}</span>
+                                <span className="font-semibold">📝 السطور: {question.line_from}-{question.line_to}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                         
-                        {/* Answer Comparison */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mr-11">
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                             <div className="text-sm font-bold text-green-700 mb-2">✓ الإجابة الصحيحة</div>
-                            <div className="text-lg text-green-900 font-bold">
+                            <div className="text-base text-green-900 font-semibold">
                               {question.correct_answer || 'غير محددة'}
                             </div>
                           </div>
                           
-                          <div className={`border-2 rounded-lg p-4 ${
+                          <div className={`border rounded-lg p-4 ${
                             isCorrect 
-                              ? 'bg-green-50 border-green-300' 
-                              : 'bg-red-50 border-red-300'
+                              ? 'bg-green-50 border-green-200' 
+                              : 'bg-red-50 border-red-200'
                           }`}>
                             <div className={`text-sm font-bold mb-2 ${
                               isCorrect ? 'text-green-700' : 'text-red-700'
                             }`}>
                               {isCorrect ? '✓ إجابة الطالب (صحيحة)' : '✗ إجابة الطالب (خاطئة)'}
                             </div>
-                            <div className={`text-lg font-bold ${
+                            <div className={`text-base font-semibold ${
                               isCorrect ? 'text-green-900' : 'text-red-900'
                             }`}>
                               {studentAnswer || 'لم يجب'}
@@ -785,6 +853,141 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
               <Button
                 onClick={() => setBulkAction(null)}
                 variant="secondary"
+              >
+                إلغاء
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Edit Submission Modal */}
+      {editModal.open && editModal.submission && (
+        <Modal
+          isOpen={editModal.open}
+          onClose={() => setEditModal({ open: false, submission: null })}
+          title="تعديل إجابة الطالب"
+        >
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-blue-900">
+                📝 الطالب: {editModal.submission.participant_name}
+              </p>
+              <p className="text-xs text-blue-700 mt-1">
+                يمكنك تعديل إجابات الطالب والأدلة المقدمة
+              </p>
+            </div>
+
+            {editModal.questions && editModal.questions.length > 0 ? (
+              <div className="space-y-4">
+                {editModal.questions.map((question, index) => {
+                  const currentAnswer = editAnswers[question.id] || ''
+                  const currentProof = editProofs[question.id] || ''
+                  const isCorrect = question.correct_answer === currentAnswer
+
+                  return (
+                    <div key={question.id} className="bg-white border border-neutral-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">
+                          {index + 1}
+                        </span>
+                        <div className="flex-1">
+                          <p className="text-neutral-900 font-medium mb-2">{question.question_text}</p>
+                          
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                            <div className="text-xs font-bold text-green-700 mb-1">✓ الإجابة الصحيحة</div>
+                            <div className="text-sm text-green-900 font-semibold">
+                              {question.correct_answer || 'غير محددة'}
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-bold text-neutral-700 mb-1">
+                                إجابة الطالب {isCorrect && '✓'}
+                              </label>
+                              {question.type === 'mcq' && question.options ? (
+                                <select
+                                  value={currentAnswer}
+                                  onChange={(e) => setEditAnswers({ ...editAnswers, [question.id]: e.target.value })}
+                                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none ${
+                                    isCorrect 
+                                      ? 'border-green-300 bg-green-50' 
+                                      : 'border-red-300 bg-red-50'
+                                  }`}
+                                >
+                                  <option value="">اختر إجابة</option>
+                                  {question.options.map((opt: string) => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                  ))}
+                                </select>
+                              ) : question.type === 'true_false' ? (
+                                <select
+                                  value={currentAnswer}
+                                  onChange={(e) => setEditAnswers({ ...editAnswers, [question.id]: e.target.value })}
+                                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none ${
+                                    isCorrect 
+                                      ? 'border-green-300 bg-green-50' 
+                                      : 'border-red-300 bg-red-50'
+                                  }`}
+                                >
+                                  <option value="">اختر إجابة</option>
+                                  <option value="true">صح</option>
+                                  <option value="false">خطأ</option>
+                                </select>
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={currentAnswer}
+                                  onChange={(e) => setEditAnswers({ ...editAnswers, [question.id]: e.target.value })}
+                                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none ${
+                                    isCorrect 
+                                      ? 'border-green-300 bg-green-50' 
+                                      : 'border-red-300 bg-red-50'
+                                  }`}
+                                  placeholder="أدخل الإجابة"
+                                />
+                              )}
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-bold text-amber-700 mb-1">
+                                📖 الدليل من المصدر
+                              </label>
+                              <input
+                                type="text"
+                                value={currentProof}
+                                onChange={(e) => setEditProofs({ ...editProofs, [question.id]: e.target.value })}
+                                className="w-full px-3 py-2 border-2 border-amber-300 bg-amber-50 rounded-lg focus:outline-none focus:border-amber-500"
+                                placeholder="مثال: المجلد 1 - الصفحة 25"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center text-neutral-600 py-8">
+                لا توجد أسئلة لهذه المسابقة
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-4 border-t border-neutral-200">
+              <Button
+                onClick={handleSaveEdit}
+                disabled={saving}
+                variant="primary"
+                className="flex-1"
+              >
+                {saving ? '⏳ جاري الحفظ...' : '💾 حفظ التعديلات'}
+              </Button>
+              <Button
+                onClick={() => setEditModal({ open: false, submission: null })}
+                variant="secondary"
+                disabled={saving}
               >
                 إلغاء
               </Button>
