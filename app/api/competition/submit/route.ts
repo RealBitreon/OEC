@@ -221,6 +221,7 @@ export async function POST(request: NextRequest) {
     // Calculate tickets - DISABLED: Tickets functionality removed
     // Teachers will manually review and approve submissions
     const ticketsEarned = 0
+    const submittedAt = new Date()
 
     // Create submission
     const submissionId = randomUUID()
