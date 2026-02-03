@@ -647,6 +647,16 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                     const question = reviewModal.questions?.find(q => q.id === questionId)
                     if (!question) return null
                     
+                    // Debug: Log question data to see what we have
+                    console.log('Question data:', {
+                      id: question.id,
+                      volume: question.volume,
+                      page: question.page,
+                      line_from: question.line_from,
+                      line_to: question.line_to,
+                      fullQuestion: question
+                    })
+                    
                     const isCorrect = question.correct_answer === studentAnswer
                     const studentProof = reviewModal.submission.proofs?.[questionId] || ''
                     
@@ -673,9 +683,9 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
                               <div className="text-xs font-bold text-blue-700 mb-1">📍 الموقع الصحيح في المصدر (للمراجعة):</div>
                               <div className="text-sm text-blue-700 flex flex-wrap items-center gap-3">
-                                <span>📚 المجلد: {question.volume}</span>
-                                <span>📄 الصفحة: {question.page}</span>
-                                <span>📝 السطور: {question.line_from}-{question.line_to}</span>
+                                <span>📚 المجلد: {question.volume || 'غير محدد'}</span>
+                                <span>📄 الصفحة: {question.page || 'غير محدد'}</span>
+                                <span>📝 السطور: {question.line_from && question.line_to ? `${question.line_from}-${question.line_to}` : 'غير محدد'}</span>
                               </div>
                             </div>
                           </div>
