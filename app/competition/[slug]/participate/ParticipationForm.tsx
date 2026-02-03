@@ -799,10 +799,13 @@ export default function ParticipationForm({ competition, questions }: Props) {
           )}
         </p>
 
-        <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-primary/20 rounded-xl p-6 mb-6">
-          <div className="mb-3"><Icons.target className="w-12 h-12" /></div>
-          <p className="text-lg font-bold text-neutral-800 mb-4">
-            النتيجة: {result.correctCount} / {result.totalQuestions}
+        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-xl p-6 mb-6">
+          <div className="mb-3"><Icons.clock className="w-12 h-12 text-blue-600" /></div>
+          <p className="text-lg font-bold text-blue-900 mb-2">
+            ⏳ إجابتك قيد المراجعة
+          </p>
+          <p className="text-sm text-blue-700">
+            سيتم مراجعة إجابتك من قبل معلم المصادر قريباً
           </p>
         </div>
 

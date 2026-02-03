@@ -38,15 +38,15 @@ export async function POST(request: NextRequest) {
 
     const maxAttempts = competition.max_attempts || 2
 
-    // Get current attempts
-    const { data: tracking, error: trackError } = await supabase
-      .from('attempt_tracking')
-      .select('attempt_count')
+    // ✅ FIX: Count only SUBMITTED attempts (not just views)
+    // Check how many submissions exist for this device
+    const { count } = await supabase
+      .from('submissions')
+      .select('id', { count: 'exact', head: true })
       .eq('competition_id', competitionId)
       .eq('device_fingerprint', deviceFingerprint)
-      .single()
 
-    const currentAttempts = tracking?.attempt_count || 0
+    const currentAttempts = count || 0
     const canAttempt = currentAttempts < maxAttempts
     const remainingAttempts = Math.max(0, maxAttempts - currentAttempts)
     

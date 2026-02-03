@@ -255,6 +255,7 @@ export async function POST(request: NextRequest) {
     if (family_name) submissionData.family_name = family_name
     if (grade) submissionData.grade = grade
     if (proofs) submissionData.proofs = proofs
+    if (device_fingerprint) submissionData.device_fingerprint = device_fingerprint
     
     // Add is_correct if column exists (graceful degradation)
     try {
@@ -287,33 +288,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // ✅ FIX: Increment attempt count ONLY AFTER successful submission
+    // ✅ FIX: Store device_fingerprint in submission for attempt tracking
+    // Attempts are now counted by submissions, not by attempt_tracking table
     if (device_fingerprint) {
-      console.log(`[${correlationId}] Incrementing attempt count for device`)
-      
-      const { data: tracking } = await supabase
-        .from('attempt_tracking')
-        .select('attempt_count')
-        .eq('competition_id', competition_id)
-        .eq('device_fingerprint', device_fingerprint)
-        .single()
-
-      const currentAttempts = tracking?.attempt_count || 0
-
-      await supabase
-        .from('attempt_tracking')
-        .upsert({
-          competition_id,
-          device_fingerprint,
-          user_id: null,
-          attempt_count: currentAttempts + 1,
-          last_attempt_at: submittedAt.toISOString(),
-          updated_at: submittedAt.toISOString(),
-        }, {
-          onConflict: 'competition_id,device_fingerprint',
-        })
-      
-      console.log(`[${correlationId}] Attempt count incremented to ${currentAttempts + 1}`)
+      console.log(`[${correlationId}] Device fingerprint stored in submission for attempt tracking`)
     }
 
     // REMOVED: Ticket creation - tickets functionality has been removed

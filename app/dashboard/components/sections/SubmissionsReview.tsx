@@ -680,14 +680,16 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                             )}
                             
                             {/* Question Source Reference (for teacher reference) */}
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                              <div className="text-xs font-bold text-blue-700 mb-1">📍 الموقع الصحيح في المصدر (للمراجعة):</div>
-                              <div className="text-sm text-blue-700 flex flex-wrap items-center gap-3">
-                                <span>📚 المجلد: {question.volume || 'غير محدد'}</span>
-                                <span>📄 الصفحة: {question.page || 'غير محدد'}</span>
-                                <span>📝 السطور: {question.line_from && question.line_to ? `${question.line_from}-${question.line_to}` : 'غير محدد'}</span>
+                            {(question.volume || question.page || (question.line_from && question.line_to)) && (
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                                <div className="text-xs font-bold text-blue-700 mb-1">📍 الموقع الصحيح في المصدر (للمراجعة):</div>
+                                <div className="text-sm text-blue-700 flex flex-wrap items-center gap-3">
+                                  {question.volume && <span>📚 المجلد: {question.volume}</span>}
+                                  {question.page && <span>📄 الصفحة: {question.page}</span>}
+                                  {question.line_from && question.line_to && <span>📝 السطور: {question.line_from}-{question.line_to}</span>}
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                         </div>
                         
@@ -699,19 +701,11 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                             </div>
                           </div>
                           
-                          <div className={`border rounded-lg p-4 ${
-                            isCorrect 
-                              ? 'bg-green-50 border-green-200' 
-                              : 'bg-red-50 border-red-200'
-                          }`}>
-                            <div className={`text-sm font-bold mb-2 ${
-                              isCorrect ? 'text-green-700' : 'text-red-700'
-                            }`}>
-                              {isCorrect ? '✓ إجابة الطالب (صحيحة)' : '✗ إجابة الطالب (خاطئة)'}
+                          <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
+                            <div className="text-sm font-bold mb-2 text-blue-700">
+                              📝 إجابة الطالب
                             </div>
-                            <div className={`text-base font-semibold ${
-                              isCorrect ? 'text-green-900' : 'text-red-900'
-                            }`}>
+                            <div className="text-base font-semibold text-blue-900">
                               {studentAnswer || 'لم يجب'}
                             </div>
                           </div>
