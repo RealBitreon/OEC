@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { ToastProvider } from '@/components/ui'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { OfflineBanner } from '@/components/OfflineBanner'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { config } from '@/lib/config/site'
@@ -38,6 +39,7 @@ export default async function RootLayout({
         <body className="overflow-x-hidden antialiased">
           <ErrorBoundary>
             <ToastProvider>
+              <OfflineBanner />
               {children}
             </ToastProvider>
           </ErrorBoundary>
