@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -9,14 +9,14 @@ export async function GET() {
   
   try {
     // Validate environment variables first
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       console.error('[/api/winners] Missing Supabase environment variables');
       return NextResponse.json(
         { 
           ok: false,
           error: 'CONFIGURATION_ERROR',
           message: 'Database configuration missing',
-          hint: 'Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY',
+          hint: 'Check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY',
           data: { winners: [] },
           meta: { timestamp: new Date().toISOString(), duration: Date.now() - startTime }
         },
@@ -24,10 +24,10 @@ export async function GET() {
       );
     }
 
-    // Create Supabase client with error handling
+    // Create Supabase service client (bypasses RLS for public read)
     let supabase;
     try {
-      supabase = await createClient();
+      supabase = createServiceClient();
     } catch (clientError: any) {
       console.error('[/api/winners] Failed to create Supabase client:', clientError);
       return NextResponse.json(
