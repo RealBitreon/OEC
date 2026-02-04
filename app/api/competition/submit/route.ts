@@ -240,6 +240,8 @@ export async function POST(request: NextRequest) {
       id: submissionId,
       competition_id,
       participant_name,
+      // participant_email is required in DB, use placeholder if not provided
+      participant_email: participant_email || `${participant_name.replace(/\s+/g, '_')}@placeholder.local`,
       answers,
       score,
       total_questions: totalQuestions,
@@ -249,13 +251,12 @@ export async function POST(request: NextRequest) {
     }
     
     // Add optional fields if provided
-    if (participant_email) submissionData.participant_email = participant_email
     if (first_name) submissionData.first_name = first_name
     if (father_name) submissionData.father_name = father_name
     if (family_name) submissionData.family_name = family_name
     if (grade) submissionData.grade = grade
     if (proofs) submissionData.proofs = proofs
-    if (device_fingerprint) submissionData.device_fingerprint = device_fingerprint
+    // Note: device_fingerprint is stored in attempt_tracking table, not submissions table
     
     // Add is_correct if column exists (graceful degradation)
     try {
@@ -288,10 +289,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // ✅ FIX: Store device_fingerprint in submission for attempt tracking
-    // Attempts are now counted by submissions, not by attempt_tracking table
+    // Track attempt in attempt_tracking table
     if (device_fingerprint) {
-      console.log(`[${correlationId}] Device fingerprint stored in submission for attempt tracking`)
+      console.log(`[${correlationId}] Updating attempt tracking for device`)
+      
+      // Upsert attempt tracking
+      const { error: attemptError } = await supabase
+        .from('attempt_tracking')
+        .upsert({
+          competition_id,
+          device_fingerprint,
+          attempt_count: 1, // Will be incremented by trigger or manually
+          last_attempt_at: submittedAt.toISOString()
+        }, {
+          onConflict: 'competition_id,device_fingerprint'
+        })
+      
+      if (attemptError) {
+        console.error(`[${correlationId}] Failed to update attempt tracking:`, attemptError)
+        // Don't fail the submission if attempt tracking fails
+      }
     }
 
     // REMOVED: Ticket creation - tickets functionality has been removed
