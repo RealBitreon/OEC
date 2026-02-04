@@ -42,7 +42,7 @@ export function useAsyncOperation<T = void>() {
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<T | null>(null)
   
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const mountedRef = useRef(true)
   
   // Cleanup on unmount
