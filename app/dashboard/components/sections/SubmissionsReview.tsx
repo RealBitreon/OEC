@@ -618,39 +618,83 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">الحالة الحالية</label>
-              <div className="flex gap-2 items-center">
-                {getStatusBadge(reviewModal.submission)}
-                {reviewModal.submission.is_winner === true && (
-                  <Badge variant="success">🏆 فائز</Badge>
-                )}
-                {reviewModal.submission.is_winner === false && (
-                  <Badge variant="default">خاسر</Badge>
-                )}
-              </div>
-            </div>
-
             {/* Winner/Loser Status Buttons */}
             <div className="border-t border-neutral-200 pt-4 mt-4">
               <label className="block text-sm font-medium text-neutral-700 mb-3">
                 تحديد حالة المشارك
               </label>
+              
+              {/* Show current status */}
+              <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3 mb-3">
+                <div className="text-sm text-neutral-600">الحالة الحالية:</div>
+                <div className="mt-1">
+                  {reviewModal.submission.is_winner === true && (
+                    <Badge variant="success">🏆 فائز</Badge>
+                  )}
+                  {reviewModal.submission.is_winner === false && (
+                    <Badge variant="danger">خاسر</Badge>
+                  )}
+                  {reviewModal.submission.is_winner === null && (
+                    <Badge variant="info">لم تتم المراجعة</Badge>
+                  )}
+                </div>
+              </div>
+              
               <div className="grid grid-cols-2 gap-3">
-                <Button
-                  onClick={() => handleMarkWinner(reviewModal.submission!.id, true)}
-                  variant="primary"
-                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-3"
-                >
-                  🏆 فائز
-                </Button>
-                <Button
-                  onClick={() => handleMarkWinner(reviewModal.submission!.id, false)}
-                  variant="danger"
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-3"
-                >
-                  ❌ خاسر
-                </Button>
+                {reviewModal.submission.is_winner === true ? (
+                  <>
+                    <Button
+                      onClick={() => handleMarkWinner(reviewModal.submission!.id, true)}
+                      variant="primary"
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 opacity-50 cursor-not-allowed"
+                      disabled
+                    >
+                      🏆 فائز (حالي)
+                    </Button>
+                    <Button
+                      onClick={() => handleMarkWinner(reviewModal.submission!.id, false)}
+                      variant="danger"
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold py-3"
+                    >
+                      ❌ تحويل إلى خاسر
+                    </Button>
+                  </>
+                ) : reviewModal.submission.is_winner === false ? (
+                  <>
+                    <Button
+                      onClick={() => handleMarkWinner(reviewModal.submission!.id, true)}
+                      variant="primary"
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-3"
+                    >
+                      🏆 تحويل إلى فائز
+                    </Button>
+                    <Button
+                      onClick={() => handleMarkWinner(reviewModal.submission!.id, false)}
+                      variant="danger"
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 opacity-50 cursor-not-allowed"
+                      disabled
+                    >
+                      ❌ خاسر (حالي)
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      onClick={() => handleMarkWinner(reviewModal.submission!.id, true)}
+                      variant="primary"
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-3"
+                    >
+                      🏆 فائز
+                    </Button>
+                    <Button
+                      onClick={() => handleMarkWinner(reviewModal.submission!.id, false)}
+                      variant="danger"
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold py-3"
+                    >
+                      ❌ خاسر
+                    </Button>
+                  </>
+                )}
               </div>
               <p className="text-xs text-neutral-500 mt-2 text-center">
                 الفائزون سيظهرون في عجلة الحظ تلقائياً
