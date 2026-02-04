@@ -124,14 +124,18 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
         body: JSON.stringify({ submissionId, isWinner })
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('فشل تحديث الحالة')
+        console.error('Mark winner error:', data)
+        throw new Error(data.error || 'فشل تحديث الحالة')
       }
 
       showToast(isWinner ? 'تم تحديد الطالب كفائز 🎉' : 'تم تحديد الطالب كخاسر', 'success')
       loadData()
       setReviewModal({ open: false, submission: null })
     } catch (error: any) {
+      console.error('Mark winner exception:', error)
       showToast(error.message || 'فشل تحديث الحالة', 'error')
     }
   }
