@@ -100,6 +100,7 @@ export async function createCompetition(data: Omit<DashboardCompetition, 'id' | 
 
   const created = await competitionsRepo.create(competition)
   revalidatePath('/dashboard')
+  revalidatePath('/')
   return { success: true, competition: toDashboardFormat(created) }
 }
 
@@ -107,6 +108,8 @@ export async function updateCompetition(id: string, data: Partial<DashboardCompe
   const updates = toRepoFormat(data)
   await competitionsRepo.update(id, updates)
   revalidatePath('/dashboard')
+  revalidatePath('/')
+  revalidatePath('/competition/[slug]', 'page')
   return { success: true }
 }
 
@@ -129,6 +132,7 @@ export async function deleteCompetition(id: string) {
 export async function archiveCompetition(id: string) {
   await competitionsRepo.update(id, { status: 'archived' })
   revalidatePath('/dashboard')
+  revalidatePath('/')
   return { success: true }
 }
 
@@ -144,5 +148,6 @@ export async function activateCompetition(id: string) {
   // Then activate the new competition
   await competitionsRepo.update(id, { status: 'active' })
   revalidatePath('/dashboard')
+  revalidatePath('/')
   return { success: true }
 }
