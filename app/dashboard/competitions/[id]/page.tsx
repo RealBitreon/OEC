@@ -24,8 +24,9 @@ export default async function CompetitionPage({
     redirect('/login')
   }
 
-  // Get profile from users table (consistent with session API)
-  const { data: profile, error: profileError } = await supabase
+  // Get profile from users table using service client to bypass RLS
+  const serviceClient = createServiceClient()
+  const { data: profile, error: profileError } = await serviceClient
     .from('users')
     .select('*')
     .eq('auth_id', user.id)
@@ -48,7 +49,6 @@ export default async function CompetitionPage({
   }
 
   // Get competition using service client (after authorization)
-  const serviceClient = createServiceClient()
   const { data: competition, error: compError } = await serviceClient
     .from('competitions')
     .select('*')
