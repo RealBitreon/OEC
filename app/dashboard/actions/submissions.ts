@@ -76,8 +76,9 @@ export async function reviewSubmission(
       throw new Error('غير مصرح')
     }
 
-    // Get user profile
-    const { data: profile } = await supabase
+    // Get user profile using service client
+    const serviceClient = createServiceClient()
+    const { data: profile } = await serviceClient
       .from('users')
       .select('id, role')
       .eq('auth_id', authUser.id)
@@ -88,7 +89,7 @@ export async function reviewSubmission(
     }
     
     // Get submission details
-    const { data: submission, error: fetchError } = await supabase
+    const { data: submission, error: fetchError } = await serviceClient
       .from('submissions')
       .select('*')
       .eq('id', submissionId)
@@ -99,7 +100,7 @@ export async function reviewSubmission(
     }
     
     // Update submission
-    const { error } = await supabase
+    const { error } = await serviceClient
       .from('submissions')
       .update({
         status,
@@ -114,7 +115,7 @@ export async function reviewSubmission(
     }
     
     // Log audit
-    await supabase.from('audit_logs').insert({
+    await serviceClient.from('audit_logs').insert({
       user_id: profile.id,
       action: 'submission_reviewed',
       details: { 
@@ -145,8 +146,9 @@ export async function bulkReview(
       throw new Error('غير مصرح')
     }
 
-    // Get user profile
-    const { data: profile } = await supabase
+    // Get user profile using service client
+    const serviceClient = createServiceClient()
+    const { data: profile } = await serviceClient
       .from('users')
       .select('id, role')
       .eq('auth_id', authUser.id)
@@ -157,7 +159,7 @@ export async function bulkReview(
     }
     
     // Update all submissions
-    const { error } = await supabase
+    const { error } = await serviceClient
       .from('submissions')
       .update({
         status,
@@ -171,7 +173,7 @@ export async function bulkReview(
     }
     
     // Log audit
-    await supabase.from('audit_logs').insert({
+    await serviceClient.from('audit_logs').insert({
       user_id: profile.id,
       action: 'bulk_review',
       details: { 
@@ -229,8 +231,9 @@ export async function allowRetry(submissionId: string) {
       throw new Error('غير مصرح')
     }
 
-    // Get user profile
-    const { data: profile } = await supabase
+    // Get user profile using service client
+    const serviceClient = createServiceClient()
+    const { data: profile } = await serviceClient
       .from('users')
       .select('id, role')
       .eq('auth_id', authUser.id)
@@ -241,7 +244,7 @@ export async function allowRetry(submissionId: string) {
     }
     
     // Get submission details
-    const { data: submission, error: fetchError } = await supabase
+    const { data: submission, error: fetchError } = await serviceClient
       .from('submissions')
       .select('*')
       .eq('id', submissionId)
@@ -252,7 +255,7 @@ export async function allowRetry(submissionId: string) {
     }
     
     // Update submission to allow retry
-    const { error } = await supabase
+    const { error } = await serviceClient
       .from('submissions')
       .update({
         retry_allowed: true
@@ -264,7 +267,7 @@ export async function allowRetry(submissionId: string) {
     }
     
     // Log audit
-    await supabase.from('audit_logs').insert({
+    await serviceClient.from('audit_logs').insert({
       user_id: profile.id,
       action: 'allow_retry',
       details: { 

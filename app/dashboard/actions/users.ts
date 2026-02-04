@@ -80,6 +80,7 @@ export async function createUser(userData: {
   phone?: string
 }) {
   const supabase = await createClient()
+  const serviceClient = createServiceClient()
   const cookieStore = await cookies()
   
   // Get current user from auth
@@ -89,8 +90,8 @@ export async function createUser(userData: {
     throw new Error('غير مصرح')
   }
 
-  // Verify user role
-  const { data: user } = await supabase
+  // Verify user role using service client
+  const { data: user } = await serviceClient
     .from('users')
     .select('id, role')
     .eq('auth_id', authUser.id)
@@ -101,7 +102,7 @@ export async function createUser(userData: {
   }
   
   // Check if username or email already exists
-  const { data: existing } = await supabase
+  const { data: existing } = await serviceClient
     .from('users')
     .select('id')
     .or(`username.eq.${userData.username},email.eq.${userData.email}`)
@@ -123,7 +124,7 @@ export async function createUser(userData: {
   }
   
   // Create user profile
-  const { data: newUser, error } = await supabase
+  const { data: newUser, error } = await serviceClient
     .from('users')
     .insert({
       auth_id: newAuthUser.user.id,
@@ -143,7 +144,7 @@ export async function createUser(userData: {
   }
   
   // Log audit
-  await supabase.from('audit_logs').insert({
+  await serviceClient.from('audit_logs').insert({
     user_id: user.id,
     action: 'user_created',
     details: { 
@@ -167,6 +168,7 @@ export async function updateUser(
   }
 ) {
   const supabase = await createClient()
+  const serviceClient = createServiceClient()
   
   // Get current user from auth
   const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -175,8 +177,8 @@ export async function updateUser(
     throw new Error('غير مصرح')
   }
 
-  // Verify user role
-  const { data: user } = await supabase
+  // Verify user role using service client
+  const { data: user } = await serviceClient
     .from('users')
     .select('id, role')
     .eq('auth_id', authUser.id)
@@ -187,7 +189,7 @@ export async function updateUser(
   }
   
   // Update user
-  const { error } = await supabase
+  const { error } = await serviceClient
     .from('users')
     .update(updates)
     .eq('id', targetUserId)
@@ -197,7 +199,7 @@ export async function updateUser(
   }
   
   // Log audit
-  await supabase.from('audit_logs').insert({
+  await serviceClient.from('audit_logs').insert({
     user_id: user.id,
     action: 'user_updated',
     details: { 
@@ -211,6 +213,7 @@ export async function updateUser(
 
 export async function deleteUser(targetUserId: string) {
   const supabase = await createClient()
+  const serviceClient = createServiceClient()
   
   // Get current user from auth
   const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -219,8 +222,8 @@ export async function deleteUser(targetUserId: string) {
     throw new Error('غير مصرح')
   }
 
-  // Verify user role
-  const { data: user } = await supabase
+  // Verify user role using service client
+  const { data: user } = await serviceClient
     .from('users')
     .select('id, role')
     .eq('auth_id', authUser.id)
@@ -236,14 +239,14 @@ export async function deleteUser(targetUserId: string) {
   }
   
   // Get user info before deletion
-  const { data: targetUser } = await supabase
+  const { data: targetUser } = await serviceClient
     .from('users')
     .select('username, role, auth_id')
     .eq('id', targetUserId)
     .single()
   
   // Delete user from users table
-  const { error } = await supabase
+  const { error } = await serviceClient
     .from('users')
     .delete()
     .eq('id', targetUserId)
@@ -258,7 +261,7 @@ export async function deleteUser(targetUserId: string) {
   }
   
   // Log audit
-  await supabase.from('audit_logs').insert({
+  await serviceClient.from('audit_logs').insert({
     user_id: user.id,
     action: 'user_deleted',
     details: { 
@@ -273,6 +276,7 @@ export async function deleteUser(targetUserId: string) {
 
 export async function resetUserPassword(targetUserId: string, newPassword: string) {
   const supabase = await createClient()
+  const serviceClient = createServiceClient()
   
   // Get current user from auth
   const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -281,8 +285,8 @@ export async function resetUserPassword(targetUserId: string, newPassword: strin
     throw new Error('غير مصرح')
   }
 
-  // Verify user role
-  const { data: user } = await supabase
+  // Verify user role using service client
+  const { data: user } = await serviceClient
     .from('users')
     .select('id, role')
     .eq('auth_id', authUser.id)
@@ -293,7 +297,7 @@ export async function resetUserPassword(targetUserId: string, newPassword: strin
   }
   
   // Get target user's auth_id
-  const { data: targetUser } = await supabase
+  const { data: targetUser } = await serviceClient
     .from('users')
     .select('auth_id')
     .eq('id', targetUserId)
@@ -314,7 +318,7 @@ export async function resetUserPassword(targetUserId: string, newPassword: strin
   }
   
   // Log audit
-  await supabase.from('audit_logs').insert({
+  await serviceClient.from('audit_logs').insert({
     user_id: user.id,
     action: 'password_reset',
     details: { 
