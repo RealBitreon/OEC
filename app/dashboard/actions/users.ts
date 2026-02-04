@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 
@@ -10,7 +10,7 @@ export interface UserFilters {
 }
 
 export async function getUsers(filters: UserFilters = {}, page = 1, limit = 20) {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   
   let query = supabase
     .from('users')
@@ -43,7 +43,7 @@ export async function getUsers(filters: UserFilters = {}, page = 1, limit = 20) 
 }
 
 export async function getUserStats() {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   
   const { data: users } = await supabase
     .from('users')

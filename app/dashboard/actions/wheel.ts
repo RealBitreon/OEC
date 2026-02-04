@@ -1,12 +1,12 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
 export async function getEligibleStudents(competitionId: string) {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   
   // Get all submissions marked as winners for this competition
   const { data: submissions, error } = await supabase
@@ -267,7 +267,7 @@ export async function runDraw(competitionId: string, seed?: string) {
 }
 
 export async function getWheelStatus(competitionId: string) {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   
   const { data: wheelRun } = await supabase
     .from('wheel_runs')

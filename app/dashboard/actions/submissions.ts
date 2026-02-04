@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 
@@ -12,7 +12,7 @@ export interface SubmissionFilters {
 }
 
 export async function getSubmissions(filters: SubmissionFilters = {}, page = 1, limit = 20) {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   
   let query = supabase
     .from('submissions')
@@ -188,7 +188,7 @@ export async function bulkReview(
 }
 
 export async function getSubmissionStats(competitionId?: string) {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
   
   let query = supabase
     .from('submissions')

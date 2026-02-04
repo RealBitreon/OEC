@@ -1,11 +1,11 @@
 'use server'
 
 import { competitionsRepo, questionsRepo } from '@/lib/repos'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 
 export async function getOverviewStats() {
   try {
-    const supabase = await createClient()
+    const supabase = createServiceClient()
     const competitions = await competitionsRepo.listAll()
     const questions = await questionsRepo.listAll()
     
