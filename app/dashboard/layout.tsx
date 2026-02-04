@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import DashboardShell from './components/DashboardShell'
 
 export default async function DashboardLayout({
@@ -14,8 +14,9 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  // Get user profile
-  const { data: profile, error: profileError } = await supabase
+  // Get user profile using service client to bypass RLS
+  const serviceClient = createServiceClient()
+  const { data: profile, error: profileError } = await serviceClient
     .from('users')
     .select('id, username, email, role, created_at')
     .eq('auth_id', user.id)
