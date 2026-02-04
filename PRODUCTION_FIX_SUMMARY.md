@@ -46,13 +46,14 @@ Dashboard at `/dashboard` briefly loads then redirects to `/` with console error
 - Never crash - always fallback to empty arrays
 - Component hides itself if no data (returns null)
 
-### ✅ 3. Middleware Protection
-**File:** `middleware.ts` (NEW)
+### ✅ 3. Proxy Protection
+**File:** `proxy.ts` (UPDATED)
 
 **Key Changes:**
 - Skip API routes, static files, public routes
 - Let dashboard layout handle auth
-- NEVER redirect to "/" - only layout redirects to "/login"
+- NEVER redirect to "/" on errors - continue request
+- Only redirect logged-in users from /login or /signup to home
 
 ### ✅ 4. Dashboard Layout (No Changes)
 **File:** `app/dashboard/layout.tsx`
@@ -108,7 +109,7 @@ curl https://msoec.vercel.app/api/competitions/archived
 1. ✅ `app/api/winners/route.ts` - Robust error handling
 2. ✅ `app/api/competitions/archived/route.ts` - Robust error handling
 3. ✅ `components/ArchivedCompetitions.tsx` - Resilient fetching
-4. ✅ `middleware.ts` - NEW - Prevent unwanted redirects
+4. ✅ `proxy.ts` - UPDATED - Prevent unwanted redirects
 
 ## Deployment
 

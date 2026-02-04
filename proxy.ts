@@ -83,9 +83,10 @@ export async function proxy(request: NextRequest) {
 
     return response
   } catch (error) {
-    // If middleware fails, redirect to error page instead of showing browser error
-    console.error('Middleware error:', error)
-    return NextResponse.redirect(new URL('/api-error', request.url))
+    // If proxy fails, log error but continue - don't redirect
+    console.error('[proxy] Error:', error)
+    // Return next() to allow request to continue instead of redirecting
+    return NextResponse.next()
   }
 }
 
