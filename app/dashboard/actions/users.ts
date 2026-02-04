@@ -92,7 +92,7 @@ export async function createUser(userData: {
   // Verify user role
   const { data: user } = await supabase
     .from('users')
-    .select('role')
+    .select('id, role')
     .eq('auth_id', authUser.id)
     .single()
   
