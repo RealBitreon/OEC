@@ -21,27 +21,17 @@ export default function ArchivedCompetitions() {
         fetch('/api/winners')
       ])
       
-      if (!compRes.ok || !winnersRes.ok) {
-        console.warn('API endpoints not available yet')
-        return
-      }
-      
-      // Check content type before parsing
-      const compContentType = compRes.headers.get('content-type')
-      const winnersContentType = winnersRes.headers.get('content-type')
-      
-      if (!compContentType?.includes('application/json') || !winnersContentType?.includes('application/json')) {
-        console.warn('API endpoints returned non-JSON response')
-        return
-      }
-      
-      const compData = await compRes.json()
-      const winnersData = await winnersRes.json()
+      // Always parse response, even if not ok (API returns empty arrays gracefully)
+      const compData = await compRes.json().catch(() => ({ competitions: [] }))
+      const winnersData = await winnersRes.json().catch(() => ({ winners: [] }))
       
       setCompetitions(compData.competitions || [])
       setWinners(winnersData.winners || [])
     } catch (error) {
       console.error('Error loading archived competitions:', error)
+      // Set empty arrays on error to prevent crashes
+      setCompetitions([])
+      setWinners([])
     } finally {
       setLoading(false)
     }

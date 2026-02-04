@@ -17,18 +17,20 @@ export async function GET() {
 
     if (error) {
       console.error('Archived competitions fetch error:', error);
-      return NextResponse.json(
-        { error: error.message, competitions: [] },
-        { status: 500 }
-      );
+      // Return empty array gracefully instead of 500 error
+      return NextResponse.json({ 
+        competitions: [],
+        message: error.message || 'No archived competitions available'
+      });
     }
 
     return NextResponse.json({ competitions: competitions || [] });
   } catch (error) {
     console.error('Archived competitions error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch archived competitions', competitions: [] },
-      { status: 500 }
-    );
+    // Return empty array instead of 500 error
+    return NextResponse.json({ 
+      competitions: [],
+      message: 'Failed to fetch archived competitions'
+    });
   }
 }

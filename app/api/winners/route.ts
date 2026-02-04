@@ -19,25 +19,20 @@ export async function GET() {
 
     if (error) {
       console.error('Winners fetch error:', error);
-      // If is_winner column doesn't exist yet, return empty array gracefully
-      if (error.code === '42703') {
-        return NextResponse.json({ 
-          winners: [],
-          message: 'Winners feature not yet configured. Run add_is_winner_column.sql migration.'
-        });
-      }
-      return NextResponse.json(
-        { error: error.message, winners: [] },
-        { status: 500 }
-      );
+      // Return empty array gracefully for any error to prevent 500s
+      return NextResponse.json({ 
+        winners: [],
+        message: error.message || 'No winners data available'
+      });
     }
 
     return NextResponse.json({ winners: winners || [] });
   } catch (error) {
     console.error('Winners error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch winners', winners: [] },
-      { status: 500 }
-    );
+    // Return empty array instead of 500 error
+    return NextResponse.json({ 
+      winners: [],
+      message: 'Failed to fetch winners'
+    });
   }
 }
