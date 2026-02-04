@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import Archives from '../components/sections/Archives'
 
 export default async function ArchivesPage() {
@@ -11,8 +11,9 @@ export default async function ArchivesPage() {
     redirect('/login')
   }
 
-  // Get profile from users table (consistent with session API)
-  const { data: profile } = await supabase
+  // Get profile using service client to bypass RLS
+  const serviceClient = createServiceClient()
+  const { data: profile } = await serviceClient
     .from('users')
     .select('*')
     .eq('auth_id', user.id)

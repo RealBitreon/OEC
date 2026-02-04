@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import CompetitionSubmissions from './CompetitionSubmissions'
 
 export default async function CompetitionSubmissionsPage({ 
@@ -16,8 +16,9 @@ export default async function CompetitionSubmissionsPage({
     redirect('/login')
   }
 
-  // Get profile from users table (consistent with session API)
-  const { data: profile } = await supabase
+  // Get profile using service client to bypass RLS
+  const serviceClient = createServiceClient()
+  const { data: profile } = await serviceClient
     .from('users')
     .select('*')
     .eq('auth_id', user.id)
@@ -28,7 +29,7 @@ export default async function CompetitionSubmissionsPage({
   }
 
   // Get competition
-  const { data: competition } = await supabase
+  const { data: competition } = await serviceClient
     .from('competitions')
     .select('*')
     .eq('id', id)
