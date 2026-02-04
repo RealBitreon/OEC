@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function GET(request: Request) {
+export async function GET() {
   const startTime = Date.now();
   
   try {
@@ -42,22 +42,6 @@ export async function GET(request: Request) {
         { status: 500 }
       );
     }
-
-    // Check authentication (optional - remove if endpoint should be public)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    // If you want this endpoint to be protected, uncomment:
-    // if (authError || !user) {
-    //   return NextResponse.json(
-    //     { 
-    //       ok: false,
-    //       error: 'UNAUTHORIZED',
-    //       message: 'Authentication required',
-    //       meta: { timestamp: new Date().toISOString(), duration: Date.now() - startTime }
-    //     },
-    //     { status: 401 }
-    //   );
-    // }
     
     // Get winners from submissions with is_winner = true
     const { data: winners, error: dbError } = await supabase
