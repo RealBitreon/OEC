@@ -1,46 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdmin, handleAuthError, successResponse, errorResponse } from '@/lib/auth/guards'
+import { createServiceClient } from '@/lib/supabase/server'
+import { randomUUID } from 'crypto'
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const correlationId = randomUUID()
+  
   try {
-    const supabase = await createClient()
+    // Require admin authentication
+    const { user } = await requireAdmin()
     
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'غير مصرح' },
-        { status: 401 }
-      )
-    }
-
-    // Check if user is admin (CEO or LRC_MANAGER)
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('auth_id', user.id)
-      .single()
-
-    if (!profile || !['CEO', 'LRC_MANAGER'].includes(profile.role)) {
-      return NextResponse.json(
-        { error: 'غير مصرح - يتطلب صلاحيات مدير' },
-        { status: 403 }
-      )
-    }
-
     // Handle params as Promise in Next.js 15+
     const resolvedParams = await Promise.resolve(params)
     const submissionId = resolvedParams.id
 
     if (!submissionId) {
-      return NextResponse.json(
-        { error: 'معرف الإجابة مطلوب' },
-        { status: 400 }
-      )
+      return errorResponse('INVALID_INPUT', 'معرف الإجابة مطلوب', 400, correlationId)
     }
+
+    const supabase = createServiceClient()
 
     // Delete the submission
     const { error: deleteError } = await supabase
@@ -49,19 +30,22 @@ export async function DELETE(
       .eq('id', submissionId)
 
     if (deleteError) {
-      console.error('Error deleting submission:', deleteError)
-      return NextResponse.json(
-        { error: 'فشل حذف الإجابة: ' + deleteError.message },
-        { status: 500 }
-      )
+      console.error('[DELETE submission] Error:', deleteError)
+      return errorResponse('DATABASE_ERROR', 'فشل حذف الإجابة', 500, correlationId)
     }
 
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error in DELETE /api/submissions/[id]:', error)
-    return NextResponse.json(
-      { error: 'حدث خطأ في الخادم: ' + (error?.message || 'خطأ غير معروف') },
-      { status: 500 }
-    )
+    // Log audit
+    await supabase.from('audit_logs').insert({
+      user_id: user.id,
+      action: 'submission_deleted',
+      entity_type: 'submission',
+      entity_id: submissionId,
+      details: { deleted_by: user.username }
+    })
+
+    return successResponse({ success: true, message: 'تم حذف الإجابة بنجاح' }, correlationId)
+    
+  } catch (error) {
+    return handleAuthError(error, correlationId)
   }
 }

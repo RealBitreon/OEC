@@ -1,35 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { randomUUID } from 'crypto'
 
 // LRC Teacher Reset Code - Change this to update the code
 const RESET_CODE = '12311'
 
 export async function POST(request: NextRequest) {
+  const correlationId = randomUUID()
+  
   try {
     const body = await request.json()
     const { competitionId, deviceFingerprint, resetCode } = body
 
-    console.log('[RESET ATTEMPTS] Request:', {
+    console.log(`[${correlationId}] [RESET ATTEMPTS] Request:`, {
       competitionId,
       fingerprint: deviceFingerprint?.substring(0, 8) + '...',
-      codeProvided: !!resetCode,
-      timestamp: new Date().toISOString()
+      codeProvided: !!resetCode
     })
 
     // Validate inputs
     if (!competitionId || !deviceFingerprint || !resetCode) {
-      console.log('[RESET ATTEMPTS] Missing required fields')
       return NextResponse.json(
-        { error: 'الحقول المطلوبة مفقودة' },
+        { ok: false, code: 'MISSING_FIELDS', error: 'الحقول المطلوبة مفقودة', correlationId },
         { status: 400 }
       )
     }
 
     // Verify reset code - CRITICAL SECURITY CHECK
     if (resetCode.trim() !== RESET_CODE) {
-      console.log('[RESET ATTEMPTS] Invalid code provided:', resetCode.substring(0, 3) + '...')
+      console.log(`[${correlationId}] Invalid code provided`)
       return NextResponse.json(
-        { error: 'كود غير صحيح - يرجى التحقق من الكود مع معلم مركز مصادر التعلم' },
+        { ok: false, code: 'INVALID_CODE', error: 'كود غير صحيح - يرجى التحقق من الكود مع معلم مركز مصادر التعلم', correlationId },
         { status: 403 }
       )
     }

@@ -92,6 +92,10 @@ export async function POST(request: NextRequest) {
   const correlationId = randomUUID()
   
   try {
+    // Require admin authentication
+    const { requireAdmin } = await import('@/lib/auth/guards')
+    await requireAdmin()
+    
     const body = await request.json()
     const { competitionId, winnerCount, dryRun = true } = body
     

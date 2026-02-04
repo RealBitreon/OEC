@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { randomUUID } from 'crypto'
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const correlationId = randomUUID()
+  
   try {
     const { id } = await params
-    const supabase = await createClient()
+    const supabase = createServiceClient()
 
     // Get all submissions for this competition
     const { data: submissions, error: submissionsError } = await supabase
@@ -16,38 +19,46 @@ export async function GET(
       .eq('competition_id', id)
 
     if (submissionsError) {
-      console.error('Error fetching submissions:', submissionsError)
+      console.error(`[${correlationId}] Error fetching submissions:`, submissionsError)
       return NextResponse.json(
         { 
-          submissions: [],
-          totalTickets: 0,
-          totalParticipants: 0
+          ok: true,
+          data: {
+            submissions: [],
+            totalTickets: 0,
+            totalParticipants: 0
+          },
+          correlationId
         },
         { status: 200 }
       )
     }
 
-    // Calculate total tickets (sum of all tickets from submissions)
+    // Calculate total tickets
     const totalTickets = submissions?.reduce((sum, sub) => sum + (sub.tickets_earned || 0), 0) || 0
 
     // Calculate unique participants
     const uniqueParticipants = new Set(
-      submissions?.map(sub => sub.device_fingerprint || sub.student_name)
+      submissions?.map(sub => sub.participant_email || sub.participant_name)
     ).size
 
     return NextResponse.json({
-      submissions: submissions || [],
-      totalTickets,
-      totalParticipants: uniqueParticipants
+      ok: true,
+      data: {
+        submissions: submissions || [],
+        totalTickets,
+        totalParticipants: uniqueParticipants
+      },
+      correlationId
     })
-  } catch (error) {
-    console.error('Error in stats API:', error)
+  } catch (error: any) {
+    console.error(`[${correlationId}] Error in stats API:`, error)
     return NextResponse.json(
       { 
-        error: 'Internal server error',
-        submissions: [],
-        totalTickets: 0,
-        totalParticipants: 0
+        ok: false,
+        code: 'INTERNAL_ERROR',
+        error: 'حدث خطأ داخلي',
+        correlationId
       },
       { status: 500 }
     )
