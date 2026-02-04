@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import DashboardShell from './components/DashboardShell'
 
@@ -11,6 +12,16 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
+    // Preserve the current path for redirect after login
+    const headersList = await headers()
+    const pathname = headersList.get('x-pathname') || headersList.get('referer')
+    const currentPath = pathname ? new URL(pathname, 'http://localhost').pathname : '/dashboard'
+    
+    // Only redirect to login with current path if it's a dashboard route
+    if (currentPath.startsWith('/dashboard')) {
+      redirect(`/login?redirect=${encodeURIComponent(currentPath)}`)
+    }
+    
     redirect('/login')
   }
 

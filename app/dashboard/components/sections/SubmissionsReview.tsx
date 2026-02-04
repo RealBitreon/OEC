@@ -19,6 +19,9 @@ import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { useToast } from '@/components/ui/Toast'
+import { TableSkeleton } from '@/components/ui/TableSkeleton'
+import { useAsyncOperation } from '@/lib/hooks/useAsyncOperation'
+import { getErrorMessage } from '@/lib/utils/error-messages'
 
 interface Submission {
   id: string
@@ -51,9 +54,9 @@ interface Stats {
 
 export default function SubmissionsReview({ profile, competitionId }: { profile: User, competitionId?: string }) {
   const { showToast } = useToast()
+  const { loading, error, execute } = useAsyncOperation()
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
-  const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [filters, setFilters] = useState<SubmissionFilters>(
@@ -75,8 +78,7 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
   const [competitions, setCompetitions] = useState<Array<{ id: string; title: string }>>([])
 
   const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+    await execute(async () => {
       const [submissionsData, statsData] = await Promise.all([
         getSubmissions(filters, page, 20),
         getSubmissionStats(filters.competition_id)
@@ -102,15 +104,16 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
         )
         setCompetitions(uniqueComps as any)
       }
-    } catch (error) {
-      console.error('Error loading data:', error)
-      showToast('فشل تحميل البيانات', 'error')
-      setSubmissions([])
-      setTotalPages(1)
-    } finally {
-      setLoading(false)
-    }
-  }, [filters, page])
+    }, {
+      onError: (err) => {
+        console.error('Error loading data:', err)
+        showToast(getErrorMessage(err), 'error')
+        setSubmissions([])
+        setTotalPages(1)
+      },
+      timeout: 30000
+    })
+  }, [filters, page, execute, showToast])
 
   useEffect(() => {
     loadData()
@@ -295,33 +298,44 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
 
       {/* Submissions Table */}
       <div className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
-              <tr>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">المشارك</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">المسابقة</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">الدرجة</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">الحالة</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">التاريخ</th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">الإجراءات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-200">
-              {loading ? (
+        {loading ? (
+          <div className="p-6">
+            <TableSkeleton rows={5} columns={6} />
+          </div>
+        ) : error ? (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <p className="text-neutral-600 mb-4">{getErrorMessage(error)}</p>
+            <Button onClick={loadData} variant="primary">
+              إعادة المحاولة
+            </Button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-neutral-600">
-                    ⏳ جاري التحميل...
-                  </td>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">المشارك</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">المسابقة</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">الدرجة</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">الحالة</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">التاريخ</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-700">الإجراءات</th>
                 </tr>
-              ) : !submissions || submissions.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-neutral-600">
-                    📝 لا توجد إجابات
-                  </td>
-                </tr>
-              ) : (
-                submissions.map((submission) => (
+              </thead>
+              <tbody className="divide-y divide-neutral-200">
+                {!submissions || submissions.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-12 text-center text-neutral-600">
+                      📝 لا توجد إجابات
+                    </td>
+                  </tr>
+                ) : (
+                  submissions.map((submission) => (
                   <tr key={submission.id} className="hover:bg-neutral-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="text-sm font-medium text-neutral-900">
@@ -386,6 +400,8 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                           onClick={() => handleEditSubmission(submission)}
                           variant="secondary"
                           size="sm"
+                          title="تعديل الإجابة"
+                          aria-label="تعديل الإجابة"
                         >
                           ✏️
                         </Button>
@@ -395,6 +411,7 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                             variant="danger"
                             size="sm"
                             title="تحويل إلى خاسر"
+                            aria-label="تحويل إلى خاسر"
                           >
                             ❌
                           </Button>
@@ -404,6 +421,7 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                             variant="primary"
                             size="sm"
                             title="تحويل إلى فائز"
+                            aria-label="تحويل إلى فائز"
                           >
                             🏆
                           </Button>
@@ -413,7 +431,8 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                               onClick={() => handleMarkWinner(submission.id, true)}
                               variant="primary"
                               size="sm"
-                              title="فائز"
+                              title="تحديد كفائز"
+                              aria-label="تحديد كفائز"
                             >
                               🏆
                             </Button>
@@ -421,7 +440,8 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                               onClick={() => handleMarkWinner(submission.id, false)}
                               variant="danger"
                               size="sm"
-                              title="خاسر"
+                              title="تحديد كخاسر"
+                              aria-label="تحديد كخاسر"
                             >
                               ❌
                             </Button>
@@ -431,20 +451,23 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                           onClick={() => handleDeleteSubmission(submission.id, submission.participant_name)}
                           variant="danger"
                           size="sm"
+                          title="حذف الإجابة"
+                          aria-label="حذف الإجابة"
                         >
                           🗑️
                         </Button>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {!loading && !error && totalPages > 1 && (
           <div className="px-4 py-3 border-t border-neutral-200 flex items-center justify-between">
             <div className="text-sm text-neutral-600">
               صفحة {page} من {totalPages}

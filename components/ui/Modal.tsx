@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 export interface ModalProps {
@@ -12,12 +12,29 @@ export interface ModalProps {
 }
 
 export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) => {
+  const modalRef = useRef<HTMLDivElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
+
   useEffect(() => {
     if (isOpen) {
+      // Save currently focused element
+      previousFocusRef.current = document.activeElement as HTMLElement
+      
+      // Lock body scroll
       document.body.style.overflow = 'hidden';
+      
+      // Focus modal after a brief delay to ensure it's rendered
+      setTimeout(() => {
+        modalRef.current?.focus()
+      }, 100)
     } else {
+      // Restore body scroll
       document.body.style.overflow = 'unset';
+      
+      // Restore focus to previously focused element
+      previousFocusRef.current?.focus()
     }
+    
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -27,10 +44,35 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalPr
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
+    
+    // Focus trap
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !modalRef.current) return
+      
+      const focusableElements = modalRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      const firstElement = focusableElements[0] as HTMLElement
+      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
+      
+      if (e.shiftKey && document.activeElement === firstElement) {
+        e.preventDefault()
+        lastElement?.focus()
+      } else if (!e.shiftKey && document.activeElement === lastElement) {
+        e.preventDefault()
+        firstElement?.focus()
+      }
+    }
+    
     if (isOpen) {
       window.addEventListener('keydown', handleEscape);
+      window.addEventListener('keydown', handleTab);
     }
-    return () => window.removeEventListener('keydown', handleEscape);
+    
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('keydown', handleTab);
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -46,29 +88,37 @@ export const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalPr
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
       style={{ direction: 'rtl' }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={title ? 'modal-title' : undefined}
     >
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden="true"
       />
       
       {/* Modal */}
       <div 
+        ref={modalRef}
+        tabIndex={-1}
         className={`
           relative bg-white rounded-xl shadow-2xl
           w-full ${sizes[size]}
           max-h-[90vh] overflow-y-auto
           animate-in fade-in zoom-in-95 duration-200
+          focus:outline-none
         `}
       >
         {title && (
           <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-neutral-200">
-            <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">{title}</h2>
+            <h2 id="modal-title" className="text-lg sm:text-xl font-semibold text-neutral-900">{title}</h2>
             <button
               onClick={onClose}
-              className="text-neutral-400 hover:text-neutral-600 transition-colors p-1"
-              aria-label="إغلاق"
+              className="text-neutral-400 hover:text-neutral-600 transition-colors p-1 rounded-lg hover:bg-neutral-100"
+              aria-label="إغلاق النافذة"
+              title="إغلاق"
             >
               <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

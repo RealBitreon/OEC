@@ -6,7 +6,11 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams
+}: {
+  searchParams: Promise<{ redirect?: string }>
+}) {
   const supabase = await createClient()
   
   // Check if user is already authenticated
@@ -15,6 +19,14 @@ export default async function LoginPage() {
   if (user) {
     redirect('/dashboard')
   }
+
+  // Get and validate redirect parameter
+  const params = await searchParams
+  const redirectTo = params.redirect || '/dashboard'
+  
+  // Security: Only allow internal redirects
+  const isValidRedirect = redirectTo.startsWith('/') && !redirectTo.startsWith('//')
+  const safeRedirect = isValidRedirect ? redirectTo : '/dashboard'
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4 py-12" dir="rtl">
@@ -70,7 +82,7 @@ export default async function LoginPage() {
 
           {/* Form Container */}
           <div className="p-8">
-            <LoginForm />
+            <LoginForm redirectTo={safeRedirect} />
 
             {/* Sign Up Link */}
             <div className="mt-8 text-center">

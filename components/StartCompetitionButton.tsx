@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getOrCreateFingerprint } from '@/lib/utils/device-fingerprint'
+import { useAsyncOperation } from '@/lib/hooks/useAsyncOperation'
+import { getErrorMessage } from '@/lib/utils/error-messages'
 
 interface StartCompetitionButtonProps {
   competitionId?: string
@@ -18,14 +19,10 @@ export default function StartCompetitionButton({
   children = 'ابدأ الإجابة على الأسئلة',
 }: StartCompetitionButtonProps) {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { loading, error, execute } = useAsyncOperation()
 
   const handleClick = async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
+    await execute(async () => {
       // If no competition provided, fetch active competition
       let targetCompetitionId = competitionId
       let targetSlug = competitionSlug
@@ -35,9 +32,7 @@ export default function StartCompetitionButton({
         const data = await response.json()
 
         if (!data.competition) {
-          setError('لا توجد مسابقة نشطة حالياً')
-          setLoading(false)
-          return
+          throw new Error('لا توجد مسابقة نشطة حالياً')
         }
 
         targetCompetitionId = data.competition.id
@@ -60,11 +55,9 @@ export default function StartCompetitionButton({
       const checkData = await checkResponse.json()
 
       if (!checkData.canAttempt) {
-        setError(
+        throw new Error(
           `لقد استنفدت جميع المحاولات المتاحة (${checkData.maxAttempts} محاولات). لا يمكنك المشاركة مرة أخرى.`
         )
-        setLoading(false)
-        return
       }
 
       // Show remaining attempts warning if less than max
@@ -73,22 +66,20 @@ export default function StartCompetitionButton({
           `لديك ${checkData.remainingAttempts} محاولة متبقية من أصل ${checkData.maxAttempts}. هل تريد المتابعة؟`
         )
         if (!confirmed) {
-          setLoading(false)
-          return
+          throw new Error('تم إلغاء العملية')
         }
       }
 
       // Redirect to competition questions
-      // Ensure slug is properly encoded for URL
       const encodedSlug = encodeURIComponent(targetSlug)
       console.log('[START BUTTON] Redirecting to:', `/competition/${encodedSlug}/participate`)
       router.push(`/competition/${encodedSlug}/participate`)
-    } catch (err) {
-      console.error('Error starting competition:', err)
-      setError('حدث خطأ. يرجى المحاولة مرة أخرى.')
-    } finally {
-      setLoading(false)
-    }
+    }, {
+      onError: (err) => {
+        console.error('Error starting competition:', err)
+      },
+      timeout: 15000
+    })
   }
 
   return (
@@ -102,7 +93,7 @@ export default function StartCompetitionButton({
       </button>
       {error && (
         <div className="mt-2 p-3 bg-red-50 border-2 border-red-200 rounded-lg text-red-700 text-sm">
-          {error}
+          {getErrorMessage(error)}
         </div>
       )}
     </div>

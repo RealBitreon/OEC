@@ -1,18 +1,25 @@
 'use client'
 
 import { useState, FormEvent, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { loginAction } from './actions'
 import { applyCustomValidation } from '@/lib/utils/form-validation'
 import { useToast } from '@/components/ui/Toast'
+import { useAsyncOperation } from '@/lib/hooks/useAsyncOperation'
+import { getErrorMessage } from '@/lib/utils/error-messages'
 
-export default function LoginForm() {
+interface LoginFormProps {
+  redirectTo?: string
+}
+
+export default function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
+  const router = useRouter()
   const { showToast } = useToast()
   const formRef = useRef<HTMLFormElement>(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const { loading, error, execute } = useAsyncOperation()
 
   // Apply custom validation messages with toast
   useEffect(() => {
@@ -25,30 +32,31 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setError('')
-    setLoading(true)
 
-    try {
+    await execute(async () => {
       const formData = new FormData()
       formData.append('username', username)
       formData.append('password', password)
+      formData.append('redirectTo', redirectTo)
 
       const result = await loginAction(formData)
 
       if (result?.error) {
-        setError(result.error)
-        setLoading(false)
+        throw new Error(result.error)
       }
-      // If no error, the redirect will happen automatically
-    } catch (error: any) {
-      // Ignore NEXT_REDIRECT errors - they're expected behavior
-      if (error?.message?.includes('NEXT_REDIRECT')) {
-        return
-      }
-      // Handle other errors
-      setError('حدث خطأ غير متوقع')
-      setLoading(false)
-    }
+      
+      // Success - redirect will happen automatically via server action
+      router.push(redirectTo)
+    }, {
+      onError: (err) => {
+        // Filter out NEXT_REDIRECT errors (expected behavior)
+        if (err?.message?.includes('NEXT_REDIRECT')) {
+          return
+        }
+        showToast(getErrorMessage(err), 'error')
+      },
+      timeout: 15000
+    })
   }
 
   const togglePasswordVisibility = () => {
@@ -61,7 +69,7 @@ export default function LoginForm() {
       {error && (
         <div className="bg-gradient-to-l from-red-50 to-rose-50 border-2 border-red-300 rounded-xl p-4 text-center shadow-sm animate-shake" suppressHydrationWarning>
           <div className="flex items-center justify-center gap-2">
-            <p className="text-red-700 text-sm font-semibold">{error}</p>
+            <p className="text-red-700 text-sm font-semibold">{getErrorMessage(error)}</p>
             <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
