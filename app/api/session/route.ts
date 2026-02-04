@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 
 export async function GET() {
   try {
@@ -11,8 +11,9 @@ export async function GET() {
       return NextResponse.json({ user: null }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using service client to bypass RLS
+    const serviceClient = createServiceClient();
+    const { data: profile, error: profileError } = await serviceClient
       .from('users')
       .select('*')
       .eq('auth_id', user.id)
