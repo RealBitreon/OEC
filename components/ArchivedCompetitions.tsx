@@ -15,25 +15,63 @@ export default function ArchivedCompetitions() {
   }, [])
 
   const loadData = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
     try {
       const [compRes, winnersRes] = await Promise.all([
-        fetch('/api/competitions/archived'),
-        fetch('/api/winners')
-      ])
+        fetch('/api/competitions/archived', { 
+          signal: controller.signal,
+          cache: 'no-store'
+        }),
+        fetch('/api/winners', { 
+          signal: controller.signal,
+          cache: 'no-store'
+        })
+      ]);
+
+      clearTimeout(timeoutId);
+
+      // Parse responses with proper error handling
+      const compData = await compRes.json().catch(() => ({ 
+        ok: false, 
+        data: { competitions: [] } 
+      }));
       
-      // Always parse response, even if not ok (API returns empty arrays gracefully)
-      const compData = await compRes.json().catch(() => ({ competitions: [] }))
-      const winnersData = await winnersRes.json().catch(() => ({ winners: [] }))
+      const winnersData = await winnersRes.json().catch(() => ({ 
+        ok: false, 
+        data: { winners: [] } 
+      }));
+
+      // Extract data from new API format
+      const competitions = compData.data?.competitions || compData.competitions || [];
+      const winners = winnersData.data?.winners || winnersData.winners || [];
+
+      setCompetitions(competitions);
+      setWinners(winners);
+
+      // Log errors for debugging (not shown to user since this is optional content)
+      if (!compData.ok) {
+        console.warn('[ArchivedCompetitions] Competitions API error:', compData.error, compData.message);
+      }
+      if (!winnersData.ok) {
+        console.warn('[ArchivedCompetitions] Winners API error:', winnersData.error, winnersData.message);
+      }
+
+    } catch (error: any) {
+      clearTimeout(timeoutId);
       
-      setCompetitions(compData.competitions || [])
-      setWinners(winnersData.winners || [])
-    } catch (error) {
-      console.error('Error loading archived competitions:', error)
+      if (error.name === 'AbortError') {
+        console.error('[ArchivedCompetitions] Request timeout after 10s');
+      } else {
+        console.error('[ArchivedCompetitions] Error loading data:', error);
+      }
+      
       // Set empty arrays on error to prevent crashes
-      setCompetitions([])
-      setWinners([])
+      setCompetitions([]);
+      setWinners([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
