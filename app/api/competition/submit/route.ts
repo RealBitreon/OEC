@@ -209,17 +209,8 @@ export async function POST(request: NextRequest) {
     
     const totalQuestions = questions?.length || 0
     
-    // Calculate score
-    let score = 0
-    for (const question of questions || []) {
-      const userAnswer = answers[question.id]
-      if (userAnswer && userAnswer === question.correct_answer) {
-        score++
-      }
-    }
-
-    // Calculate tickets - DISABLED: Tickets functionality removed
-    // Teachers will manually review and approve submissions
+    // SIMPLIFIED: No automatic scoring - teacher will review manually
+    // Just save the submission with status 'pending' for teacher review
     const ticketsEarned = 0
     const submittedAt = new Date()
 
@@ -230,9 +221,8 @@ export async function POST(request: NextRequest) {
       id: submissionId,
       competition_id,
       participant_name,
-      score,
       totalQuestions,
-      ticketsEarned
+      status: 'pending - awaiting teacher review'
     })
     
     // Build submission data with only available fields
@@ -243,10 +233,10 @@ export async function POST(request: NextRequest) {
       // participant_email is required in DB, use placeholder if not provided
       participant_email: participant_email || `${participant_name.replace(/\s+/g, '_')}@placeholder.local`,
       answers,
-      score,
+      score: null, // Will be set by teacher after review
       total_questions: totalQuestions,
       tickets_earned: ticketsEarned,
-      status: 'pending',
+      status: 'pending', // Teacher will review and change to 'approved' or 'rejected'
       submitted_at: submittedAt.toISOString(),
     }
     
@@ -257,13 +247,6 @@ export async function POST(request: NextRequest) {
     if (grade) submissionData.grade = grade
     if (proofs) submissionData.proofs = proofs
     // Note: device_fingerprint is stored in attempt_tracking table, not submissions table
-    
-    // Add is_correct if column exists (graceful degradation)
-    try {
-      submissionData.is_correct = score === totalQuestions
-    } catch (e) {
-      console.log(`[${correlationId}] is_correct column may not exist, skipping`)
-    }
     
     const { error: subError } = await supabase
       .from('submissions')
@@ -314,17 +297,17 @@ export async function POST(request: NextRequest) {
     // REMOVED: Ticket creation - tickets functionality has been removed
     // Teachers will manually review submissions instead
 
-    console.log(`[${correlationId}] Submission created successfully: ${submissionId}, score: ${score}/${totalQuestions}, tickets: ${ticketsEarned}`)
+    console.log(`[${correlationId}] Submission created successfully: ${submissionId}, status: pending (awaiting teacher review)`)
 
     return NextResponse.json<SuccessResponse>({
       ok: true,
       submission: {
         id: submissionId,
-        score,
+        score: 0, // Will be determined by teacher
         totalQuestions,
         ticketsEarned,
         status: 'pending',
-        isEligible: ticketsEarned > 0
+        isEligible: false // Will be determined by teacher after review
       },
       correlationId
     })

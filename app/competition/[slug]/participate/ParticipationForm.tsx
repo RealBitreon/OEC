@@ -451,7 +451,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
 
       setResult({
         success: true,
-        correctCount,
+        correctCount: 0, // Not calculated - teacher will review
         totalQuestions: questions.length
       })
       setStep('complete')
@@ -820,10 +820,6 @@ export default function ParticipationForm({ competition, questions }: Props) {
 
   // Step 3: Complete
   if (step === 'complete' && result) {
-    const allCorrect = result.correctCount === result.totalQuestions
-    const someCorrect = result.correctCount > 0 && result.correctCount < result.totalQuestions
-    const noneCorrect = result.correctCount === 0
-    
     // Format competition end date
     const endDate = new Date(competition.endAt)
     const endDateStr = endDate.toLocaleDateString('ar-SA', { 
@@ -834,48 +830,24 @@ export default function ParticipationForm({ competition, questions }: Props) {
     })
     
     // Check if user can retry (has remaining attempts)
-    const canRetry = attemptInfo && attemptInfo.canAttempt && !allCorrect
+    const canRetry = attemptInfo && attemptInfo.canAttempt
 
     return (
       <div className="space-y-6">
         {/* Success Header */}
         <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-          <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${
-            allCorrect ? 'bg-green-100' : someCorrect ? 'bg-amber-100' : 'bg-blue-100'
-          }`}>
-            <span className="text-6xl">
-              {allCorrect ? '🎉' : someCorrect ? '💪' : '🌟'}
-            </span>
+          <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-green-100">
+            <span className="text-6xl">🎉</span>
           </div>
           
-          <h2 className={`text-3xl font-bold mb-4 ${
-            allCorrect ? 'text-green-700' : someCorrect ? 'text-amber-700' : 'text-blue-700'
-          }`}>
-            {allCorrect ? 'ممتاز! إجابات صحيحة!' : 
-             someCorrect ? 'أحسنت! لديك إجابات صحيحة' : 
-             'شكراً لمشاركتك!'}
+          <h2 className="text-3xl font-bold mb-4 text-green-700">
+            تم إرسال إجابتك بنجاح!
           </h2>
           
           <p className="text-xl text-neutral-700 mb-6 leading-relaxed">
-            {allCorrect ? (
-              <>
-                🌟 رائع! أجبت على جميع الأسئلة بشكل صحيح!<br/>
-                ✨ اسمك الآن في قائمة المرشحين للسحب! 🎯<br/>
-                🍀 بالتوفيق في السحب على الجوائز!
-              </>
-            ) : someCorrect ? (
-              <>
-                أجبت على {result.correctCount} من {result.totalQuestions} أسئلة بشكل صحيح<br/>
-                اسمك في قائمة المرشحين للسحب! 🎯<br/>
-                بالتوفيق! 🍀
-              </>
-            ) : (
-              <>
-                لا بأس، الأخطاء جزء من التعلم! 💪<br/>
-                {canRetry ? 'يمكنك المحاولة مرة أخرى' : 'لقد استنفدت جميع المحاولات'}<br/>
-                استمر في التعلم وستنجح بإذن الله! 📚
-              </>
-            )}
+            ✨ شكراً لمشاركتك في المسابقة!<br/>
+            📋 سيقوم المعلم بمراجعة إجابتك قريباً<br/>
+            🍀 بالتوفيق!
           </p>
         </div>
 
@@ -992,7 +964,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
           </div>
         </div>
 
-        {attemptInfo && !attemptInfo.canAttempt && !allCorrect && (
+        {attemptInfo && !attemptInfo.canAttempt && (
           <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4">
             <p className="text-sm text-amber-800 font-semibold flex items-center gap-2">
               <span className="text-xl">⚠️</span>
@@ -1016,11 +988,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
           )}
           <button
             onClick={() => router.push('/')}
-            className={`px-8 py-3 font-bold rounded-lg transition-all duration-200 ${
-              allCorrect || !canRetry
-                ? 'bg-primary hover:bg-primary-dark text-white'
-                : 'border-2 border-neutral-300 text-neutral-700 hover:bg-neutral-50'
-            }`}
+            className="px-8 py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg transition-all duration-200"
           >
             العودة للصفحة الرئيسية
           </button>
