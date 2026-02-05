@@ -56,6 +56,8 @@ export default function ParticipationForm({ competition, questions }: Props) {
   const [checkingAttempts, setCheckingAttempts] = useState(true)
   const [resetCode, setResetCode] = useState('')
   const [showOutOfTriesModal, setShowOutOfTriesModal] = useState(false)
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle')
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
 
   // Apply custom validation messages with toast
   useEffect(() => {
@@ -65,6 +67,80 @@ export default function ParticipationForm({ competition, questions }: Props) {
       })
     }
   }, [step, showToast]) // Re-apply when step changes
+
+  // Auto-save functionality - save answers and evidences to localStorage every 30 seconds
+  useEffect(() => {
+    if (step !== 'questions') return
+
+    const saveData = () => {
+      try {
+        setAutoSaveStatus('saving')
+        const dataToSave = {
+          firstName,
+          fatherName,
+          familyName,
+          gradeLevel,
+          classNumber,
+          answers,
+          evidences,
+          currentQuestionIndex,
+          timestamp: new Date().toISOString()
+        }
+        localStorage.setItem(`competition_${competition.id}_draft`, JSON.stringify(dataToSave))
+        setAutoSaveStatus('saved')
+        setLastSaved(new Date())
+        
+        // Reset to idle after 2 seconds
+        setTimeout(() => setAutoSaveStatus('idle'), 2000)
+      } catch (error) {
+        console.error('Auto-save failed:', error)
+        setAutoSaveStatus('idle')
+      }
+    }
+
+    // Save immediately when answers or evidences change
+    const timeoutId = setTimeout(saveData, 30000) // 30 seconds
+
+    return () => clearTimeout(timeoutId)
+  }, [step, answers, evidences, firstName, fatherName, familyName, gradeLevel, classNumber, currentQuestionIndex, competition.id])
+
+  // Load saved data on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`competition_${competition.id}_draft`)
+      if (saved) {
+        const data = JSON.parse(saved)
+        const savedTime = new Date(data.timestamp)
+        const hoursSince = (new Date().getTime() - savedTime.getTime()) / (1000 * 60 * 60)
+        
+        // Only restore if saved within last 24 hours
+        if (hoursSince < 24) {
+          const shouldRestore = confirm(
+            `🔄 تم العثور على إجابات محفوظة من ${savedTime.toLocaleString('ar-SA')}\n\nهل تريد استعادة إجاباتك السابقة؟`
+          )
+          
+          if (shouldRestore) {
+            setFirstName(data.firstName || '')
+            setFatherName(data.fatherName || '')
+            setFamilyName(data.familyName || '')
+            setGradeLevel(data.gradeLevel || '')
+            setClassNumber(data.classNumber || '')
+            setAnswers(data.answers || {})
+            setEvidences(data.evidences || {})
+            setCurrentQuestionIndex(data.currentQuestionIndex || 0)
+            showToast('✅ تم استعادة إجاباتك السابقة', 'success')
+          } else {
+            localStorage.removeItem(`competition_${competition.id}_draft`)
+          }
+        } else {
+          // Remove old data
+          localStorage.removeItem(`competition_${competition.id}_draft`)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load saved data:', error)
+    }
+  }, [competition.id, showToast])
 
   // Check attempts on mount
   useEffect(() => {
@@ -370,6 +446,9 @@ export default function ParticipationForm({ competition, questions }: Props) {
       const result = await response.json()
       console.log('[SUBMIT] Success:', result)
 
+      // Clear auto-saved data after successful submission
+      localStorage.removeItem(`competition_${competition.id}_draft`)
+
       setResult({
         success: true,
         correctCount,
@@ -535,6 +614,27 @@ export default function ParticipationForm({ competition, questions }: Props) {
               السؤال {currentQuestionIndex + 1} من {questions.length}
             </span>
             <div className="flex items-center gap-4">
+              {/* Auto-save indicator */}
+              {autoSaveStatus !== 'idle' && (
+                <div className="flex items-center gap-2 text-xs">
+                  {autoSaveStatus === 'saving' && (
+                    <>
+                      <Icons.clock className="w-4 h-4 text-blue-500 animate-spin" />
+                      <span className="text-blue-600">جاري الحفظ...</span>
+                    </>
+                  )}
+                  {autoSaveStatus === 'saved' && (
+                    <>
+                      <span className="text-green-600">✓ تم الحفظ</span>
+                    </>
+                  )}
+                </div>
+              )}
+              {lastSaved && (
+                <span className="text-xs text-neutral-500">
+                  آخر حفظ: {lastSaved.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => setShowAllQuestions(!showAllQuestions)}
@@ -737,57 +837,136 @@ export default function ParticipationForm({ competition, questions }: Props) {
     const canRetry = attemptInfo && attemptInfo.canAttempt && !allCorrect
 
     return (
-      <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-        <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${
-          allCorrect ? 'bg-green-100' : someCorrect ? 'bg-amber-100' : 'bg-blue-100'
-        }`}>
-          <span className="text-6xl">
-            {allCorrect ? '🎉' : someCorrect ? '💪' : '🌟'}
-          </span>
+      <div className="space-y-6">
+        {/* Success Header */}
+        <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+          <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${
+            allCorrect ? 'bg-green-100' : someCorrect ? 'bg-amber-100' : 'bg-blue-100'
+          }`}>
+            <span className="text-6xl">
+              {allCorrect ? '🎉' : someCorrect ? '💪' : '🌟'}
+            </span>
+          </div>
+          
+          <h2 className={`text-3xl font-bold mb-4 ${
+            allCorrect ? 'text-green-700' : someCorrect ? 'text-amber-700' : 'text-blue-700'
+          }`}>
+            {allCorrect ? 'ممتاز! إجابات صحيحة!' : 
+             someCorrect ? 'أحسنت! لديك إجابات صحيحة' : 
+             'شكراً لمشاركتك!'}
+          </h2>
+          
+          <p className="text-xl text-neutral-700 mb-6 leading-relaxed">
+            {allCorrect ? (
+              <>
+                🌟 رائع! أجبت على جميع الأسئلة بشكل صحيح!<br/>
+                ✨ اسمك الآن في قائمة المرشحين للسحب! 🎯<br/>
+                🍀 بالتوفيق في السحب على الجوائز!
+              </>
+            ) : someCorrect ? (
+              <>
+                أجبت على {result.correctCount} من {result.totalQuestions} أسئلة بشكل صحيح<br/>
+                اسمك في قائمة المرشحين للسحب! 🎯<br/>
+                بالتوفيق! 🍀
+              </>
+            ) : (
+              <>
+                لا بأس، الأخطاء جزء من التعلم! 💪<br/>
+                {canRetry ? 'يمكنك المحاولة مرة أخرى' : 'لقد استنفدت جميع المحاولات'}<br/>
+                استمر في التعلم وستنجح بإذن الله! 📚
+              </>
+            )}
+          </p>
         </div>
-        
-        <h2 className={`text-3xl font-bold mb-4 ${
-          allCorrect ? 'text-green-700' : someCorrect ? 'text-amber-700' : 'text-blue-700'
-        }`}>
-          {allCorrect ? 'ممتاز! إجابات صحيحة!' : 
-           someCorrect ? 'أحسنت! لديك إجابات صحيحة' : 
-           'شكراً لمشاركتك!'}
-        </h2>
-        
-        <p className="text-xl text-neutral-700 mb-6 leading-relaxed">
-          {allCorrect ? (
-            <>
-              🌟 رائع! أجبت على جميع الأسئلة بشكل صحيح!<br/>
-              ✨ اسمك الآن في قائمة المرشحين للسحب! 🎯<br/>
-              🍀 بالتوفيق في السحب على الجوائز!
-            </>
-          ) : someCorrect ? (
-            <>
-              أجبت على {result.correctCount} من {result.totalQuestions} أسئلة بشكل صحيح<br/>
-              اسمك في قائمة المرشحين للسحب! 🎯<br/>
-              بالتوفيق! 🍀
-            </>
-          ) : (
-            <>
-              لا بأس، الأخطاء جزء من التعلم! 💪<br/>
-              {canRetry ? 'يمكنك المحاولة مرة أخرى' : 'لقد استنفدت جميع المحاولات'}<br/>
-              استمر في التعلم وستنجح بإذن الله! 📚
-            </>
-          )}
-        </p>
 
-        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-xl p-6 mb-6">
-          <div className="mb-3"><Icons.clock className="w-12 h-12 text-blue-600" /></div>
-          <p className="text-lg font-bold text-blue-900 mb-2">
-            ⏳ إجابتك قيد المراجعة
-          </p>
-          <p className="text-sm text-blue-700">
-            سيتم مراجعة إجابتك من قبل معلم المصادر قريباً
-          </p>
+        {/* Submission Status Tracker */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">حالة إجابتك</h3>
+          
+          {/* Status Steps */}
+          <div className="relative">
+            {/* Progress Line */}
+            <div className="absolute top-8 left-8 right-8 h-1 bg-gray-200">
+              <div className="h-full bg-blue-500 w-1/4 transition-all duration-500" />
+            </div>
+
+            {/* Steps */}
+            <div className="relative flex justify-between">
+              {/* Step 1: Submitted */}
+              <div className="flex flex-col items-center flex-1">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl bg-green-500 text-white relative z-10">
+                  ✓
+                </div>
+                <p className="mt-3 text-sm font-bold text-green-600">تم الإرسال</p>
+                <p className="mt-1 text-xs text-gray-600 text-center max-w-[120px]">
+                  تم استلام إجابتك بنجاح
+                </p>
+              </div>
+
+              {/* Step 2: Under Review */}
+              <div className="flex flex-col items-center flex-1">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl bg-blue-500 text-white ring-4 ring-blue-200 scale-110 relative z-10">
+                  🔍
+                </div>
+                <p className="mt-3 text-sm font-bold text-blue-600">قيد المراجعة</p>
+                <p className="mt-1 text-xs text-gray-600 text-center max-w-[120px]">
+                  المعلم يراجع إجابتك
+                </p>
+              </div>
+
+              {/* Step 3: Accepted */}
+              <div className="flex flex-col items-center flex-1">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl bg-gray-200 text-gray-400 relative z-10">
+                  ✓
+                </div>
+                <p className="mt-3 text-sm font-medium text-gray-400">مقبولة</p>
+                <p className="mt-1 text-xs text-gray-400 text-center max-w-[120px]">
+                  مؤهل للسحب
+                </p>
+              </div>
+
+              {/* Step 4: In Draw */}
+              <div className="flex flex-col items-center flex-1">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl bg-gray-200 text-gray-400 relative z-10">
+                  🎲
+                </div>
+                <p className="mt-3 text-sm font-medium text-gray-400">في السحب</p>
+                <p className="mt-1 text-xs text-gray-400 text-center max-w-[120px]">
+                  دخلت السحب
+                </p>
+              </div>
+
+              {/* Step 5: Winner */}
+              <div className="flex flex-col items-center flex-1">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl bg-gray-200 text-gray-400 relative z-10">
+                  🏆
+                </div>
+                <p className="mt-3 text-sm font-medium text-gray-400">فائز!</p>
+                <p className="mt-1 text-xs text-gray-400 text-center max-w-[120px]">
+                  مبروك الفوز
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Current Status Details */}
+          <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">ℹ️</span>
+              <div className="flex-1">
+                <p className="font-medium text-blue-900 mb-1">
+                  إجابتك قيد المراجعة
+                </p>
+                <p className="text-sm text-blue-800">
+                  سيقوم معلم مركز مصادر التعلم بمراجعة إجابتك والأدلة المقدمة. الوقت المتوقع للمراجعة: 24-48 ساعة
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Important Information Box */}
-        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-6 mb-6 text-right">
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-6 text-right">
           <div className="flex items-start gap-3 mb-4">
             <Icons.info className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
             <div className="flex-1">
@@ -805,22 +984,29 @@ export default function ParticipationForm({ competition, questions }: Props) {
                 <p>
                   🏆 <strong>التكريم:</strong> سيتم تكريم الفائزين في الطابور إن شاء الله
                 </p>
+                <p>
+                  📧 <strong>الإشعارات:</strong> سيتم إعلامك بالنتيجة عبر المدرسة
+                </p>
               </div>
             </div>
           </div>
         </div>
 
         {attemptInfo && !attemptInfo.canAttempt && !allCorrect && (
-          <p className="text-sm text-amber-600 mb-6 font-semibold bg-amber-50 border border-amber-200 rounded-lg p-3">
-            ⚠️ لقد استنفدت جميع المحاولات ({attemptInfo.maxAttempts} محاولات)
-          </p>
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4">
+            <p className="text-sm text-amber-800 font-semibold flex items-center gap-2">
+              <span className="text-xl">⚠️</span>
+              لقد استنفدت جميع المحاولات ({attemptInfo.maxAttempts} محاولات)
+            </p>
+          </div>
         )}
         
         <div className="flex gap-4 justify-center flex-wrap">
           {canRetry && (
             <button
               onClick={() => {
-                // Reload page to check attempts again
+                // Clear saved data and reload
+                localStorage.removeItem(`competition_${competition.id}_draft`)
                 window.location.reload()
               }}
               className="px-8 py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg transition-all duration-200"
