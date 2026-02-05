@@ -305,7 +305,7 @@ export default function ParticipationForm({ competition, questions }: Props) {
       return
     }
     const evidence = evidences[currentQuestion.id]
-    if (!evidence || !evidence.volume.trim() || !evidence.page.trim()) {
+    if (!evidence || !evidence.volume?.trim() || !evidence.page?.trim()) {
       showToast('يرجى إدخال الدليل كاملاً (المجلد والصفحة)', 'warning')
       return
     }
