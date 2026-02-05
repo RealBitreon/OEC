@@ -112,8 +112,11 @@ export default function ManageCompetition({ competition: initialCompetition, pro
             </label>
             <input
               type="datetime-local"
-              value={competition.start_at.slice(0, 16)}
-              onChange={e => setCompetition({ ...competition, start_at: e.target.value })}
+              value={competition.start_at ? new Date(competition.start_at).toISOString().slice(0, 16) : ''}
+              onChange={e => {
+                const isoString = e.target.value ? new Date(e.target.value).toISOString() : ''
+                setCompetition({ ...competition, start_at: isoString })
+              }}
               className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -124,8 +127,11 @@ export default function ManageCompetition({ competition: initialCompetition, pro
             </label>
             <input
               type="datetime-local"
-              value={competition.end_at.slice(0, 16)}
-              onChange={e => setCompetition({ ...competition, end_at: e.target.value })}
+              value={competition.end_at ? new Date(competition.end_at).toISOString().slice(0, 16) : ''}
+              onChange={e => {
+                const isoString = e.target.value ? new Date(e.target.value).toISOString() : ''
+                setCompetition({ ...competition, end_at: isoString })
+              }}
               className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -136,8 +142,11 @@ export default function ManageCompetition({ competition: initialCompetition, pro
             </label>
             <input
               type="datetime-local"
-              value={competition.wheel_at.slice(0, 16)}
-              onChange={e => setCompetition({ ...competition, wheel_at: e.target.value })}
+              value={competition.wheel_at ? new Date(competition.wheel_at).toISOString().slice(0, 16) : ''}
+              onChange={e => {
+                const isoString = e.target.value ? new Date(e.target.value).toISOString() : ''
+                setCompetition({ ...competition, wheel_at: isoString })
+              }}
               className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               required
             />
