@@ -105,7 +105,7 @@ export default function ManageCompetition({ competition: initialCompetition, pro
           </select>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-neutral-900 mb-2">
               تاريخ البداية *
@@ -123,33 +123,26 @@ export default function ManageCompetition({ competition: initialCompetition, pro
           </div>
           <div>
             <label className="block text-sm font-medium text-neutral-900 mb-2">
-              تاريخ النهاية *
+              تاريخ النهاية * <span className="text-xs text-neutral-600">(سيتم السحب تلقائياً في نفس اليوم)</span>
             </label>
             <input
               type="datetime-local"
               value={competition.end_at ? new Date(competition.end_at).toISOString().slice(0, 16) : ''}
               onChange={e => {
                 const isoString = e.target.value ? new Date(e.target.value).toISOString() : ''
-                setCompetition({ ...competition, end_at: isoString })
+                // Set wheel_at to same as end_at automatically
+                setCompetition({ 
+                  ...competition, 
+                  end_at: isoString,
+                  wheel_at: isoString // السحب في نفس يوم الانتهاء
+                })
               }}
               className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               required
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-900 mb-2">
-              موعد السحب *
-            </label>
-            <input
-              type="datetime-local"
-              value={competition.wheel_at ? new Date(competition.wheel_at).toISOString().slice(0, 16) : ''}
-              onChange={e => {
-                const isoString = e.target.value ? new Date(e.target.value).toISOString() : ''
-                setCompetition({ ...competition, wheel_at: isoString })
-              }}
-              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
+            <p className="mt-1 text-xs text-blue-600">
+              💡 سيتم السحب على الجوائز تلقائياً في نفس يوم انتهاء المسابقة
+            </p>
           </div>
         </div>
 

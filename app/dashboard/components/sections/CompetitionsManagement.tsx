@@ -291,8 +291,6 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
       const today = new Date()
       const endDate = new Date(today)
       endDate.setDate(endDate.getDate() + 30)
-      const wheelDate = new Date(endDate)
-      wheelDate.setDate(wheelDate.getDate() + 7)
 
       setFormData({
         title: '',
@@ -300,7 +298,7 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
         status: 'draft',
         start_at: today.toISOString().split('T')[0],
         end_at: endDate.toISOString().split('T')[0],
-        wheel_at: wheelDate.toISOString().split('T')[0],
+        wheel_at: endDate.toISOString().split('T')[0], // السحب في نفس يوم الانتهاء
         rules: {
           eligibilityMode: 'all_correct',
           minCorrectAnswers: 5,
@@ -348,7 +346,6 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
       // Validate dates
       const startDate = new Date(formData.start_at)
       const endDate = new Date(formData.end_at)
-      const wheelDate = new Date(formData.wheel_at)
 
       if (startDate >= endDate) {
         alert('تاريخ البداية يجب أن يكون قبل تاريخ النهاية')
@@ -356,16 +353,16 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
         return
       }
 
-      if (endDate >= wheelDate) {
-        alert('تاريخ النهاية يجب أن يكون قبل موعد السحب')
-        setSaving(false)
-        return
+      // Ensure wheel_at is same as end_at (automatic draw on end date)
+      const updatedFormData = {
+        ...formData,
+        wheel_at: formData.end_at // السحب تلقائياً في نفس يوم الانتهاء
       }
 
       if (competitionId) {
-        await updateCompetition(competitionId, formData)
+        await updateCompetition(competitionId, updatedFormData)
       } else {
-        await createCompetition(formData)
+        await createCompetition(updatedFormData)
       }
       
       // FIXED: Clear draft from localStorage after successful save
@@ -436,7 +433,7 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-neutral-900 mb-2">
               تاريخ البداية *
@@ -452,28 +449,25 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
 
           <div>
             <label className="block text-sm font-medium text-neutral-900 mb-2">
-              تاريخ النهاية *
+              تاريخ النهاية * <span className="text-xs text-neutral-600">(سيتم السحب تلقائياً في نفس اليوم)</span>
             </label>
             <input
               type="date"
               required
               value={formData.end_at}
-              onChange={e => setFormData({ ...formData, end_at: e.target.value })}
+              onChange={e => {
+                // Set both end_at and wheel_at to the same date
+                setFormData({ 
+                  ...formData, 
+                  end_at: e.target.value,
+                  wheel_at: e.target.value // السحب في نفس يوم الانتهاء
+                })
+              }}
               className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-neutral-900 mb-2">
-              تاريخ السحب *
-            </label>
-            <input
-              type="date"
-              required
-              value={formData.wheel_at}
-              onChange={e => setFormData({ ...formData, wheel_at: e.target.value })}
-              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+            <p className="mt-1 text-xs text-blue-600">
+              💡 سيتم السحب على الجوائز تلقائياً في نفس يوم انتهاء المسابقة
+            </p>
           </div>
         </div>
 
