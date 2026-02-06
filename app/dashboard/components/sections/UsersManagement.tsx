@@ -1,8 +1,33 @@
+/**
+ * Users Management Component
+ * 
+ * Admin interface for managing user accounts, roles, and permissions.
+ * 
+ * Features:
+ * - List all users with search and filtering
+ * - Create new user accounts
+ * - Edit user profiles and roles
+ * - Delete users (with protection against self-deletion)
+ * - Reset user passwords
+ * - View user statistics
+ * 
+ * Security:
+ * - Only accessible to CEO and LRC_MANAGER roles
+ * - Password reset requires admin privileges
+ * - Self-deletion is prevented
+ * 
+ * Performance:
+ * - Pagination for large user lists
+ * - Client-side search for instant filtering
+ * - Optimistic UI updates
+ */
+
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
 import { User } from '../../core/types'
 import { getUsers, getUserStats, createUser, updateUser, deleteUser, resetUserPassword, type UserFilters } from '../../actions/users'
+import { safeString } from '@/lib/utils/form-helpers'
 
 interface UserData {
   id: string
@@ -467,11 +492,27 @@ function CreateUserModal({ onClose, onSuccess }: { onClose: () => void; onSucces
   )
 }
 
+/**
+ * Edit User Modal
+ * 
+ * Allows admins to modify user information and reset passwords.
+ * 
+ * CRITICAL FIX: All form fields must be initialized with strings, never null.
+ * React throws warnings if controlled inputs receive null values.
+ * We use safeString() to convert null/undefined to empty strings.
+ * 
+ * Features:
+ * - Edit display name, email, phone, and role
+ * - Reset password with confirmation
+ * - Optimistic concurrency (future: add version checking)
+ */
 function EditUserModal({ user, onClose, onSuccess }: { user: UserData; onClose: () => void; onSuccess: () => void }) {
+  // CRITICAL: Use safeString() to ensure no null values in controlled inputs
+  // This prevents React warning: "value prop on input should not be null"
   const [formData, setFormData] = useState({
-    display_name: user.display_name,
-    email: user.email,
-    phone: user.phone || '',
+    display_name: safeString(user.display_name),
+    email: safeString(user.email),
+    phone: safeString(user.phone),
     role: user.role
   })
   const [submitting, setSubmitting] = useState(false)
