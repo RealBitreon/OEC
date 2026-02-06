@@ -23,7 +23,7 @@ export default function Header({ profile, onMenuClick }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-20 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-b border-neutral-200 dark:border-neutral-800 shadow-sm">
+    <header className="z-20 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-b border-neutral-200 dark:border-neutral-800 shadow-sm">
       <div className="flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 lg:px-8">
         {/* Mobile Menu Button */}
         <button

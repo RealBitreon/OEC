@@ -4,11 +4,13 @@
 // COMPETITIONS MANAGEMENT (LRC + CEO)
 // ============================================
 
-import { useEffect, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { Icons } from '@/components/icons'
 import { useRouter } from 'next/navigation'
 import { User, Competition } from '../../core/types'
 import { getCompetitions, createCompetition, updateCompetition, deleteCompetition, activateCompetition } from '../../actions/competitions'
+
 
 interface CompetitionsManagementProps {
   profile: User
@@ -16,47 +18,39 @@ interface CompetitionsManagementProps {
 
 export default function CompetitionsManagement({ profile }: CompetitionsManagementProps) {
   const router = useRouter()
-  const [competitions, setCompetitions] = useState<Competition[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  useEffect(() => {
-    let mounted = true
-    
-    const fetchCompetitions = async () => {
-      try {
-        const data = await getCompetitions()
-        if (mounted) {
-          setCompetitions(data)
-        }
-      } catch (error) {
-        console.error('Failed to load competitions:', error)
-      } finally {
-        if (mounted) {
-          setLoading(false)
-        }
-      }
-    }
-    
-    fetchCompetitions()
-    
-    return () => {
-      mounted = false
-    }
-  }, [])
+  const { data: competitions = [], isLoading: loading } = useQuery({
+    queryKey: ['competitions'],
+    queryFn: getCompetitions,
+    staleTime: 30 * 1000,
+  })
 
-  const loadCompetitions = async () => {
-    setLoading(true)
-    try {
-      const data = await getCompetitions()
-      setCompetitions(data)
-    } catch (error) {
-      console.error('Failed to load competitions:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const activateMutation = useMutation({
+    mutationFn: activateCompetition,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['competitions'] })
+      queryClient.invalidateQueries({ queryKey: ['overview-stats'] })
+    },
+  })
+
+  const archiveMutation = useMutation({
+    mutationFn: (id: string) => updateCompetition(id, { status: 'archived' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['competitions'] })
+      queryClient.invalidateQueries({ queryKey: ['overview-stats'] })
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteCompetition,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['competitions'] })
+      queryClient.invalidateQueries({ queryKey: ['overview-stats'] })
+    },
+  })
 
   const handleCreate = () => {
     setEditingId(null)
@@ -72,8 +66,7 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
     if (!confirm('هل تريد تفعيل هذه المسابقة؟ سيتم أرشفة المسابقة النشطة الحالية.')) return
     
     try {
-      await activateCompetition(id)
-      await loadCompetitions()
+      await activateMutation.mutateAsync(id)
     } catch (error) {
       alert('فشل تفعيل المسابقة')
     }
@@ -83,8 +76,7 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
     if (!confirm('هل تريد أرشفة هذه المسابقة؟')) return
     
     try {
-      await updateCompetition(id, { status: 'archived' })
-      await loadCompetitions()
+      await archiveMutation.mutateAsync(id)
     } catch (error) {
       alert('فشل أرشفة المسابقة')
     }
@@ -94,8 +86,7 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
     if (!confirm('هل تريد حذف هذه المسابقة؟ سيتم نقل الأسئلة إلى التدريب.')) return
     
     try {
-      await deleteCompetition(id)
-      await loadCompetitions()
+      await deleteMutation.mutateAsync(id)
     } catch (error) {
       alert('فشل حذف المسابقة')
     }
@@ -120,7 +111,8 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
         onClose={() => {
           setShowForm(false)
           setEditingId(null)
-          loadCompetitions()
+          queryClient.invalidateQueries({ queryKey: ['competitions'] })
+          queryClient.invalidateQueries({ queryKey: ['overview-stats'] })
         }}
       />
     )
@@ -221,6 +213,14 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
                     أرشفة
                   </button>
                 )}
+                {competition.status === 'archived' && (
+                  <button
+                    onClick={() => router.push(`/dashboard/competitions/${competition.id}/migrate-training`)}
+                    className="px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+                  >
+                    📚 نقل إلى التدريب
+                  </button>
+                )}
                 {profile.role === 'CEO' && (
                   <button
                     onClick={() => handleDelete(competition.id)}
@@ -291,8 +291,6 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
       const today = new Date()
       const endDate = new Date(today)
       endDate.setDate(endDate.getDate() + 30)
-      const wheelDate = new Date(endDate)
-      wheelDate.setDate(wheelDate.getDate() + 7)
 
       setFormData({
         title: '',
@@ -300,7 +298,7 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
         status: 'draft',
         start_at: today.toISOString().split('T')[0],
         end_at: endDate.toISOString().split('T')[0],
-        wheel_at: wheelDate.toISOString().split('T')[0],
+        wheel_at: endDate.toISOString().split('T')[0], // السحب في نفس يوم الانتهاء
         rules: {
           eligibilityMode: 'all_correct',
           minCorrectAnswers: 5,
@@ -348,7 +346,6 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
       // Validate dates
       const startDate = new Date(formData.start_at)
       const endDate = new Date(formData.end_at)
-      const wheelDate = new Date(formData.wheel_at)
 
       if (startDate >= endDate) {
         alert('تاريخ البداية يجب أن يكون قبل تاريخ النهاية')
@@ -356,16 +353,16 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
         return
       }
 
-      if (endDate >= wheelDate) {
-        alert('تاريخ النهاية يجب أن يكون قبل موعد السحب')
-        setSaving(false)
-        return
+      // Ensure wheel_at is same as end_at (automatic draw on end date)
+      const updatedFormData = {
+        ...formData,
+        wheel_at: formData.end_at // السحب تلقائياً في نفس يوم الانتهاء
       }
 
       if (competitionId) {
-        await updateCompetition(competitionId, formData)
+        await updateCompetition(competitionId, updatedFormData)
       } else {
-        await createCompetition(formData)
+        await createCompetition(updatedFormData)
       }
       
       // FIXED: Clear draft from localStorage after successful save
@@ -436,7 +433,7 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-neutral-900 mb-2">
               تاريخ البداية *
@@ -452,28 +449,25 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
 
           <div>
             <label className="block text-sm font-medium text-neutral-900 mb-2">
-              تاريخ النهاية *
+              تاريخ النهاية * <span className="text-xs text-neutral-600">(سيتم السحب تلقائياً في نفس اليوم)</span>
             </label>
             <input
               type="date"
               required
               value={formData.end_at}
-              onChange={e => setFormData({ ...formData, end_at: e.target.value })}
+              onChange={e => {
+                // Set both end_at and wheel_at to the same date
+                setFormData({ 
+                  ...formData, 
+                  end_at: e.target.value,
+                  wheel_at: e.target.value // السحب في نفس يوم الانتهاء
+                })
+              }}
               className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-neutral-900 mb-2">
-              تاريخ السحب *
-            </label>
-            <input
-              type="date"
-              required
-              value={formData.wheel_at}
-              onChange={e => setFormData({ ...formData, wheel_at: e.target.value })}
-              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+            <p className="mt-1 text-xs text-blue-600">
+              💡 سيتم السحب على الجوائز تلقائياً في نفس يوم انتهاء المسابقة
+            </p>
           </div>
         </div>
 

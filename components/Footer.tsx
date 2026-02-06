@@ -1,3 +1,19 @@
+/**
+ * Footer Component
+ * 
+ * The site footer with brand, navigation, contact info, and credits.
+ * This appears on every page and provides essential links and information.
+ * 
+ * Structure:
+ * - 4-column grid (brand, quick links, help, contact)
+ * - Social media icons
+ * - Bottom bar with copyright and legal links
+ * - School and developer attribution
+ * 
+ * Design: Dark background for visual weight, responsive layout,
+ * hover effects for interactivity, icons for visual interest.
+ */
+
 import Link from 'next/link'
 import { config } from '@/lib/config/site'
 

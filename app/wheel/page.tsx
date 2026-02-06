@@ -126,10 +126,12 @@ export default function WheelPage() {
               <NoActiveCompetition />
             ) : !wheelRun ? (
               <NotLockedYet competition={competition} />
-            ) : wheelRun.status === 'ready' ? (
+            ) : wheelRun.winner_id && wheelRun.run_at ? (
+              <WheelComplete wheelRun={wheelRun} competition={competition} />
+            ) : wheelRun.locked_at ? (
               <LockedNotRun wheelRun={wheelRun} competition={competition} />
             ) : (
-              <WheelComplete wheelRun={wheelRun} competition={competition} />
+              <NotLockedYet competition={competition} />
             )}
           </div>
         </div>
@@ -200,6 +202,9 @@ function NotLockedYet({ competition }: { competition: any }) {
 }
 
 function LockedNotRun({ wheelRun, competition }: { wheelRun: any; competition: any }) {
+  const candidatesCount = wheelRun.locked_snapshot?.length || 0
+  const totalTickets = wheelRun.locked_snapshot?.reduce((sum: number, e: any) => sum + (e.totalTickets || 0), 0) || 0
+  
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -217,41 +222,46 @@ function LockedNotRun({ wheelRun, competition }: { wheelRun: any; competition: a
         
         <div className="grid md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4">
-            <div className="text-3xl font-bold text-primary">{wheelRun.candidatesSnapshot.length}</div>
+            <div className="text-3xl font-bold text-primary">{candidatesCount}</div>
             <div className="text-sm text-neutral-600">مرشح مؤهل</div>
           </div>
           <div className="bg-white rounded-xl p-4">
-            <div className="text-3xl font-bold text-green-600">{wheelRun.totalTickets}</div>
+            <div className="text-3xl font-bold text-green-600">{totalTickets}</div>
             <div className="text-sm text-neutral-600">إجمالي التذاكر</div>
           </div>
           <div className="bg-white rounded-xl p-4">
             <div className="text-3xl font-bold text-blue-600">
-              {new Date(competition.wheelSpinAt).toLocaleDateString('ar-OM', { day: 'numeric', month: 'short' })}
+              {competition.wheelSpinAt 
+                ? new Date(competition.wheelSpinAt).toLocaleDateString('ar-OM', { day: 'numeric', month: 'short' })
+                : 'قريباً'}
             </div>
             <div className="text-sm text-neutral-600">موعد السحب</div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl p-4 text-sm text-neutral-600">
-          <div>تم القفل في: {new Date(wheelRun.lockedAt).toLocaleString('ar-OM')}</div>
+          <div>تم القفل في: {new Date(wheelRun.locked_at).toLocaleString('ar-OM')}</div>
         </div>
       </div>
 
       {/* Idle Wheel Animation */}
-      <div className="card bg-white">
-        <h3 className="text-xl font-bold text-neutral-900 mb-4 text-center">السحب</h3>
-        <ScrollingWheel 
-          candidates={wheelRun.candidatesSnapshot}
-          status="idle"
-        />
-      </div>
+      {wheelRun.locked_snapshot && wheelRun.locked_snapshot.length > 0 && (
+        <div className="card bg-white">
+          <h3 className="text-xl font-bold text-neutral-900 mb-4 text-center">السحب</h3>
+          <ScrollingWheel 
+            candidates={wheelRun.locked_snapshot.map((e: any) => ({
+              studentUsername: e.user?.display_name || e.user?.username || 'مرشح',
+              tickets: e.totalTickets || 1
+            }))}
+            status="idle"
+          />
+        </div>
+      )}
     </motion.div>
   )
 }
 
 function WheelComplete({ wheelRun, competition }: { wheelRun: any; competition: any }) {
-  const [showReplay, setShowReplay] = useState(false)
-  
   // Determine display name
   const displayName = wheelRun.winner_display_name || 
     (wheelRun.show_winner_name !== false 
@@ -277,7 +287,7 @@ function WheelComplete({ wheelRun, competition }: { wheelRun: any; competition: 
             repeatDelay: 3
           }}
           className="text-8xl mb-6"
-        ><Icons.trophy className="w-6 h-6" /></motion.div>
+        >🏆</motion.div>
         <h2 className="text-3xl font-bold text-green-700 mb-4">
           مبروك للفائز!
         </h2>
@@ -303,7 +313,7 @@ function WheelComplete({ wheelRun, competition }: { wheelRun: any; competition: 
           </div>
         )}
         
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 gap-4 max-w-md mx-auto">
           <div className="bg-white rounded-xl p-4 shadow-sm border border-green-100">
             <div className="text-2xl font-bold text-primary">{wheelRun.locked_snapshot?.length || 0}</div>
             <div className="text-sm text-neutral-600">مرشح مؤهل</div>
@@ -314,67 +324,6 @@ function WheelComplete({ wheelRun, competition }: { wheelRun: any; competition: 
             </div>
             <div className="text-sm text-neutral-600">إجمالي التذاكر</div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-green-100">
-            <div className="text-2xl font-bold text-blue-600">
-              {wheelRun.draw_metadata?.winner_ticket_index !== undefined 
-                ? `#${wheelRun.draw_metadata.winner_ticket_index}` 
-                : '✓'}
-            </div>
-            <div className="text-sm text-neutral-600">التذكرة الفائزة</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Wheel Replay */}
-      <div className="card bg-white shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-neutral-900">🎯 السحب</h3>
-          <button
-            onClick={() => setShowReplay(!showReplay)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-          >
-            {showReplay ? '⏸️ إيقاف' : '▶️ إعادة السحب'}
-          </button>
-        </div>
-        <ScrollingWheel 
-          candidates={wheelRun.locked_snapshot?.map((e: any) => ({
-            studentUsername: e.user.display_name || e.user.username,
-            tickets: e.totalTickets
-          })) || []}
-          status={showReplay ? 'spinning' : 'done'}
-          winnerUsername={displayName}
-          winnerTicketIndex={wheelRun.draw_metadata?.winner_ticket_index}
-        />
-      </div>
-
-      {/* Competition Info */}
-      <div className="card bg-gradient-to-br from-neutral-50 to-neutral-100 border border-neutral-200">
-        <h3 className="text-lg font-bold text-neutral-900 mb-4">📋 معلومات السحب</h3>
-        <div className="grid md:grid-cols-2 gap-4 text-sm">
-          <div className="bg-white rounded-lg p-4 border border-neutral-200">
-            <div className="text-neutral-600 mb-1">المسابقة</div>
-            <div className="font-bold text-neutral-900">{competition.title}</div>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-neutral-200">
-            <div className="text-neutral-600 mb-1">تاريخ السحب</div>
-            <div className="font-bold text-neutral-900">
-              {new Date(wheelRun.run_at).toLocaleString('ar-SA')}
-            </div>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-neutral-200">
-            <div className="text-neutral-600 mb-1">تاريخ القفل</div>
-            <div className="font-bold text-neutral-900">
-              {new Date(wheelRun.locked_at).toLocaleString('ar-SA')}
-            </div>
-          </div>
-          {wheelRun.draw_metadata?.draw_hash && (
-            <div className="bg-white rounded-lg p-4 border border-neutral-200">
-              <div className="text-neutral-600 mb-1">Hash التحقق</div>
-              <div className="font-mono text-xs text-neutral-700 break-all">
-                {wheelRun.draw_metadata.draw_hash.substring(0, 32)}...
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

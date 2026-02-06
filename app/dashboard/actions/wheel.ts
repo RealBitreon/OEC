@@ -2,7 +2,6 @@
 
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
 export async function getEligibleStudents(competitionId: string) {
@@ -53,28 +52,45 @@ export async function getEligibleStudents(competitionId: string) {
 }
 
 export async function lockSnapshot(competitionId: string) {
+  // Use regular client for auth check
   const supabase = await createClient()
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('student_id')?.value
   
-  if (!userId) {
+  // Get authenticated user
+  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+  
+  if (authError || !authUser) {
+    console.error('Auth error:', authError)
     throw new Error('غير مصرح - يجب تسجيل الدخول')
   }
 
-  // Verify user role
-  const { data: user, error: userError } = await supabase
-    .from('student_participants')
-    .select('role, username')
-    .eq('id', userId)
+  console.log('Auth user ID:', authUser.id)
+
+  // Use service client to bypass RLS for user lookup
+  const serviceSupabase = createServiceClient()
+  const { data: user, error: userError } = await serviceSupabase
+    .from('users')
+    .select('id, role, username')
+    .eq('auth_id', authUser.id)
     .single()
   
-  if (userError || !user) {
-    throw new Error('فشل التحقق من المستخدم')
+  if (userError) {
+    console.error('User lookup error:', userError)
+    console.error('Looking for auth_id:', authUser.id)
+    throw new Error(`فشل التحقق من المستخدم: ${userError.message}`)
   }
+  
+  if (!user) {
+    console.error('No user found for auth_id:', authUser.id)
+    throw new Error('لم يتم العثور على ملف المستخدم. يرجى التواصل مع المسؤول.')
+  }
+  
+  console.log('User found:', user.username, 'Role:', user.role)
   
   if (!['LRC_MANAGER', 'CEO'].includes(user.role)) {
     throw new Error('غير مصرح - يتطلب صلاحيات مدير LRC أو CEO')
   }
+  
+  const userId = user.id
   
   // Get eligible students
   const eligible = await getEligibleStudents(competitionId)
@@ -140,19 +156,22 @@ export async function lockSnapshot(competitionId: string) {
 }
 
 export async function runDraw(competitionId: string, seed?: string) {
+  // Use regular client for auth check
   const supabase = await createClient()
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('student_id')?.value
   
-  if (!userId) {
+  // Get authenticated user
+  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+  
+  if (authError || !authUser) {
     throw new Error('غير مصرح - يجب تسجيل الدخول')
   }
 
-  // Verify user role
-  const { data: user, error: userError } = await supabase
-    .from('student_participants')
-    .select('role, username')
-    .eq('id', userId)
+  // Use service client to bypass RLS for user lookup
+  const serviceSupabase = createServiceClient()
+  const { data: user, error: userError } = await serviceSupabase
+    .from('users')
+    .select('id, role, username')
+    .eq('auth_id', authUser.id)
     .single()
   
   if (userError || !user) {
@@ -162,6 +181,8 @@ export async function runDraw(competitionId: string, seed?: string) {
   if (!['LRC_MANAGER', 'CEO'].includes(user.role)) {
     throw new Error('غير مصرح - يتطلب صلاحيات مدير LRC أو CEO')
   }
+  
+  const userId = user.id
   
   // Get wheel run
   const { data: wheelRun, error: fetchError } = await supabase
@@ -272,11 +293,28 @@ export async function getWheelStatus(competitionId: string) {
   const { data: wheelRun } = await supabase
     .from('wheel_runs')
     .select(`
-      *,
-      winner:student_participants!wheel_runs_winner_id_fkey(id, username, display_name, class)
+      *
     `)
     .eq('competition_id', competitionId)
-    .single()
+    .maybeSingle()
+  
+  // If there's a winner_id, fetch the submission details separately
+  if (wheelRun && wheelRun.winner_id) {
+    const { data: winner } = await supabase
+      .from('submissions')
+      .select('id, participant_name, participant_email, grade')
+      .eq('id', wheelRun.winner_id)
+      .single()
+    
+    if (winner) {
+      wheelRun.winner = {
+        id: winner.id,
+        username: winner.participant_email,
+        display_name: winner.participant_name,
+        class: winner.grade
+      }
+    }
+  }
   
   return wheelRun
 }
@@ -287,19 +325,22 @@ export async function publishResults(competitionId: string, settings: {
   winnerDisplayName?: string
   announcementMessage?: string
 }) {
+  // Use regular client for auth check
   const supabase = await createClient()
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('student_id')?.value
   
-  if (!userId) {
+  // Get authenticated user
+  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+  
+  if (authError || !authUser) {
     throw new Error('غير مصرح - يجب تسجيل الدخول')
   }
 
-  // Verify user role
-  const { data: user, error: userError } = await supabase
-    .from('student_participants')
-    .select('role, username')
-    .eq('id', userId)
+  // Use service client to bypass RLS for user lookup
+  const serviceSupabase = createServiceClient()
+  const { data: user, error: userError } = await serviceSupabase
+    .from('users')
+    .select('id, role, username')
+    .eq('auth_id', authUser.id)
     .single()
   
   if (userError || !user) {
@@ -309,6 +350,8 @@ export async function publishResults(competitionId: string, settings: {
   if (!['LRC_MANAGER', 'CEO'].includes(user.role)) {
     throw new Error('غير مصرح - يتطلب صلاحيات مدير LRC أو CEO')
   }
+  
+  const userId = user.id
   
   // Verify wheel run exists and has winner
   const { data: wheelRun } = await supabase
@@ -355,19 +398,22 @@ export async function publishResults(competitionId: string, settings: {
 }
 
 export async function resetWheel(competitionId: string, reason: string) {
+  // Use regular client for auth check
   const supabase = await createClient()
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('student_id')?.value
   
-  if (!userId) {
+  // Get authenticated user
+  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+  
+  if (authError || !authUser) {
     throw new Error('غير مصرح - يجب تسجيل الدخول')
   }
 
-  // Verify user role - only CEO can reset
-  const { data: user, error: userError } = await supabase
-    .from('student_participants')
-    .select('role, username')
-    .eq('id', userId)
+  // Use service client to bypass RLS for user lookup
+  const serviceSupabase = createServiceClient()
+  const { data: user, error: userError } = await serviceSupabase
+    .from('users')
+    .select('id, role, username')
+    .eq('auth_id', authUser.id)
     .single()
   
   if (userError || !user) {
@@ -377,6 +423,8 @@ export async function resetWheel(competitionId: string, reason: string) {
   if (user.role !== 'CEO') {
     throw new Error('غير مصرح - يتطلب صلاحيات CEO فقط')
   }
+  
+  const userId = user.id
   
   if (!reason || reason.trim().length < 10) {
     throw new Error('يجب تقديم سبب واضح لإعادة التعيين (10 أحرف على الأقل)')

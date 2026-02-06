@@ -278,6 +278,9 @@ import {
   Club,
   Spade,
   Heart as HeartIcon,
+  ChevronsLeft,
+  ChevronsRight,
+  Loader,
 } from 'lucide-react'
 
 export type IconProps = {
@@ -363,6 +366,12 @@ export const Icons = {
   chevronLeft: ChevronLeft,
   chevronDown: ChevronDown,
   chevronUp: ChevronUp,
+  chevronsLeft: ChevronsLeft,
+  chevronsRight: ChevronsRight,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   home: Home,
   
   // Actions
@@ -377,8 +386,16 @@ export const Icons = {
   
   // Status
   loading: Loader2,
+  Loader,
+  Loader2,
   success: CheckCircle2,
   error: XCircle,
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  Eye,
+  EyeOff,
+  RefreshCw,
   
   // Media
   play: Play,

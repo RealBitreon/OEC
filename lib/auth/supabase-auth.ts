@@ -82,6 +82,23 @@ export async function signup(
       return { success: false, error: 'Failed to create user' }
     }
 
+    // Create user record in users table
+    const { error: insertError } = await serviceSupabase
+      .from('users')
+      .insert({
+        auth_id: data.user.id,
+        username,
+        email,
+        role,
+      })
+
+    if (insertError) {
+      console.error('Failed to create user record:', insertError)
+      // Clean up auth user if users table insert fails
+      await serviceSupabase.auth.admin.deleteUser(data.user.id)
+      return { success: false, error: 'Failed to create user profile' }
+    }
+
     return { success: true }
   } catch (error) {
     console.error('Signup error:', error)
@@ -109,17 +126,28 @@ export async function login(
     })
 
     if (error) {
-      return { success: false, error: 'Invalid username or password' }
+      console.error('Supabase auth error:', error)
+      
+      // Provide user-friendly error messages in Arabic
+      if (error.message.includes('Invalid login credentials')) {
+        return { success: false, error: 'اسم المستخدم أو كلمة المرور غير صحيحة' }
+      }
+      
+      if (error.message.includes('Email not confirmed')) {
+        return { success: false, error: 'البريد الإلكتروني غير مؤكد' }
+      }
+      
+      return { success: false, error: 'اسم المستخدم أو كلمة المرور غير صحيحة' }
     }
 
     if (!data.session) {
-      return { success: false, error: 'Failed to create session' }
+      return { success: false, error: 'فشل إنشاء الجلسة' }
     }
 
     return { success: true }
   } catch (error) {
     console.error('Login error:', error)
-    return { success: false, error: 'Login failed' }
+    return { success: false, error: 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى' }
   }
 }
 

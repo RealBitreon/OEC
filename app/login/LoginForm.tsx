@@ -7,6 +7,9 @@ import { applyCustomValidation } from '@/lib/utils/form-validation'
 import { useToast } from '@/components/ui/Toast'
 import { useAsyncOperation } from '@/lib/hooks/useAsyncOperation'
 import { getErrorMessage } from '@/lib/utils/error-messages'
+import { Input } from '@/components/ui/Input'
+import { Button } from '@/components/ui/Button'
+import { Icons } from '@/components/icons'
 
 interface LoginFormProps {
   redirectTo?: string
@@ -18,7 +21,8 @@ export default function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps)
   const formRef = useRef<HTMLFormElement>(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<{ username?: string; password?: string }>({})
   const { loading, error, execute } = useAsyncOperation()
 
   // Apply custom validation messages with toast
@@ -30,25 +34,198 @@ export default function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps)
     }
   }, [showToast])
 
+  const validateForm = (): boolean => {
+    const newErrors: { username?: string; password?: string } = {}
+    
+    if (!username.trim()) {
+      newErrors.username = 'يرجى إدخال اسم المستخدم'
+    }
+    
+    if (!password) {
+      newErrors.password = 'يرجى إدخال كلمة المرور'
+    } else if (password.length < 6) {
+      newErrors.password = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    e.stopPropagation()
+
+    // Prevent double submission
+    if (isSubmitting || loading) {
+      console.log('Already submitting, ignoring...')
+      return
+    }
+
+    // Validate form
+    if (!validateForm()) {
+      return
+    }
+
+    console.log('Form submitted with:', { username: username.trim(), hasPassword: !!password })
+
+    setIsSubmitting(true)
+
+    await execute(
+      async () => {
+        const formData = new FormData()
+        formData.append('username', username.trim())
+        formData.append('password', password)
+
+        const result = await loginAction(formData)
+
+        if (!result.success) {
+          throw new Error(result.error || 'فشل تسجيل الدخول')
+        }
+
+        return result
+      },
+      {
+        onSuccess: (result) => {
+          console.log('Login successful:', result)
+          showToast('تم تسجيل الدخول بنجاح', 'success')
+          
+          // Small delay for better UX
+          setTimeout(() => {
+            router.push(redirectTo)
+            router.refresh()
+          }, 500)
+        },
+        onError: (err) => {
+          console.error('Login error:', err)
+          const errorMessage = getErrorMessage(err.message)
+          showToast(errorMessage, 'error')
+          setIsSubmitting(false)
+        },
+        timeout: 15000,
+      }
+    )
+  }
+
+  return (
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className="space-y-6"
+      noValidate
+    >
+      <Input
+        label="اسم المستخدم"
+        type="text"
+        value={username}
+        onChange={(e) => {
+          setUsername(e.target.value)
+          if (errors.username) setErrors({ ...errors, username: undefined })
+        }}
+        error={errors.username}
+        placeholder="أدخل اسم المستخدم"
+        required
+        disabled={isSubmitting || loading}
+        leftIcon={<Icons.user className="w-5 h-5" />}
+        autoComplete="username"
+        autoFocus
+      />
+
+      <Input
+        label="كلمة المرور"
+        type="password"
+        value={password}
+        onChange={(e) => {
+          setPassword(e.target.value)
+          if (errors.password) setErrors({ ...errors, password: undefined })
+        }}
+        error={errors.password}
+        placeholder="أدخل كلمة المرور"
+        required
+        disabled={isSubmitting || loading}
+        leftIcon={<Icons.lock className="w-5 h-5" />}
+        showPasswordToggle
+        autoComplete="current-password"
+      />
+
+      {error && (
+        <div
+          className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
+          role="alert"
+        >
+          <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
+            <Icons.alertCircle className="w-5 h-5 flex-shrink-0" />
+            <p className="text-sm">{getErrorMessage(error)}</p>
+          </div>
+        </div>
+      )}
+
+      <Button
+        type="submit"
+        variant="primary"
+        size="lg"
+        fullWidth
+        loading={isSubmitting || loading}
+        disabled={isSubmitting || loading}
+      >
+        {isSubmitting || loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
+      </Button>
+    </form>
+  )
+}
+
+    if (!password) {
+      showToast('يرجى إدخال كلمة المرور', 'error')
+      return
+    }
+
+    if (username.length < 3) {
+      showToast('اسم المستخدم يجب أن يكون 3 أحرف على الأقل', 'error')
+      return
+    }
+
+    setIsSubmitting(true)
 
     await execute(async () => {
       const formData = new FormData()
-      formData.append('username', username)
+      formData.append('username', username.trim())
       formData.append('password', password)
       formData.append('redirectTo', redirectTo)
 
-      const result = await loginAction(formData)
+      console.log('Calling loginAction...')
 
-      if (result?.error) {
-        throw new Error(result.error)
+      try {
+        const result = await loginAction(formData)
+
+        console.log('Login result:', result)
+
+        if (result?.error) {
+          throw new Error(result.error)
+        }
+        
+        // Show success message
+        showToast('تم تسجيل الدخول بنجاح! جاري التحويل...', 'success')
+        
+        // Small delay to show success message before redirect
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Success - redirect will happen automatically via server action
+        router.push(redirectTo)
+        router.refresh()
+      } catch (err: any) {
+        console.error('Login error caught:', err)
+        // Filter out NEXT_REDIRECT errors (expected behavior)
+        if (err?.message?.includes('NEXT_REDIRECT')) {
+          showToast('تم تسجيل الدخول بنجاح! جاري التحويل...', 'success')
+          return
+        }
+        throw err
+      } finally {
+        setIsSubmitting(false)
       }
-      
-      // Success - redirect will happen automatically via server action
-      router.push(redirectTo)
     }, {
       onError: (err) => {
+        console.error('Execute onError:', err)
+        setIsSubmitting(false)
         // Filter out NEXT_REDIRECT errors (expected behavior)
         if (err?.message?.includes('NEXT_REDIRECT')) {
           return
@@ -62,6 +239,8 @@ export default function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps)
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword)
   }
+
+  const isButtonDisabled = loading || isSubmitting || !username.trim() || !password || username.length < 3
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" dir="rtl" suppressHydrationWarning noValidate>
@@ -94,7 +273,7 @@ export default function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps)
             placeholder="أدخل اسم المستخدم"
             required
             minLength={3}
-            disabled={loading}
+            disabled={loading || isSubmitting}
             className="w-full px-5 py-4 rounded-xl border-2 border-emerald-200 bg-gradient-to-bl from-white to-emerald-50/30 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 disabled:bg-neutral-100 disabled:cursor-not-allowed transition-all duration-300 text-right text-lg font-medium shadow-sm hover:shadow-md hover:border-emerald-300"
             dir="rtl"
             autoFocus
@@ -132,7 +311,7 @@ export default function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps)
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
-            disabled={loading}
+            disabled={loading || isSubmitting}
             className="w-full px-5 py-4 pl-14 rounded-xl border-2 border-emerald-200 bg-gradient-to-bl from-white to-emerald-50/30 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 disabled:bg-neutral-100 disabled:cursor-not-allowed transition-all duration-300 text-right text-lg font-medium shadow-sm hover:shadow-md hover:border-emerald-300"
             dir="rtl"
             autoComplete="current-password"
@@ -143,7 +322,7 @@ export default function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps)
             type="button"
             onClick={togglePasswordVisibility}
             className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 hover:text-emerald-600 focus:outline-none transition-colors duration-200 p-1 rounded-lg hover:bg-emerald-50"
-            disabled={loading}
+            disabled={loading || isSubmitting}
           >
             {showPassword ? (
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -163,18 +342,22 @@ export default function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps)
       <div className="pt-4">
         <button
           type="submit"
-          disabled={loading || !username || !password}
+          disabled={isButtonDisabled}
+          onClick={(e) => {
+            console.log('Button clicked!', { disabled: isButtonDisabled })
+          }}
           className="w-full relative overflow-hidden bg-gradient-to-l from-emerald-500 via-green-500 to-teal-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
+          aria-label="تسجيل الدخول"
         >
           <div className="absolute inset-0 bg-gradient-to-l from-emerald-600 via-green-600 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <div className="relative flex items-center justify-center gap-2 text-lg">
-            {loading ? (
+            {(loading || isSubmitting) ? (
               <>
-                <span>جاري تسجيل الدخول...</span>
                 <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
+                <span>جاري تسجيل الدخول...</span>
               </>
             ) : (
               <>
@@ -184,8 +367,19 @@ export default function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps)
             )}
           </div>
           {/* Shine Effect */}
-          <div className="absolute inset-0 translate-x-full group-hover:-translate-x-full transition-transform duration-1000 bg-gradient-to-l from-transparent via-white/20 to-transparent"></div>
+          {!(loading || isSubmitting) && (
+            <div className="absolute inset-0 translate-x-full group-hover:-translate-x-full transition-transform duration-1000 bg-gradient-to-l from-transparent via-white/20 to-transparent"></div>
+          )}
         </button>
+        
+        {/* Helper text for disabled state */}
+        {(!username.trim() || !password || username.length < 3) && !(loading || isSubmitting) && (
+          <p className="mt-2 text-xs text-neutral-500 text-center">
+            {!username.trim() ? 'يرجى إدخال اسم المستخدم' : 
+             username.length < 3 ? 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل' :
+             !password ? 'يرجى إدخال كلمة المرور' : ''}
+          </p>
+        )}
       </div>
     </form>
   )
