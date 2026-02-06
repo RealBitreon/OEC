@@ -1,0 +1,156 @@
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License
+with Additional Commercial Use Restrictions
+
+Copyright (c) 2026 Omani Encyclopedia Competition Platform
+
+This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 
+International License with the following additional terms:
+
+================================================================================
+TERMS AND CONDITIONS
+================================================================================
+
+1. DEFINITIONS
+
+   "Software" refers to the Omani Encyclopedia Competition Platform, including 
+   all source code, documentation, assets, and associated files.
+
+   "Substantial Modification" means changes that represent at least 40% of the 
+   original codebase, including but not limited to:
+   - Complete redesign of the user interface
+   - Significant architectural changes
+   - Addition of major new features
+   - Fundamental changes to core functionality
+
+   "Commercial Use" means any use of the Software for financial gain, including 
+   but not limited to:
+   - Selling the Software or access to it
+   - Offering the Software as a paid service
+   - Using the Software in a commercial product
+   - Monetizing the Software through advertisements or subscriptions
+
+2. PERMISSIONS
+
+   You are free to:
+   
+   ✓ Use the Software for personal, educational, or non-profit purposes
+   ✓ Study how the Software works and modify it
+   ✓ Share copies of the Software
+   ✓ Distribute your modifications under the same license
+   ✓ Use the Software internally within your organization
+   ✓ Deploy the Software for educational institutions (free of charge)
+
+3. RESTRICTIONS
+
+   You may NOT:
+   
+   ✗ Sell the Software or any derivative work without Substantial Modification
+   ✗ Offer the Software as a commercial service without Substantial Modification
+   ✗ Remove or alter copyright notices
+   ✗ Use the Software name or trademarks without permission
+   ✗ Sublicense the Software under different terms
+   ✗ Use the Software for commercial purposes without making Substantial Modifications
+
+4. COMMERCIAL USE REQUIREMENTS
+
+   If you wish to use the Software commercially, you MUST:
+   
+   a) Make Substantial Modifications (minimum 40% of codebase changed)
+   b) Clearly document all modifications made
+   c) Provide attribution to the original work
+   d) Release your modifications under the same license
+   e) Not misrepresent the origin of the Software
+
+5. ATTRIBUTION
+
+   You must give appropriate credit, provide a link to the license, and indicate 
+   if changes were made. You may do so in any reasonable manner, but not in any 
+   way that suggests the licensor endorses you or your use.
+
+   Required attribution format:
+   
+   "Based on Omani Encyclopedia Competition Platform
+    Original work: [repository URL]
+    Licensed under CC BY-NC-SA 4.0 with Commercial Restrictions"
+
+6. SHARE-ALIKE
+
+   If you remix, transform, or build upon the Software, you must distribute your 
+   contributions under the same license as the original.
+
+7. NO ADDITIONAL RESTRICTIONS
+
+   You may not apply legal terms or technological measures that legally restrict 
+   others from doing anything the license permits.
+
+8. PATENT GRANT
+
+   Each contributor grants you a non-exclusive, worldwide, royalty-free patent 
+   license under the contributor's essential patent claims, to make, use, sell, 
+   offer for sale, import and otherwise run, modify and propagate the contents 
+   of the Software.
+
+9. DISCLAIMER OF WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+10. LIMITATION OF LIABILITY
+
+    IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+    THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+================================================================================
+EXAMPLES OF PERMITTED AND PROHIBITED USE
+================================================================================
+
+PERMITTED ✓
+-----------
+• Using the Software for your school's competition (free)
+• Modifying the Software for your organization's needs
+• Learning from the code and using concepts in your own projects
+• Contributing improvements back to the project
+• Deploying for non-profit educational purposes
+• Creating a fork with substantial changes for commercial use
+
+PROHIBITED ✗
+------------
+• Selling the Software as-is or with minor changes
+• Offering the Software as a paid SaaS without substantial modifications
+• Rebranding the Software and selling it
+• Using the Software in a commercial product without substantial modifications
+• Removing attribution and claiming as your own work
+
+================================================================================
+COMMERCIAL LICENSE AVAILABLE
+================================================================================
+
+If you wish to use this Software commercially without making Substantial 
+Modifications, please contact the copyright holder to discuss a commercial 
+license agreement.
+
+Contact: [your-email@example.com]
+
+================================================================================
+FULL LICENSE TEXT
+================================================================================
+
+This is a human-readable summary. The full legal text of the Creative Commons 
+Attribution-NonCommercial-ShareAlike 4.0 International License is available at:
+
+https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+
+================================================================================
+
+For questions about this license, please open an issue on the project repository 
+or contact the copyright holder directly.

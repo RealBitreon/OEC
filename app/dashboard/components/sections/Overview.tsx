@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { User } from '../../core/types'
 import { getOverviewStats } from '../../actions/overview'
 import { Icons } from '@/components/icons'
+import { SkeletonStats } from '@/components/ui/SkeletonCard'
 
 interface OverviewProps {
   profile: User
@@ -46,16 +47,19 @@ export default function Overview({ profile }: OverviewProps) {
     let mounted = true
     
     const fetchStats = async () => {
+      console.log('[Overview] Fetching stats...')
       try {
+        setLoading(true)
         setError(null)
-        const data = await getOverviewStats()
+        const result = await getOverviewStats()
+        console.log('[Overview] Stats loaded:', result)
         if (mounted) {
-          setStats(data)
+          setStats(result)
         }
-      } catch (error) {
-        console.error('Failed to load stats:', error)
+      } catch (err) {
+        console.error('[Overview] Error fetching stats:', err)
         if (mounted) {
-          setError(error instanceof Error ? error.message : 'فشل تحميل الإحصائيات')
+          setError(err instanceof Error ? err.message : 'فشل تحميل الإحصائيات')
         }
       } finally {
         if (mounted) {
@@ -71,25 +75,20 @@ export default function Overview({ profile }: OverviewProps) {
     }
   }, [])
 
-
+  console.log('[Overview] Render state:', { loading, hasError: !!error, hasData: !!stats })
 
   if (loading) {
+    console.log('[Overview] Showing loading state')
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">نظرة عامة</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm animate-pulse">
-              <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2 mb-4" />
-              <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4" />
-            </div>
-          ))}
-        </div>
+        <SkeletonStats />
       </div>
     )
   }
 
   if (error) {
+    console.error('[Overview] Rendering error state:', error)
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">نظرة عامة</h1>
@@ -113,6 +112,7 @@ export default function Overview({ profile }: OverviewProps) {
   }
 
   if (!stats) {
+    console.log('[Overview] No stats data, showing empty state')
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">نظرة عامة</h1>
@@ -122,6 +122,8 @@ export default function Overview({ profile }: OverviewProps) {
       </div>
     )
   }
+
+  console.log('[Overview] Rendering stats:', stats)
 
   return (
     <div className="space-y-6">

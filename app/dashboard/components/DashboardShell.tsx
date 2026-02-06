@@ -5,8 +5,10 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { DashboardSection } from '../core/types'
 import { ThemeProvider } from '@/lib/theme/ThemeProvider'
 import { AuthProvider, useAuth } from '@/lib/auth/AuthProvider'
+import { QueryProvider } from '@/lib/query/QueryProvider'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import DashboardBreadcrumb from './DashboardBreadcrumb'
 import Overview from './sections/Overview'
 import CompetitionsManagement from './sections/CompetitionsManagement'
 import QuestionsManagement from './sections/QuestionsManagement'
@@ -19,31 +21,37 @@ function DashboardContent({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { user: profile } = useAuth()
-  const [activeSection, setActiveSection] = useState<DashboardSection>('overview')
+  const [activeSection, setActiveSection] = useState<DashboardSection>(() => {
+    // Initialize from URL on mount
+    if (typeof window !== 'undefined') {
+      const section = new URLSearchParams(window.location.search).get('section') as DashboardSection
+      return section || 'overview'
+    }
+    return 'overview'
+  })
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Check if we're on a sub-route (not the main dashboard page)
   const isSubRoute = pathname !== '/dashboard'
 
-  // Update active section based on URL search params
+  // Sync state with URL (only when URL changes externally)
   useEffect(() => {
     const section = searchParams.get('section') as DashboardSection
-    if (section && section !== activeSection) {
-      setActiveSection(section)
+    const targetSection = section || 'overview'
+    if (targetSection !== activeSection) {
+      setActiveSection(targetSection)
     }
   }, [searchParams])
   
-  // Update URL when section changes
-  useEffect(() => {
+  // Update URL when section changes via sidebar click
+  const handleSectionChange = (section: DashboardSection) => {
+    setActiveSection(section)
     if (typeof window !== 'undefined' && !isSubRoute) {
-      const currentSection = searchParams.get('section')
-      if (currentSection !== activeSection) {
-        const url = new URL(window.location.href)
-        url.searchParams.set('section', activeSection)
-        window.history.replaceState({}, '', url.toString())
-      }
+      const url = new URL(window.location.href)
+      url.searchParams.set('section', section)
+      window.history.pushState({}, '', url.toString())
     }
-  }, [activeSection, isSubRoute, searchParams])
+  }
 
   // Always render dashboard - auth is checked at layout level
   // Use profile from AuthProvider (passed as initialUser from server)
@@ -80,21 +88,32 @@ function DashboardContent({ children }: { children?: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-100 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors" dir="rtl">
+      <style jsx global>{`
+        body {
+          padding-top: 0 !important;
+        }
+      `}</style>
       <Sidebar
         profile={currentProfile}
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
+        onSectionChange={handleSectionChange}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
-      <div className="lg:pr-72">
+      <div className="lg:pr-64 xl:pr-72">
         <Header
           profile={currentProfile}
           onMenuClick={() => setSidebarOpen(true)}
         />
 
         <main className="p-3 sm:p-4 md:p-6 lg:p-8 animate-fade-in">
+          {!isSubRoute && (
+            <DashboardBreadcrumb
+              activeSection={activeSection}
+              onSectionChange={handleSectionChange}
+            />
+          )}
           {isSubRoute ? children : renderSection()}
         </main>
       </div>
@@ -115,9 +134,11 @@ export default function DashboardShell({ children, initialUser }: { children?: R
   
   return (
     <ThemeProvider>
-      <AuthProvider initialUser={initialUser}>
-        <DashboardContent>{children}</DashboardContent>
-      </AuthProvider>
+      <QueryProvider>
+        <AuthProvider initialUser={initialUser}>
+          <DashboardContent>{children}</DashboardContent>
+        </AuthProvider>
+      </QueryProvider>
     </ThemeProvider>
   )
 }

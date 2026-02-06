@@ -1,12 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { User } from '../../core/types'
 import { 
-  getSubmissions, 
   reviewSubmission, 
   bulkReview, 
-  getSubmissionStats,
   allowRetry,
   type SubmissionFilters 
 } from '../../actions/submissions'
@@ -54,7 +52,8 @@ interface Stats {
 
 export default function SubmissionsReview({ profile, competitionId }: { profile: User, competitionId?: string }) {
   const { showToast } = useToast()
-  const { loading, error, execute } = useAsyncOperation()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [page, setPage] = useState(1)
@@ -76,13 +75,52 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
   const [editProofs, setEditProofs] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [competitions, setCompetitions] = useState<Array<{ id: string; title: string }>>([])
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   const loadData = useCallback(async () => {
-    await execute(async () => {
-      const [submissionsData, statsData] = await Promise.all([
-        getSubmissions(filters, page, 20),
-        getSubmissionStats(filters.competition_id)
+    if (!mountedRef.current) return
+    
+    setLoading(true)
+    setError(null)
+    
+    try {
+      // Build query params
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '20'
+      })
+      
+      if (filters.competition_id) params.append('competition_id', filters.competition_id)
+      if (filters.status) params.append('status', filters.status)
+      if (filters.search) params.append('search', filters.search)
+      
+      // Fetch submissions and stats in parallel
+      const [submissionsRes, statsRes] = await Promise.all([
+        fetch(`/api/submissions?${params.toString()}`),
+        fetch(`/api/submissions/stats${filters.competition_id ? `?competition_id=${filters.competition_id}` : ''}`)
       ])
+      
+      if (!submissionsRes.ok) {
+        const errorData = await submissionsRes.json()
+        throw new Error(errorData.error || 'فشل في جلب البيانات')
+      }
+      
+      if (!statsRes.ok) {
+        const errorData = await statsRes.json()
+        throw new Error(errorData.error || 'فشل في جلب الإحصائيات')
+      }
+      
+      const submissionsData = await submissionsRes.json()
+      const statsData = await statsRes.json()
+      
+      if (!mountedRef.current) return
       
       // Ensure submissions is always an array
       const submissionsArray = Array.isArray(submissionsData?.submissions) 
@@ -104,16 +142,19 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
         )
         setCompetitions(uniqueComps as any)
       }
-    }, {
-      onError: (err) => {
-        console.error('Error loading data:', err)
+      
+      setLoading(false)
+    } catch (err: any) {
+      console.error('Error loading data:', err)
+      if (mountedRef.current) {
+        setError(err.message || 'حدث خطأ في تحميل البيانات')
+        setLoading(false)
         showToast(getErrorMessage(err), 'error')
         setSubmissions([])
         setTotalPages(1)
-      },
-      timeout: 30000
-    })
-  }, [filters, page, execute, showToast])
+      }
+    }
+  }, [filters, page, showToast])
 
   useEffect(() => {
     loadData()

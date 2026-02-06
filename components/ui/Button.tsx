@@ -4,10 +4,12 @@ import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { tokens } from '@/lib/ui/tokens';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   fullWidth?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -19,6 +21,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     disabled,
     className = '',
     children,
+    leftIcon,
+    rightIcon,
     ...props 
   }, ref) => {
     const baseStyles = `
@@ -32,22 +36,30 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: `
-        bg-gradient-to-r from-blue-600 to-blue-700
-        hover:from-blue-700 hover:to-blue-800
+        bg-gradient-to-r from-emerald-600 to-emerald-700
+        hover:from-emerald-700 hover:to-emerald-800
         text-white shadow-md hover:shadow-lg
-        focus:ring-blue-500
+        focus:ring-emerald-500
         active:scale-[0.98]
+        dark:from-emerald-500 dark:to-emerald-600
       `,
       secondary: `
-        bg-white border-2 border-neutral-300
-        hover:border-neutral-400 hover:bg-neutral-50
-        text-neutral-900 shadow-sm
+        bg-white dark:bg-neutral-800 border-2 border-neutral-300 dark:border-neutral-600
+        hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-700
+        text-neutral-900 dark:text-white shadow-sm
+        focus:ring-neutral-400
+        active:scale-[0.98]
+      `,
+      outline: `
+        bg-transparent border-2 border-neutral-300 dark:border-neutral-600
+        hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800
+        text-neutral-700 dark:text-neutral-300
         focus:ring-neutral-400
         active:scale-[0.98]
       `,
       ghost: `
-        bg-transparent hover:bg-neutral-100
-        text-neutral-700 hover:text-neutral-900
+        bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800
+        text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white
         focus:ring-neutral-400
       `,
       danger: `
@@ -72,12 +84,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
         {...props}
       >
-        {loading && (
+        {loading ? (
           <svg 
             className="animate-spin h-4 w-4" 
             xmlns="http://www.w3.org/2000/svg" 
             fill="none" 
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <circle 
               className="opacity-25" 
@@ -93,8 +106,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-        )}
+        ) : leftIcon ? (
+          <span className="flex-shrink-0" aria-hidden="true">{leftIcon}</span>
+        ) : null}
         {children}
+        {!loading && rightIcon && (
+          <span className="flex-shrink-0" aria-hidden="true">{rightIcon}</span>
+        )}
       </button>
     );
   }

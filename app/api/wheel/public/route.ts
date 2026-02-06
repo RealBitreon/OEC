@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   try {
@@ -13,20 +13,12 @@ export async function GET(request: Request) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = createServiceClient()
     
-    // Fetch wheel run with winner details
+    // Fetch wheel run
     const { data: wheelRun, error } = await supabase
       .from('wheel_runs')
-      .select(`
-        *,
-        winner:student_participants!wheel_runs_winner_id_fkey(
-          id,
-          username,
-          display_name,
-          class
-        )
-      `)
+      .select('*')
       .eq('competition_id', competitionId)
       .maybeSingle()
     
@@ -41,6 +33,24 @@ export async function GET(request: Request) {
     // Only return if published
     if (!wheelRun || !wheelRun.is_published) {
       return NextResponse.json({ wheelRun: null })
+    }
+    
+    // If there's a winner, fetch submission details
+    if (wheelRun.winner_id) {
+      const { data: winner } = await supabase
+        .from('submissions')
+        .select('id, participant_name, participant_email, grade')
+        .eq('id', wheelRun.winner_id)
+        .single()
+      
+      if (winner) {
+        wheelRun.winner = {
+          id: winner.id,
+          username: winner.participant_email,
+          display_name: winner.participant_name,
+          class: winner.grade
+        }
+      }
     }
     
     // Return sanitized data for public view

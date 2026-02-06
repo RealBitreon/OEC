@@ -4,11 +4,13 @@
 // COMPETITIONS MANAGEMENT (LRC + CEO)
 // ============================================
 
-import { useEffect, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { Icons } from '@/components/icons'
 import { useRouter } from 'next/navigation'
 import { User, Competition } from '../../core/types'
 import { getCompetitions, createCompetition, updateCompetition, deleteCompetition, activateCompetition } from '../../actions/competitions'
+
 
 interface CompetitionsManagementProps {
   profile: User
@@ -16,47 +18,39 @@ interface CompetitionsManagementProps {
 
 export default function CompetitionsManagement({ profile }: CompetitionsManagementProps) {
   const router = useRouter()
-  const [competitions, setCompetitions] = useState<Competition[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  useEffect(() => {
-    let mounted = true
-    
-    const fetchCompetitions = async () => {
-      try {
-        const data = await getCompetitions()
-        if (mounted) {
-          setCompetitions(data)
-        }
-      } catch (error) {
-        console.error('Failed to load competitions:', error)
-      } finally {
-        if (mounted) {
-          setLoading(false)
-        }
-      }
-    }
-    
-    fetchCompetitions()
-    
-    return () => {
-      mounted = false
-    }
-  }, [])
+  const { data: competitions = [], isLoading: loading } = useQuery({
+    queryKey: ['competitions'],
+    queryFn: getCompetitions,
+    staleTime: 30 * 1000,
+  })
 
-  const loadCompetitions = async () => {
-    setLoading(true)
-    try {
-      const data = await getCompetitions()
-      setCompetitions(data)
-    } catch (error) {
-      console.error('Failed to load competitions:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const activateMutation = useMutation({
+    mutationFn: activateCompetition,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['competitions'] })
+      queryClient.invalidateQueries({ queryKey: ['overview-stats'] })
+    },
+  })
+
+  const archiveMutation = useMutation({
+    mutationFn: (id: string) => updateCompetition(id, { status: 'archived' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['competitions'] })
+      queryClient.invalidateQueries({ queryKey: ['overview-stats'] })
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteCompetition,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['competitions'] })
+      queryClient.invalidateQueries({ queryKey: ['overview-stats'] })
+    },
+  })
 
   const handleCreate = () => {
     setEditingId(null)
@@ -72,8 +66,7 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
     if (!confirm('هل تريد تفعيل هذه المسابقة؟ سيتم أرشفة المسابقة النشطة الحالية.')) return
     
     try {
-      await activateCompetition(id)
-      await loadCompetitions()
+      await activateMutation.mutateAsync(id)
     } catch (error) {
       alert('فشل تفعيل المسابقة')
     }
@@ -83,8 +76,7 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
     if (!confirm('هل تريد أرشفة هذه المسابقة؟')) return
     
     try {
-      await updateCompetition(id, { status: 'archived' })
-      await loadCompetitions()
+      await archiveMutation.mutateAsync(id)
     } catch (error) {
       alert('فشل أرشفة المسابقة')
     }
@@ -94,8 +86,7 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
     if (!confirm('هل تريد حذف هذه المسابقة؟ سيتم نقل الأسئلة إلى التدريب.')) return
     
     try {
-      await deleteCompetition(id)
-      await loadCompetitions()
+      await deleteMutation.mutateAsync(id)
     } catch (error) {
       alert('فشل حذف المسابقة')
     }
@@ -120,7 +111,8 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
         onClose={() => {
           setShowForm(false)
           setEditingId(null)
-          loadCompetitions()
+          queryClient.invalidateQueries({ queryKey: ['competitions'] })
+          queryClient.invalidateQueries({ queryKey: ['overview-stats'] })
         }}
       />
     )
@@ -219,6 +211,14 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
                     className="px-4 py-2 text-sm font-medium text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors"
                   >
                     أرشفة
+                  </button>
+                )}
+                {competition.status === 'archived' && (
+                  <button
+                    onClick={() => router.push(`/dashboard/competitions/${competition.id}/migrate-training`)}
+                    className="px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+                  >
+                    📚 نقل إلى التدريب
                   </button>
                 )}
                 {profile.role === 'CEO' && (

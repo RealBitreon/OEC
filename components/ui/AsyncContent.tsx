@@ -1,7 +1,23 @@
 /**
  * AsyncContent Component
  * 
- * Wrapper for async content with loading, error, and empty states
+ * This is our universal wrapper for async data. Instead of writing the same
+ * loading/error/empty logic in every component, we centralize it here.
+ * 
+ * This pattern is inspired by React Suspense but works with any async data,
+ * not just React.lazy(). It's especially useful for:
+ * - API calls that might fail
+ * - Database queries that might be empty
+ * - Long-running operations that need loading states
+ * 
+ * The component automatically handles:
+ * - Loading skeletons (table, card, or custom)
+ * - Error states with retry buttons
+ * - Empty states with helpful messages
+ * - Success states (just renders children)
+ * 
+ * This keeps our components clean and focused on the happy path, while
+ * ensuring consistent UX for edge cases.
  */
 
 'use client'
@@ -37,7 +53,12 @@ export function AsyncContent({
   children,
   className = ''
 }: AsyncContentProps) {
+  // Priority order: loading > error > empty > success
+  // This ensures we show the most relevant state to the user
+  
   if (loading) {
+    // Show appropriate skeleton based on content type
+    // This gives users a visual hint of what's loading
     if (loadingType === 'table') {
       return (
         <div className={className}>
@@ -54,7 +75,7 @@ export function AsyncContent({
       )
     }
     
-    // Custom loading
+    // Custom loading - generic spinner
     return (
       <div className={`flex items-center justify-center p-12 ${className}`}>
         <div className="text-center">
@@ -66,6 +87,8 @@ export function AsyncContent({
   }
 
   if (error) {
+    // Show error state with optional retry button
+    // We accept both Error objects and strings for flexibility
     return (
       <div className={className}>
         <ErrorState
@@ -77,6 +100,8 @@ export function AsyncContent({
   }
 
   if (empty) {
+    // Show empty state - this is different from error
+    // Empty means the operation succeeded but returned no data
     return (
       <div className={`flex flex-col items-center justify-center p-12 text-center ${className}`}>
         <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
@@ -94,5 +119,6 @@ export function AsyncContent({
     )
   }
 
+  // Success state - just render the children
   return <div className={className}>{children}</div>
 }

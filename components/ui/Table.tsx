@@ -4,10 +4,10 @@ import { HTMLAttributes, forwardRef } from 'react';
 
 export const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
   ({ className = '', ...props }, ref) => (
-    <div className="w-full overflow-x-auto rounded-lg border border-neutral-200 -mx-3 sm:mx-0">
+    <div className="w-full overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm bg-white dark:bg-neutral-800">
       <table
         ref={ref}
-        className={`w-full text-xs sm:text-sm ${className}`}
+        className={`w-full text-[10px] sm:text-xs md:text-sm ${className}`}
         {...props}
       />
     </div>
@@ -19,7 +19,7 @@ export const TableHeader = forwardRef<HTMLTableSectionElement, HTMLAttributes<HT
   ({ className = '', ...props }, ref) => (
     <thead
       ref={ref}
-      className={`bg-neutral-50 border-b border-neutral-200 ${className}`}
+      className={`bg-neutral-50 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 ${className}`}
       {...props}
     />
   )
@@ -30,7 +30,7 @@ export const TableBody = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTML
   ({ className = '', ...props }, ref) => (
     <tbody
       ref={ref}
-      className={`divide-y divide-neutral-200 bg-white ${className}`}
+      className={`divide-y divide-neutral-200 dark:divide-neutral-700 bg-white dark:bg-neutral-800 ${className}`}
       {...props}
     />
   )
@@ -41,7 +41,7 @@ export const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTable
   ({ className = '', ...props }, ref) => (
     <tr
       ref={ref}
-      className={`hover:bg-neutral-50 transition-colors ${className}`}
+      className={`hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors ${className}`}
       {...props}
     />
   )
@@ -52,7 +52,8 @@ export const TableHead = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTab
   ({ className = '', ...props }, ref) => (
     <th
       ref={ref}
-      className={`px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider ${className}`}
+      scope="col"
+      className={`px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 text-right text-[10px] sm:text-xs font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider whitespace-nowrap ${className}`}
       {...props}
     />
   )
@@ -63,7 +64,7 @@ export const TableCell = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTab
   ({ className = '', ...props }, ref) => (
     <td
       ref={ref}
-      className={`px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-neutral-900 ${className}`}
+      className={`px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-neutral-900 dark:text-neutral-100 ${className}`}
       {...props}
     />
   )
