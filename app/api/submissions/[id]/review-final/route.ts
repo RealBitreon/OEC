@@ -30,7 +30,7 @@ import { z } from 'zod'
 // Input validation schema using Zod
 // This ensures we get clean, type-safe data before we touch the database
 const ReviewFinalSchema = z.object({
-  corrections: z.record(z.object({
+  corrections: z.record(z.string(), z.object({
     isCorrect: z.boolean(),
     notes: z.string().optional()
   })),
