@@ -19,6 +19,9 @@ interface Submission {
   competition?: {
     id: string
     title: string
+    rules?: {
+      require_all_correct?: boolean  // If true, all answers must be correct (no per-question marking)
+    }
   }
 }
 
@@ -51,6 +54,9 @@ export function CurrentSubmissionTab({ submission, questions, onComplete, onUnsa
   const [reviews, setReviews] = useState<Record<string, QuestionReview>>({})
   const [finalDecision, setFinalDecision] = useState<'accepted' | 'rejected' | null>(null)
   const [saving, setSaving] = useState(false)
+
+  // Check if competition requires all answers to be correct
+  const requireAllCorrect = submission.competition?.rules?.require_all_correct === true
 
   // Initialize reviews from submission answers
   useEffect(() => {
@@ -171,24 +177,36 @@ export function CurrentSubmissionTab({ submission, questions, onComplete, onUnsa
         </div>
       </div>
 
-      {/* Review Progress */}
-      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-        <h4 className="font-bold text-sm text-blue-900 mb-3">تقدم المراجعة</h4>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-green-700">{correctCount}</div>
-            <div className="text-xs text-neutral-600">صحيحة</div>
-          </div>
-          <div className="bg-white rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-red-700">{wrongCount}</div>
-            <div className="text-xs text-neutral-600">خاطئة</div>
-          </div>
-          <div className="bg-white rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-neutral-700">{pendingCount}</div>
-            <div className="text-xs text-neutral-600">معلقة</div>
+      {/* Review Progress - Only show if per-question correction is enabled */}
+      {!requireAllCorrect && (
+        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+          <h4 className="font-bold text-sm text-blue-900 mb-3">تقدم المراجعة</h4>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-green-700">{correctCount}</div>
+              <div className="text-xs text-neutral-600">صحيحة</div>
+            </div>
+            <div className="bg-white rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-red-700">{wrongCount}</div>
+              <div className="text-xs text-neutral-600">خاطئة</div>
+            </div>
+            <div className="bg-white rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-neutral-700">{pendingCount}</div>
+              <div className="text-xs text-neutral-600">معلقة</div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Info for "all correct" mode */}
+      {requireAllCorrect && (
+        <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+          <h4 className="font-bold text-sm text-amber-900 mb-2">📋 وضع "جميع الإجابات صحيحة"</h4>
+          <p className="text-sm text-amber-800">
+            هذه المسابقة تتطلب أن تكون جميع الإجابات صحيحة للفوز. راجع جميع الإجابات ثم حدد القرار النهائي (فائز/خاسر).
+          </p>
+        </div>
+      )}
 
       {/* Questions Review */}
       <div className="space-y-4">
@@ -267,29 +285,40 @@ export function CurrentSubmissionTab({ submission, questions, onComplete, onUnsa
                     </div>
                   </div>
 
-                  {/* Review Decision */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleMarkQuestion(question.id, true)}
-                      className={`flex-1 py-2 px-4 rounded-lg border-2 font-bold transition-all ${
-                        review?.isCorrect
-                          ? 'border-green-500 bg-green-100 text-green-900'
-                          : 'border-neutral-300 text-neutral-600 hover:border-green-300'
-                      }`}
-                    >
-                      ✓ صحيحة
-                    </button>
-                    <button
-                      onClick={() => handleMarkQuestion(question.id, false)}
-                      className={`flex-1 py-2 px-4 rounded-lg border-2 font-bold transition-all ${
-                        review && !review.isCorrect
-                          ? 'border-red-500 bg-red-100 text-red-900'
-                          : 'border-neutral-300 text-neutral-600 hover:border-red-300'
-                      }`}
-                    >
-                      ✗ خاطئة
-                    </button>
-                  </div>
+                  {/* Review Decision - Only show if competition doesn't require all correct */}
+                  {!requireAllCorrect && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleMarkQuestion(question.id, true)}
+                        className={`flex-1 py-2 px-4 rounded-lg border-2 font-bold transition-all ${
+                          review?.isCorrect
+                            ? 'border-green-500 bg-green-100 text-green-900'
+                            : 'border-neutral-300 text-neutral-600 hover:border-green-300'
+                        }`}
+                      >
+                        ✓ صحيحة
+                      </button>
+                      <button
+                        onClick={() => handleMarkQuestion(question.id, false)}
+                        className={`flex-1 py-2 px-4 rounded-lg border-2 font-bold transition-all ${
+                          review && !review.isCorrect
+                            ? 'border-red-500 bg-red-100 text-red-900'
+                            : 'border-neutral-300 text-neutral-600 hover:border-red-300'
+                        }`}
+                      >
+                        ✗ خاطئة
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Info message when all answers must be correct */}
+                  {requireAllCorrect && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <p className="text-sm text-amber-800">
+                        ℹ️ هذه المسابقة تتطلب جميع الإجابات صحيحة. سيتم تحديد الفائز/الخاسر بناءً على جميع الإجابات.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

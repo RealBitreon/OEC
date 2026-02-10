@@ -53,6 +53,7 @@ interface Stats {
 
 export default function SubmissionsReview({ profile, competitionId }: { profile: User, competitionId?: string }) {
   const { showToast } = useToast()
+  const [activeMainTab, setActiveMainTab] = useState<'pending' | 'winners'>('pending')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
@@ -84,6 +85,19 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
       mountedRef.current = false
     }
   }, [])
+
+  // Update filters when tab changes
+  useEffect(() => {
+    if (activeMainTab === 'winners') {
+      setFilters(prev => ({ ...prev, status: 'winner' }))
+    } else {
+      setFilters(prev => {
+        const { status, ...rest } = prev
+        return rest
+      })
+    }
+    setPage(1)
+  }, [activeMainTab])
 
   const loadData = useCallback(async () => {
     if (!mountedRef.current) return
@@ -268,6 +282,55 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
         >
           {loading ? '⏳ جاري التحميل...' : '🔄 تحديث'}
         </Button>
+      </div>
+
+      {/* Main Tabs: Winners / Under Review */}
+      <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden">
+        <div className="flex border-b border-neutral-200" dir="rtl">
+          <button
+            onClick={() => setActiveMainTab('pending')}
+            className={`flex-1 px-6 py-4 text-base font-bold transition-all relative ${
+              activeMainTab === 'pending'
+                ? 'text-blue-700 bg-blue-50'
+                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+            }`}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <span>📝</span>
+              <span>قيد التصحيح</span>
+              {stats && stats.notReviewed > 0 && (
+                <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  {stats.notReviewed}
+                </span>
+              )}
+            </span>
+            {activeMainTab === 'pending' && (
+              <div className="absolute bottom-0 right-0 left-0 h-1 bg-blue-600"></div>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveMainTab('winners')}
+            className={`flex-1 px-6 py-4 text-base font-bold transition-all relative ${
+              activeMainTab === 'winners'
+                ? 'text-green-700 bg-green-50'
+                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+            }`}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <span>🏆</span>
+              <span>تم التصحيح (الفائزون)</span>
+              {stats && stats.winners > 0 && (
+                <span className="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  {stats.winners}
+                </span>
+              )}
+            </span>
+            {activeMainTab === 'winners' && (
+              <div className="absolute bottom-0 right-0 left-0 h-1 bg-green-600"></div>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}

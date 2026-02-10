@@ -26,6 +26,9 @@ interface Submission {
   competition?: {
     id: string
     title: string
+    rules?: {
+      require_all_correct?: boolean
+    }
   }
 }
 
