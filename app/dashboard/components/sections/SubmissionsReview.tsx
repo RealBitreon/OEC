@@ -649,27 +649,51 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mr-11">
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                            <div className="text-sm font-bold text-green-700 mb-2">✓ الإجابة الصحيحة</div>
-                            <div className="text-base text-green-900 font-semibold">
-                              {question.correct_answer || 'غير محددة'}
+                          <div className="bg-green-50 border-2 border-green-400 rounded-lg p-4 shadow-sm">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-xl">✓</span>
+                              <div className="text-sm font-bold text-green-700">الإجابة الصحيحة</div>
+                            </div>
+                            <div className="bg-white border border-green-300 rounded p-3">
+                              <div className="text-lg text-green-900 font-bold">
+                                {question.correct_answer || 'غير محددة'}
+                              </div>
                             </div>
                           </div>
                           
-                          <div className={`border rounded-lg p-4 ${
+                          <div className={`border-2 rounded-lg p-4 shadow-sm ${
                             missingAnswer 
-                              ? 'bg-red-50 border-red-200' 
-                              : 'bg-blue-50 border-blue-200'
+                              ? 'bg-red-50 border-red-400' 
+                              : isCorrect
+                              ? 'bg-green-50 border-green-400'
+                              : 'bg-blue-50 border-blue-400'
                           }`}>
-                            <div className={`text-sm font-bold mb-2 ${
-                              missingAnswer ? 'text-red-700' : 'text-blue-700'
-                            }`}>
-                              📝 إجابة الطالب
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-xl">
+                                {missingAnswer ? '❌' : isCorrect ? '✅' : '📝'}
+                              </span>
+                              <div className={`text-sm font-bold ${
+                                missingAnswer ? 'text-red-700' : isCorrect ? 'text-green-700' : 'text-blue-700'
+                              }`}>
+                                إجابة الطالب
+                              </div>
                             </div>
-                            <div className={`text-base font-semibold ${
-                              missingAnswer ? 'text-red-900' : 'text-blue-900'
+                            <div className={`border rounded p-3 ${
+                              missingAnswer 
+                                ? 'bg-white border-red-300' 
+                                : isCorrect
+                                ? 'bg-white border-green-300'
+                                : 'bg-white border-blue-300'
                             }`}>
-                              {studentAnswer || 'لم يجب'}
+                              <div className={`text-lg font-bold ${
+                                missingAnswer ? 'text-red-900 italic' : isCorrect ? 'text-green-900' : 'text-blue-900'
+                              }`}>
+                                {studentAnswer || 'لم يجب الطالب'}
+                              </div>
+                              {/* Debug info */}
+                              <div className="text-xs text-neutral-500 mt-2 font-mono">
+                                Debug: {JSON.stringify({ hasAnswer: !!studentAnswer, value: studentAnswer })}
+                              </div>
                             </div>
                           </div>
                         </div>
