@@ -20,6 +20,7 @@ import { useToast } from '@/components/ui/Toast'
 import { TableSkeleton } from '@/components/ui/TableSkeleton'
 import { useAsyncOperation } from '@/lib/hooks/useAsyncOperation'
 import { getErrorMessage } from '@/lib/utils/error-messages'
+import { AnswerDetailsModal } from '../AnswerDetailsModal'
 
 interface Submission {
   id: string
@@ -535,8 +536,22 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
         )}
       </div>
 
-      {/* Review Modal */}
+      {/* Review Modal - Enhanced with Tabs */}
       {reviewModal.open && reviewModal.submission && (
+        <AnswerDetailsModal
+          isOpen={reviewModal.open}
+          onClose={() => setReviewModal({ open: false, submission: null })}
+          submission={reviewModal.submission}
+          questions={reviewModal.questions || []}
+          onComplete={() => {
+            setReviewModal({ open: false, submission: null })
+            loadData()
+          }}
+        />
+      )}
+
+      {/* OLD MODAL - REPLACED WITH ENHANCED VERSION ABOVE */}
+      {false && reviewModal.open && reviewModal.submission && (
         <Modal
           isOpen={reviewModal.open}
           onClose={() => setReviewModal({ open: false, submission: null })}
@@ -781,6 +796,7 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
           </div>
         </Modal>
       )}
+      {/* END OLD MODAL */}
 
 {/* Edit Submission Modal */}
       {editModal.open && editModal.submission && (
