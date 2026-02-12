@@ -20,7 +20,6 @@ import { useToast } from '@/components/ui/Toast'
 import { TableSkeleton } from '@/components/ui/TableSkeleton'
 import { useAsyncOperation } from '@/lib/hooks/useAsyncOperation'
 import { getErrorMessage } from '@/lib/utils/error-messages'
-import { AnswerDetailsModal } from '../AnswerDetailsModal'
 
 interface Submission {
   id: string
@@ -53,7 +52,6 @@ interface Stats {
 
 export default function SubmissionsReview({ profile, competitionId }: { profile: User, competitionId?: string }) {
   const { showToast } = useToast()
-  const [activeMainTab, setActiveMainTab] = useState<'pending' | 'winners'>('pending')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
@@ -77,6 +75,7 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
   const [editProofs, setEditProofs] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [competitions, setCompetitions] = useState<Array<{ id: string; title: string }>>([])
+  const [reviewCompetitionRules, setReviewCompetitionRules] = useState<any>(null)
   const mountedRef = useRef(true)
 
   useEffect(() => {
@@ -85,19 +84,6 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
       mountedRef.current = false
     }
   }, [])
-
-  // Update filters when tab changes
-  useEffect(() => {
-    if (activeMainTab === 'winners') {
-      setFilters(prev => ({ ...prev, status: 'winner' }))
-    } else {
-      setFilters(prev => {
-        const { status, ...rest } = prev
-        return rest
-      })
-    }
-    setPage(1)
-  }, [activeMainTab])
 
   const loadData = useCallback(async () => {
     if (!mountedRef.current) return
@@ -257,6 +243,26 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
     }
   }
 
+  const handleOpenReviewModal = async (submission: Submission) => {
+    let questions: any[] = []
+    if (submission.competition_id) {
+      try {
+        const result = await getQuestions({ competition_id: submission.competition_id })
+        questions = result.questions || []
+        
+        // Fetch competition rules
+        const response = await fetch(`/api/competitions/${submission.competition_id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setReviewCompetitionRules(data?.data?.rules)
+        }
+      } catch (error) {
+        console.error('Failed to load questions or competition rules:', error)
+      }
+    }
+    setReviewModal({ open: true, submission, questions })
+  }
+
   const getStatusBadge = (submission: Submission) => {
     if (submission.is_winner === true) {
       return <Badge variant="success">🏆 فائز</Badge>
@@ -282,55 +288,6 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
         >
           {loading ? '⏳ جاري التحميل...' : '🔄 تحديث'}
         </Button>
-      </div>
-
-      {/* Main Tabs: Winners / Under Review */}
-      <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden">
-        <div className="flex border-b border-neutral-200" dir="rtl">
-          <button
-            onClick={() => setActiveMainTab('pending')}
-            className={`flex-1 px-6 py-4 text-base font-bold transition-all relative ${
-              activeMainTab === 'pending'
-                ? 'text-blue-700 bg-blue-50'
-                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
-            }`}
-          >
-            <span className="flex items-center justify-center gap-2">
-              <span>📝</span>
-              <span>قيد التصحيح</span>
-              {stats && stats.notReviewed > 0 && (
-                <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  {stats.notReviewed}
-                </span>
-              )}
-            </span>
-            {activeMainTab === 'pending' && (
-              <div className="absolute bottom-0 right-0 left-0 h-1 bg-blue-600"></div>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveMainTab('winners')}
-            className={`flex-1 px-6 py-4 text-base font-bold transition-all relative ${
-              activeMainTab === 'winners'
-                ? 'text-green-700 bg-green-50'
-                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
-            }`}
-          >
-            <span className="flex items-center justify-center gap-2">
-              <span>🏆</span>
-              <span>تم التصحيح (الفائزون)</span>
-              {stats && stats.winners > 0 && (
-                <span className="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  {stats.winners}
-                </span>
-              )}
-            </span>
-            {activeMainTab === 'winners' && (
-              <div className="absolute bottom-0 right-0 left-0 h-1 bg-green-600"></div>
-            )}
-          </button>
-        </div>
       </div>
 
       {/* Stats Cards */}
@@ -485,16 +442,7 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                       <div className="flex gap-2 flex-wrap">
                         <Button
                           onClick={async () => {
-                            let questions: any[] = []
-                            if (submission.competition_id) {
-                              try {
-                                const result = await getQuestions({ competition_id: submission.competition_id })
-                                questions = result.questions || []
-                              } catch (error) {
-                                console.error('Failed to load questions:', error)
-                              }
-                            }
-                            setReviewModal({ open: true, submission, questions })
+                            await handleOpenReviewModal(submission)
                           }}
                           variant="primary"
                           size="sm"
@@ -599,25 +547,14 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
         )}
       </div>
 
-      {/* Review Modal - Enhanced with Tabs */}
+      {/* Review Modal */}
       {reviewModal.open && reviewModal.submission && (
-        <AnswerDetailsModal
-          isOpen={reviewModal.open}
-          onClose={() => setReviewModal({ open: false, submission: null })}
-          submission={reviewModal.submission}
-          questions={reviewModal.questions || []}
-          onComplete={() => {
-            setReviewModal({ open: false, submission: null })
-            loadData()
-          }}
-        />
-      )}
-
-      {/* OLD MODAL - REPLACED WITH ENHANCED VERSION ABOVE */}
-      {false && reviewModal.open && reviewModal.submission && (
         <Modal
           isOpen={reviewModal.open}
-          onClose={() => setReviewModal({ open: false, submission: null })}
+          onClose={() => {
+            setReviewModal({ open: false, submission: null })
+            setReviewCompetitionRules(null)
+          }}
           title="تفاصيل الإجابة"
         >
           <div className="space-y-4">
@@ -658,110 +595,222 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">الإجابات</label>
-              <div className="space-y-3">
-                {reviewModal.questions && reviewModal.questions.length > 0 ? (
-                  Object.entries(reviewModal.submission.answers).map(([questionId, studentAnswer], index) => {
-                    const question = reviewModal.questions?.find(q => q.id === questionId)
-                    if (!question) return null
-                    
-                    // Debug: Log question data to see what we have
-                    console.log('Question data:', {
-                      id: question.id,
-                      volume: question.volume,
-                      page: question.page,
-                      line_from: question.line_from,
-                      line_to: question.line_to,
-                      fullQuestion: question
-                    })
-                    
-                    const isCorrect = question.correct_answer === studentAnswer
-                    const studentProof = reviewModal.submission.proofs?.[questionId] || ''
-                    
-                    // Check if answer or proof is missing
-                    const missingAnswer = !studentAnswer || studentAnswer.trim() === ''
-                    const missingProof = !studentProof || studentProof.trim() === ''
-                    
-                    return (
-                      <div key={questionId} className="bg-white border border-neutral-200 rounded-lg p-4">
-                        <div className="flex items-start gap-3 mb-3">
-                          <span className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">
-                            {index + 1}
-                          </span>
-                          <div className="flex-1">
-                            <p className="text-neutral-900 font-medium mb-3">{question.question_text}</p>
-                            
-                            {/* Warning if answer or proof is missing */}
-                            {(missingAnswer || missingProof) && (
-                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
-                                <div className="text-sm font-bold text-red-900 mb-1">⚠️ بيانات ناقصة</div>
-                                <div className="text-sm text-red-700">
-                                  {missingAnswer && missingProof && 'الإجابة والدليل غير موجودين'}
-                                  {missingAnswer && !missingProof && 'الإجابة غير موجودة'}
-                                  {!missingAnswer && missingProof && 'الدليل غير موجود'}
+              
+              {/* Show question details only if NOT all_correct mode */}
+              {reviewCompetitionRules?.eligibilityMode !== 'all_correct' && (
+                <div className="space-y-3">
+                  {reviewModal.questions && reviewModal.questions.length > 0 ? (
+                    Object.entries(reviewModal.submission.answers).map(([questionId, studentAnswer], index) => {
+                      const question = reviewModal.questions?.find(q => q.id === questionId)
+                      if (!question) return null
+                      
+                      // Debug: Log question data to see what we have
+                      console.log('Question data:', {
+                        id: question.id,
+                        volume: question.volume,
+                        page: question.page,
+                        line_from: question.line_from,
+                        line_to: question.line_to,
+                        fullQuestion: question
+                      })
+                      
+                      const isCorrect = question.correct_answer === studentAnswer
+                      const studentProof = reviewModal.submission.proofs?.[questionId] || ''
+                      
+                      // Check if answer or proof is missing
+                      const missingAnswer = !studentAnswer || studentAnswer.trim() === ''
+                      const missingProof = !studentProof || studentProof.trim() === ''
+                      
+                      return (
+                        <div key={questionId} className="bg-white border border-neutral-200 rounded-lg p-4">
+                          <div className="flex items-start gap-3 mb-3">
+                            <span className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">
+                              {index + 1}
+                            </span>
+                            <div className="flex-1">
+                              <p className="text-neutral-900 font-medium mb-3">{question.question_text}</p>
+                              
+                              {/* Warning if answer or proof is missing */}
+                              {(missingAnswer || missingProof) && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+                                  <div className="text-sm font-bold text-red-900 mb-1">⚠️ بيانات ناقصة</div>
+                                  <div className="text-sm text-red-700">
+                                    {missingAnswer && missingProof && 'الإجابة والدليل غير موجودين'}
+                                    {missingAnswer && !missingProof && 'الإجابة غير موجودة'}
+                                    {!missingAnswer && missingProof && 'الدليل غير موجود'}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                            
-                            {/* Student's Evidence/Proof */}
-                            {studentProof && (
-                              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
-                                <div className="text-sm font-bold text-amber-900 mb-2">� دليل الطالب من المصدر:</div>
-                                <div className="text-base text-amber-800 font-semibold">
-                                  {studentProof}
+                              )}
+                              
+                              {/* Student's Evidence/Proof */}
+                              {studentProof && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                                  <div className="text-sm font-bold text-amber-900 mb-2">📖 دليل الطالب من المصدر:</div>
+                                  <div className="text-base text-amber-800 font-semibold">
+                                    {studentProof}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                            
-                            {/* Question Source Reference (for teacher reference) */}
-                            {(question.volume || question.page || (question.line_from && question.line_to)) && (
-                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                                <div className="text-xs font-bold text-blue-700 mb-1">📍 الموقع الصحيح في المصدر (للمراجعة):</div>
-                                <div className="text-sm text-blue-700 flex flex-wrap items-center gap-3">
-                                  {question.volume && <span>📚 المجلد: {question.volume}</span>}
-                                  {question.page && <span>📄 الصفحة: {question.page}</span>}
-                                  {question.line_from && question.line_to && <span>📝 السطور: {question.line_from}-{question.line_to}</span>}
+                              )}
+                              
+                              {/* Question Source Reference (for teacher reference) */}
+                              {(question.volume || question.page || (question.line_from && question.line_to)) && (
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                                  <div className="text-xs font-bold text-blue-700 mb-1">📍 الموقع الصحيح في المصدر (للمراجعة):</div>
+                                  <div className="text-sm text-blue-700 flex flex-wrap items-center gap-3">
+                                    {question.volume && <span>📚 المجلد: {question.volume}</span>}
+                                    {question.page && <span>📄 الصفحة: {question.page}</span>}
+                                    {question.line_from && question.line_to && <span>📝 السطور: {question.line_from}-{question.line_to}</span>}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mr-11">
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                            <div className="text-sm font-bold text-green-700 mb-2">✓ الإجابة الصحيحة</div>
-                            <div className="text-base text-green-900 font-semibold">
-                              {question.correct_answer || 'غير محددة'}
+                              )}
                             </div>
                           </div>
                           
-                          <div className={`border rounded-lg p-4 ${
-                            missingAnswer 
-                              ? 'bg-red-50 border-red-200' 
-                              : 'bg-blue-50 border-blue-200'
-                          }`}>
-                            <div className={`text-sm font-bold mb-2 ${
-                              missingAnswer ? 'text-red-700' : 'text-blue-700'
-                            }`}>
-                              📝 إجابة الطالب
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mr-11">
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                              <div className="text-sm font-bold text-green-700 mb-2">✓ الإجابة الصحيحة</div>
+                              <div className="text-base text-green-900 font-semibold">
+                                {question.correct_answer || 'غير محددة'}
+                              </div>
                             </div>
-                            <div className={`text-base font-semibold ${
-                              missingAnswer ? 'text-red-900' : 'text-blue-900'
+                            
+                            <div className={`border rounded-lg p-4 ${
+                              missingAnswer 
+                                ? 'bg-red-50 border-red-200' 
+                                : 'bg-blue-50 border-blue-200'
                             }`}>
-                              {studentAnswer || 'لم يجب'}
+                              <div className={`text-sm font-bold mb-2 ${
+                                missingAnswer ? 'text-red-700' : 'text-blue-700'
+                              }`}>
+                                📝 إجابة الطالب
+                              </div>
+                              <div className={`text-base font-semibold ${
+                                missingAnswer ? 'text-red-900' : 'text-blue-900'
+                              }`}>
+                                {studentAnswer || 'لم يجب'}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  })
-                ) : (
-                  <div className="bg-neutral-50 p-3 rounded-lg">
-                    <pre className="text-sm text-neutral-900 whitespace-pre-wrap">
-                      {JSON.stringify(reviewModal.submission.answers, null, 2)}
-                    </pre>
+                      )
+                    })
+                  ) : (
+                    <div className="bg-neutral-50 p-3 rounded-lg">
+                      <pre className="text-sm text-neutral-900 whitespace-pre-wrap">
+                        {JSON.stringify(reviewModal.submission.answers, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* For all_correct mode, show summary instead of details */}
+              {reviewCompetitionRules?.eligibilityMode === 'all_correct' ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="text-sm font-bold text-blue-700 mb-2">📝 ملخص الإجابة</div>
+                  <div className="text-sm text-blue-800">
+                    في وضع "كل الإجابات صحيحة"، يتم تحديد الفائز تلقائياً بناءً على:
                   </div>
-                )}
-              </div>
+                  <ul className="mt-2 text-sm text-blue-800 space-y-1 list-disc list-inside">
+                    <li>الترتيب في الإرسال (المبكرون لديهم أولوية)</li>
+                    <li>جميع الإجابات صحيحة ✓</li>
+                  </ul>
+                  <div className="mt-3 text-sm">
+                    <span className="font-medium">الدرجة:</span> {reviewModal.submission.score} / {reviewModal.submission.total_questions}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {reviewModal.questions && reviewModal.questions.length > 0 ? (
+                    Object.entries(reviewModal.submission.answers).map(([questionId, studentAnswer], index) => {
+                      const question = reviewModal.questions?.find(q => q.id === questionId)
+                      if (!question) return null
+                      
+                      const isCorrect = question.correct_answer === studentAnswer
+                      const studentProof = reviewModal.submission.proofs?.[questionId] || ''
+                      
+                      const missingAnswer = !studentAnswer || studentAnswer.trim() === ''
+                      const missingProof = !studentProof || studentProof.trim() === ''
+                      
+                      return (
+                        <div key={questionId} className="bg-white border border-neutral-200 rounded-lg p-4">
+                          <div className="flex items-start gap-3 mb-3">
+                            <span className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-sm">
+                              {index + 1}
+                            </span>
+                            <div className="flex-1">
+                              <p className="text-neutral-900 font-medium mb-3">{question.question_text}</p>
+                              
+                              {(missingAnswer || missingProof) && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+                                  <div className="text-sm font-bold text-red-900 mb-1">⚠️ بيانات ناقصة</div>
+                                  <div className="text-sm text-red-700">
+                                    {missingAnswer && missingProof && 'الإجابة والدليل غير موجودين'}
+                                    {missingAnswer && !missingProof && 'الإجابة غير موجودة'}
+                                    {!missingAnswer && missingProof && 'الدليل غير موجود'}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {studentProof && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                                  <div className="text-sm font-bold text-amber-900 mb-2">📖 دليل الطالب من المصدر:</div>
+                                  <div className="text-base text-amber-800 font-semibold">
+                                    {studentProof}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {(question.volume || question.page || (question.line_from && question.line_to)) && (
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                                  <div className="text-xs font-bold text-blue-700 mb-1">📍 الموقع الصحيح في المصدر (للمراجعة):</div>
+                                  <div className="text-sm text-blue-700 flex flex-wrap items-center gap-3">
+                                    {question.volume && <span>📚 المجلد: {question.volume}</span>}
+                                    {question.page && <span>📄 الصفحة: {question.page}</span>}
+                                    {question.line_from && question.line_to && <span>📝 السطور: {question.line_from}-{question.line_to}</span>}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mr-11">
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                              <div className="text-sm font-bold text-green-700 mb-2">✓ الإجابة الصحيحة</div>
+                              <div className="text-base text-green-900 font-semibold">
+                                {question.correct_answer || 'غير محددة'}
+                              </div>
+                            </div>
+                            
+                            <div className={`border rounded-lg p-4 ${
+                              missingAnswer 
+                                ? 'bg-red-50 border-red-200' 
+                                : 'bg-blue-50 border-blue-200'
+                            }`}>
+                              <div className={`text-sm font-bold mb-2 ${
+                                missingAnswer ? 'text-red-700' : 'text-blue-700'
+                              }`}>
+                                📝 إجابة الطالب
+                              </div>
+                              <div className={`text-base font-semibold ${
+                                missingAnswer ? 'text-red-900' : 'text-blue-900'
+                              }`}>
+                                {studentAnswer || 'لم يجب'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="bg-neutral-50 p-3 rounded-lg">
+                      <pre className="text-sm text-neutral-900 whitespace-pre-wrap">
+                        {JSON.stringify(reviewModal.submission.answers, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Winner/Loser Status Buttons */}
@@ -859,7 +908,6 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
           </div>
         </Modal>
       )}
-      {/* END OLD MODAL */}
 
 {/* Edit Submission Modal */}
       {editModal.open && editModal.submission && (

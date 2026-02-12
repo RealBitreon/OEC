@@ -100,6 +100,11 @@ export async function POST(
     
     // Build candidates list with weights
     // Weight determines odds - higher weight = better chance of winning
+    // 
+    // Ticket calculation logic:
+    // 1. tickets mode: weight = tickets_earned (correct answers × tickets_per_correct × early bonus)
+    // 2. all_correct mode: weight = early bonus multiplier (all answers correct, earlier = more tickets)
+    // 3. simple mode: weight = 1.0 (everyone has equal odds) or early bonus if enabled
     const candidates: Candidate[] = eligible.map(sub => {
       let weight = 1.0 // Default: everyone has equal odds
       
@@ -107,6 +112,17 @@ export async function POST(
         // Tickets mode: weight = number of tickets earned
         // Tickets already include early bonus (calculated during review)
         weight = sub.tickets_earned || 1
+      } else if (competition.eligibility_mode === 'all_correct') {
+        // all_correct mode: all accepted submissions are eligible
+        // Weight is based on early bonus to reward early submissions
+        if (competition.early_bonus_enabled && competition.early_bonus_config) {
+          weight = calculateEarlyBonus(
+            sub.submitted_at,
+            competition.end_at,
+            competition.early_bonus_config
+          )
+        }
+        // If early bonus is disabled, weight stays at 1.0 (equal odds)
       } else if (competition.early_bonus_enabled && competition.early_bonus_config) {
         // Simple mode with early bonus: weight = early bonus multiplier
         weight = calculateEarlyBonus(

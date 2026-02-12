@@ -85,17 +85,25 @@ export async function POST(
     // Get competition config to determine how to calculate tickets
     const { data: competition } = await supabase
       .from('competitions')
-      .select('winner_selection_mode, tickets_per_correct, early_bonus_enabled, early_bonus_config, end_at')
+      .select('winner_selection_mode, eligibility_mode, tickets_per_correct, early_bonus_enabled, early_bonus_config, end_at')
       .eq('id', current.competition_id)
       .single()
     
-    // Calculate tickets if in tickets mode
+    // Calculate tickets if in tickets mode or all_correct mode
     // Tickets = (correct answers × tickets_per_correct) × early_bonus_multiplier
+    // For all_correct mode: all answers are correct, so tickets = tickets_per_correct × early_bonus
     let ticketsEarned = 0
     let earlyBonusWeight = 1.0
     
-    if (competition?.winner_selection_mode === 'tickets' && finalDecision === 'accepted') {
-      const correctCount = Object.values(corrections).filter(c => c.isCorrect).length
+    const shouldCalculateTickets = 
+      (competition?.winner_selection_mode === 'tickets' || competition?.eligibility_mode === 'all_correct') 
+      && finalDecision === 'accepted'
+    
+    if (shouldCalculateTickets) {
+      const correctCount = competition?.eligibility_mode === 'all_correct' 
+        ? Object.keys(corrections).length // All answers are correct in all_correct mode
+        : Object.values(corrections).filter(c => c.isCorrect).length
+      
       ticketsEarned = correctCount * (competition.tickets_per_correct || 1)
       
       // Apply early bonus if enabled
