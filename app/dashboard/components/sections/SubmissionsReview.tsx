@@ -126,12 +126,12 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
       if (!mountedRef.current) return
       
       // Ensure submissions is always an array
-      const submissionsArray = Array.isArray(submissionsData?.submissions) 
-        ? submissionsData.submissions 
+      const submissionsArray = Array.isArray(submissionsData?.data?.submissions) 
+        ? submissionsData.data.submissions 
         : []
       
       setSubmissions(submissionsArray as Submission[])
-      setTotalPages(submissionsData?.pages || 1)
+      setTotalPages(submissionsData?.data?.pages || 1)
       setStats(statsData)
       
       // Extract unique competitions

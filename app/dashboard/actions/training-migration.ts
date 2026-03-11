@@ -90,6 +90,15 @@ export async function getCompetitionQuestionsForMigration(competitionId: string)
     console.error('Error fetching winners:', winnersError)
   }
   
+  console.log('[getCompetitionQuestionsForMigration] Winner submissions:', winnerSubmissions?.length || 0)
+  if (winnerSubmissions && winnerSubmissions.length > 0) {
+    console.log('[getCompetitionQuestionsForMigration] First winner:', {
+      id: winnerSubmissions[0].id,
+      name: winnerSubmissions[0].participant_name,
+      answersCount: winnerSubmissions[0].answers?.length || 0
+    })
+  }
+  
   // Build migration data for each question
   const migrationData: QuestionMigrationData[] = []
   
@@ -117,6 +126,13 @@ export async function getCompetitionQuestionsForMigration(competitionId: string)
     
     const hasOfficialAnswer = !!question.correct_answer
     const needsReview = !hasOfficialAnswer && winnerAnswers.length > 1
+    
+    console.log(`[getCompetitionQuestionsForMigration] Question ${question.id}:`, {
+      text: question.question_text.substring(0, 50),
+      hasOfficialAnswer,
+      winnerAnswersCount: winnerAnswers.length,
+      needsReview
+    })
     
     migrationData.push({
       questionId: question.id,
@@ -166,6 +182,9 @@ export async function setQuestionCorrectAnswer(
 ) {
   const supabase = createServiceClient()
   
+  console.log('[setQuestionCorrectAnswer] Setting answer for question:', questionId)
+  console.log('[setQuestionCorrectAnswer] Answer:', correctAnswer)
+  
   const updateData: any = {
     correct_answer: correctAnswer,
     updated_at: new Date().toISOString()
@@ -178,14 +197,18 @@ export async function setQuestionCorrectAnswer(
     if (sourceRef.lineTo) updateData.line_to = sourceRef.lineTo
   }
   
-  const { error } = await supabase
+  const { error, data } = await supabase
     .from('questions')
     .update(updateData)
     .eq('id', questionId)
+    .select()
   
   if (error) {
+    console.error('[setQuestionCorrectAnswer] Error:', error)
     throw new Error(`فشل تحديث الإجابة: ${error.message}`)
   }
+  
+  console.log('[setQuestionCorrectAnswer] Success. Updated question:', data)
   
   revalidatePath('/dashboard')
   return { success: true }
@@ -248,8 +271,17 @@ export async function migrateCompetitionToTraining(
 ) {
   const supabase = createServiceClient()
   
+  console.log('[migrateCompetitionToTraining] Starting migration for competition:', competitionId)
+  console.log('[migrateCompetitionToTraining] Options:', options)
+  
   // Get migration data
   const migrationData = await getCompetitionQuestionsForMigration(competitionId)
+  
+  console.log('[migrateCompetitionToTraining] Migration data:', {
+    totalQuestions: migrationData.totalQuestions,
+    withOfficialAnswers: migrationData.questionsWithOfficialAnswers,
+    needingReview: migrationData.questionsNeedingReview
+  })
   
   // Check if any questions need review
   if (migrationData.questionsNeedingReview > 0 && !options.skipQuestionsWithoutAnswers) {
@@ -267,20 +299,30 @@ export async function migrateCompetitionToTraining(
     try {
       let correctAnswer = question.correctAnswer
       
+      console.log(`[migrateCompetitionToTraining] Processing question ${question.questionId}:`, {
+        hasOfficialAnswer: question.hasOfficialAnswer,
+        correctAnswer: correctAnswer,
+        winnerAnswersCount: question.winnerAnswers.length
+      })
+      
       // If no official answer, try to use winner answer
       if (!correctAnswer && options.useWinnerAnswersIfMissing && question.winnerAnswers.length > 0) {
         correctAnswer = question.winnerAnswers[0].answer
+        console.log(`[migrateCompetitionToTraining] Using winner answer:`, correctAnswer)
       }
       
       // Skip if still no answer
       if (!correctAnswer) {
         if (options.skipQuestionsWithoutAnswers) {
+          console.log(`[migrateCompetitionToTraining] Skipping question ${question.questionId} - no answer`)
           skippedQuestions.push(question.questionId)
           continue
         } else {
           throw new Error('لا توجد إجابة صحيحة محددة')
         }
       }
+      
+      console.log(`[migrateCompetitionToTraining] Migrating question ${question.questionId} with answer:`, correctAnswer)
       
       // Update question to be a training question
       const { error } = await supabase
@@ -299,14 +341,22 @@ export async function migrateCompetitionToTraining(
         throw error
       }
       
+      console.log(`[migrateCompetitionToTraining] Successfully migrated question ${question.questionId}`)
       migratedQuestions.push(question.questionId)
     } catch (error: any) {
+      console.error(`[migrateCompetitionToTraining] Error migrating question ${question.questionId}:`, error)
       errors.push({
         questionId: question.questionId,
         error: error.message
       })
     }
   }
+  
+  console.log('[migrateCompetitionToTraining] Migration complete:', {
+    migrated: migratedQuestions.length,
+    skipped: skippedQuestions.length,
+    errors: errors.length
+  })
   
   // Log the migration
   await supabase.from('audit_logs').insert({
@@ -349,19 +399,33 @@ export async function autoMigrateWithWinnerAnswers(competitionId: string) {
   // Get migration data
   const migrationData = await getCompetitionQuestionsForMigration(competitionId)
   
+  console.log('[autoMigrateWithWinnerAnswers] Total questions:', migrationData.totalQuestions)
+  console.log('[autoMigrateWithWinnerAnswers] Questions with official answers:', migrationData.questionsWithOfficialAnswers)
+  
   // Auto-set winner answers for questions without official answers
+  let answersSet = 0
   for (const question of migrationData.questions) {
     if (!question.hasOfficialAnswer && question.winnerAnswers.length > 0) {
+      console.log(`[autoMigrateWithWinnerAnswers] Setting answer for question ${question.questionId}:`, question.winnerAnswers[0].answer)
       await setQuestionCorrectAnswer(
         question.questionId,
         question.winnerAnswers[0].answer
       )
+      answersSet++
+    } else if (!question.hasOfficialAnswer) {
+      console.log(`[autoMigrateWithWinnerAnswers] Question ${question.questionId} has no winner answers`)
     }
   }
   
+  console.log('[autoMigrateWithWinnerAnswers] Answers set:', answersSet)
+  
+  // Wait a moment for DB updates to complete
+  await new Promise(resolve => setTimeout(resolve, 1000))
+  
   // Now migrate everything
   return await migrateCompetitionToTraining(competitionId, {
-    skipQuestionsWithoutAnswers: true
+    skipQuestionsWithoutAnswers: true,
+    useWinnerAnswersIfMissing: false // Already set above
   })
 }
 
