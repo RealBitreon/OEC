@@ -8,6 +8,7 @@ export async function getEligibleStudents(competitionId: string) {
   const supabase = createServiceClient()
   
   // Get all submissions marked as winners for this competition
+  // Include tickets_earned and early_bonus_weight for weighted probability
   const { data: submissions, error } = await supabase
     .from('submissions')
     .select(`
@@ -19,7 +20,10 @@ export async function getEligibleStudents(competitionId: string) {
       family_name,
       grade,
       score,
-      total_questions
+      total_questions,
+      tickets_earned,
+      early_bonus_weight,
+      submitted_at
     `)
     .eq('competition_id', competitionId)
     .eq('is_winner', true)
@@ -33,22 +37,32 @@ export async function getEligibleStudents(competitionId: string) {
     return []
   }
   
+  // Calculate total tickets for probability calculation
+  const totalTickets = submissions.reduce((sum, sub) => sum + (sub.tickets_earned || 1), 0)
+  
   // Transform submissions to match expected format
-  // Each winner gets 1 ticket (equal probability)
-  return submissions.map(submission => ({
-    user: {
-      id: submission.id,
-      username: submission.participant_email || submission.id,
-      display_name: submission.participant_name,
-      class: submission.grade
-    },
-    totalTickets: 1,
-    sources: [{
-      reason: 'فائز في المسابقة',
-      count: 1
-    }],
-    probability: submissions.length > 0 ? (1 / submissions.length) * 100 : 0
-  }))
+  // Tickets are based on tickets_earned (which includes early bonus)
+  return submissions.map(submission => {
+    const tickets = submission.tickets_earned || 1
+    const probability = totalTickets > 0 ? (tickets / totalTickets) * 100 : 0
+    
+    return {
+      user: {
+        id: submission.id,
+        username: submission.participant_email || submission.id,
+        display_name: submission.participant_name,
+        class: submission.grade
+      },
+      totalTickets: tickets,
+      earlyBonus: submission.early_bonus_weight || 1,
+      submittedAt: submission.submitted_at,
+      sources: [{
+        reason: 'فائز في المسابقة',
+        count: tickets
+      }],
+      probability
+    }
+  })
 }
 
 export async function lockSnapshot(competitionId: string) {

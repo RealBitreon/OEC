@@ -106,21 +106,24 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('Error fetching submissions:', error)
       return NextResponse.json(
-        { error: 'فشل في جلب البيانات' },
+        { success: false, error: { code: 'FETCH_ERROR', message: 'فشل في جلب البيانات' } },
         { status: 500 }
       )
     }
 
     // Return paginated results with metadata
     return NextResponse.json({
-      submissions: data || [],
-      total: count || 0,
-      pages: Math.ceil((count || 0) / limit)
+      success: true,
+      data: {
+        submissions: data || [],
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit)
+      }
     })
   } catch (error: any) {
     console.error('Submissions API error:', error)
     return NextResponse.json(
-      { error: error.message || 'حدث خطأ في الخادم' },
+      { success: false, error: { code: 'SERVER_ERROR', message: error.message || 'حدث خطأ في الخادم' } },
       { status: 500 }
     )
   }

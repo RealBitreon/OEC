@@ -35,6 +35,11 @@ export async function GET() {
       );
     }
 
+    // Log slugs for debugging
+    console.log('[ARCHIVED API] Returning competitions with slugs:', 
+      competitions?.map(c => ({ id: c.id, slug: c.slug, title: c.title }))
+    );
+
     return NextResponse.json({ 
       ok: true,
       data: { competitions: competitions || [] },

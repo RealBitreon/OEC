@@ -10,6 +10,8 @@ import { Icons } from '@/components/icons'
 import { useRouter } from 'next/navigation'
 import { User, Competition } from '../../core/types'
 import { getCompetitions, createCompetition, updateCompetition, deleteCompetition, activateCompetition } from '../../actions/competitions'
+import { Button } from '@/components/ui/Button'
+import { useToast } from '@/components/ui/Toast'
 
 
 interface CompetitionsManagementProps {
@@ -21,6 +23,7 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const { showToast } = useToast()
 
   const { data: competitions = [], isLoading: loading } = useQuery({
     queryKey: ['competitions'],
@@ -67,6 +70,7 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
     
     try {
       await activateMutation.mutateAsync(id)
+      alert('تم تفعيل المسابقة بنجاح')
     } catch (error) {
       alert('فشل تفعيل المسابقة')
     }
@@ -77,6 +81,7 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
     
     try {
       await archiveMutation.mutateAsync(id)
+      alert('تم أرشفة المسابقة بنجاح')
     } catch (error) {
       alert('فشل أرشفة المسابقة')
     }
@@ -87,6 +92,7 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
     
     try {
       await deleteMutation.mutateAsync(id)
+      alert('تم حذف المسابقة بنجاح')
     } catch (error) {
       alert('فشل حذف المسابقة')
     }
@@ -123,12 +129,13 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">إدارة المسابقات</h1>
-        <button
+        <Button
           onClick={handleCreate}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          variant="primary"
+          size="lg"
         >
           + إنشاء مسابقة جديدة
-        </button>
+        </Button>
       </div>
 
       {/* Competitions List */}
@@ -143,12 +150,13 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
           <p className="text-neutral-600 dark:text-neutral-400 mb-6">
             ابدأ بإنشاء مسابقة جديدة
           </p>
-          <button
+          <Button
             onClick={handleCreate}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            variant="primary"
+            size="lg"
           >
             إنشاء مسابقة
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
@@ -185,49 +193,55 @@ export default function CompetitionsManagement({ profile }: CompetitionsManageme
               </div>
 
               <div className="flex items-center gap-3">
-                <button
+                <Button
                   onClick={() => router.push(`/dashboard/competitions/${competition.id}`)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                  variant="primary"
+                  size="sm"
                 >
                   عرض المسابقة
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => handleEdit(competition.id)}
-                  className="px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                  variant="secondary"
+                  size="sm"
                 >
                   تعديل
-                </button>
+                </Button>
                 {competition.status === 'draft' && (
-                  <button
+                  <Button
                     onClick={() => handleActivate(competition.id)}
-                    className="px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+                    variant="primary"
+                    size="sm"
                   >
                     تفعيل
-                  </button>
+                  </Button>
                 )}
                 {competition.status === 'active' && (
-                  <button
+                  <Button
                     onClick={() => handleArchive(competition.id)}
-                    className="px-4 py-2 text-sm font-medium text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors"
+                    variant="outline"
+                    size="sm"
                   >
                     أرشفة
-                  </button>
+                  </Button>
                 )}
                 {competition.status === 'archived' && (
-                  <button
+                  <Button
                     onClick={() => router.push(`/dashboard/competitions/${competition.id}/migrate-training`)}
-                    className="px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+                    variant="secondary"
+                    size="sm"
                   >
                     📚 نقل إلى التدريب
-                  </button>
+                  </Button>
                 )}
                 {profile.role === 'CEO' && (
-                  <button
+                  <Button
                     onClick={() => handleDelete(competition.id)}
-                    className="px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                    variant="danger"
+                    size="sm"
                   >
                     حذف
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -396,12 +410,12 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
           {competitionId ? 'تعديل المسابقة' : 'إنشاء مسابقة جديدة'}
         </h1>
-        <button
+        <Button
           onClick={onClose}
-          className="px-4 py-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+          variant="secondary"
         >
           إلغاء
-        </button>
+        </Button>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm border border-neutral-200 dark:border-neutral-700 space-y-6">
@@ -475,13 +489,14 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
         <div className="border-t pt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-neutral-900">قواعد الأهلية والتذاكر</h3>
-            <button
+            <Button
               type="button"
               onClick={() => setShowRulesConfig(!showRulesConfig)}
-              className="text-sm text-blue-600 hover:text-blue-700"
+              variant="ghost"
+              size="sm"
             >
               {showRulesConfig ? 'إخفاء' : 'عرض'} التفاصيل
-            </button>
+            </Button>
           </div>
 
           {showRulesConfig && (
@@ -592,7 +607,7 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
                   <label className="block text-sm font-medium text-neutral-900">
                     مكافأة التقديم المبكر (اختياري)
                   </label>
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setFormData({
                       ...formData,
@@ -604,10 +619,11 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
                         ]
                       }
                     })}
-                    className="text-sm text-blue-600 hover:text-blue-700"
+                    variant="ghost"
+                    size="sm"
                   >
                     + إضافة مستوى
-                  </button>
+                  </Button>
                 </div>
                 {formData.rules.earlyBonusTiers.length > 0 && (
                   <div className="space-y-3">
@@ -656,7 +672,7 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
                             </select>
                           </div>
                         </div>
-                        <button
+                        <Button
                           type="button"
                           onClick={() => {
                             const newTiers = formData.rules.earlyBonusTiers.filter((_, i) => i !== index)
@@ -665,10 +681,11 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
                               rules: { ...formData.rules, earlyBonusTiers: newTiers }
                             })
                           }}
-                          className="px-3 py-2 text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm"
+                          variant="danger"
+                          size="sm"
                         >
                           حذف
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -679,20 +696,24 @@ function CompetitionForm({ competitionId, onClose }: { competitionId: string | n
         </div>
 
         <div className="flex items-center gap-3 pt-4">
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            size="lg"
+            loading={saving}
             disabled={saving}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
           >
             {saving ? 'جاري الحفظ...' : 'حفظ'}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onClose}
-            className="px-6 py-3 text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
+            variant="secondary"
+            size="lg"
+            disabled={saving}
           >
             إلغاء
-          </button>
+          </Button>
         </div>
       </form>
     </div>

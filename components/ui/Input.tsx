@@ -32,7 +32,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const [showPassword, setShowPassword] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    const inputId = id || `input-${Math.random().toString(36).substring(2, 11)}`;
     const inputType = showPasswordToggle && showPassword ? 'text' : type;
 
     return (

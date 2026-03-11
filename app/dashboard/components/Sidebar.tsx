@@ -5,6 +5,7 @@
 // ============================================
 
 // Navigation handled via onSectionChange callback
+import { useState } from 'react'
 import { User, DashboardSection } from '../core/types'
 import { canAccessSection } from '../core/permissions'
 
@@ -41,22 +42,26 @@ export default function Sidebar({
   isOpen,
   onClose,
 }: SidebarProps) {
+  const [navigating, setNavigating] = useState(false)
+  
   const visibleItems = NAV_ITEMS.filter(item => 
     canAccessSection(profile.role, item.id)
   )
 
   const handleNavigation = (section: DashboardSection) => {
-    // Update section and URL
-    onSectionChange(section)
+    // Prevent double-clicks
+    if (navigating) return
     
-    // Update URL without page reload
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href)
-      url.searchParams.set('section', section)
-      window.history.pushState({}, '', url.toString())
-    }
+    setNavigating(true)
     
+    // Close mobile sidebar first
     onClose()
+    
+    // Always perform full page navigation to ensure clean state
+    if (typeof window !== 'undefined') {
+      // Use location.href for full page reload to reset all state
+      window.location.href = `/dashboard?section=${section}`
+    }
   }
 
   return (
@@ -84,6 +89,7 @@ export default function Sidebar({
               <button
                 key={item.id}
                 onClick={() => handleNavigation(item.id)}
+                disabled={navigating}
                 style={{ animationDelay: `${index * 50}ms` }}
                 className={`
                   w-full flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2.5 lg:py-3.5 text-xs lg:text-sm font-semibold rounded-xl transition-all duration-200 animate-fade-in group
@@ -91,15 +97,22 @@ export default function Sidebar({
                     ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/30 scale-[1.02]'
                     : 'text-neutral-700 dark:text-neutral-300 hover:bg-white dark:hover:bg-neutral-800 hover:shadow-md hover:scale-[1.01]'
                   }
+                  ${navigating ? 'opacity-50 cursor-wait' : ''}
                 `}
               >
                 <span className={`text-lg lg:text-2xl transition-transform group-hover:scale-110 flex-shrink-0 ${activeSection === item.id ? 'animate-pulse' : ''}`}>
                   {item.icon}
                 </span>
                 <span className="flex-1 text-right truncate">{item.label}</span>
-                {activeSection === item.id && (
+                {activeSection === item.id && !navigating && (
                   <svg className="w-4 h-4 lg:w-5 lg:h-5 animate-pulse flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                )}
+                {navigating && (
+                  <svg className="w-4 h-4 lg:w-5 lg:h-5 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 )}
               </button>
@@ -164,6 +177,7 @@ export default function Sidebar({
               <button
                 key={item.id}
                 onClick={() => handleNavigation(item.id)}
+                disabled={navigating}
                 style={{ animationDelay: `${index * 50}ms` }}
                 className={`
                   w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3.5 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 animate-fade-in group
@@ -171,15 +185,22 @@ export default function Sidebar({
                     ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/30'
                     : 'text-neutral-700 dark:text-neutral-300 hover:bg-white dark:hover:bg-neutral-800 hover:shadow-md'
                   }
+                  ${navigating ? 'opacity-50 cursor-wait' : ''}
                 `}
               >
                 <span className={`text-lg sm:text-2xl transition-transform group-hover:scale-110 ${activeSection === item.id ? 'animate-pulse' : ''}`}>
                   {item.icon}
                 </span>
                 <span className="flex-1 text-right truncate">{item.label}</span>
-                {activeSection === item.id && (
+                {activeSection === item.id && !navigating && (
                   <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                )}
+                {navigating && (
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 )}
               </button>

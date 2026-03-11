@@ -46,8 +46,9 @@ function DashboardContent({ children }: { children?: React.ReactNode }) {
   // Update URL when section changes via sidebar click
   const handleSectionChange = (section: DashboardSection) => {
     setActiveSection(section)
-    if (typeof window !== 'undefined' && !isSubRoute) {
-      const url = new URL(window.location.href)
+    // Always update URL, even on sub-routes (will navigate back to main dashboard)
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.origin + '/dashboard')
       url.searchParams.set('section', section)
       window.history.pushState({}, '', url.toString())
     }

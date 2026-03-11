@@ -6,34 +6,20 @@ import ParticipationForm from './ParticipationForm'
 import { competitionsRepo, questionsRepo } from '@/lib/repos'
 import Icons from '@/components/icons'
 
-async function getCompetitionData(slug: string) {
+async function getCompetitionData(id: string) {
   try {
-    // Decode slug to handle URL-encoded Arabic characters
-    const decodedSlug = decodeURIComponent(slug)
+    console.log('[PARTICIPATE] Fetching competition for id:', id)
     
-    console.log('[PARTICIPATE] Fetching competition:', { 
-      rawSlug: slug, 
-      decodedSlug,
-      timestamp: new Date().toISOString() 
-    })
-    
-    // Get competition by slug
+    // Get all competitions and find by ID
     const competitions = await competitionsRepo.listAll()
-    
-    // Try both decoded and raw slug for maximum compatibility
-    const competition = competitions.find((c: any) => 
-      (c.slug === decodedSlug || c.slug === slug) && c.status === 'active'
-    )
+    const competition = competitions.find((c: any) => c.id === id)
     
     if (!competition) {
-      console.error('[PARTICIPATE] Competition not found:', { 
-        decodedSlug, 
-        availableSlugs: competitions.map(c => ({ slug: c.slug, status: c.status }))
-      })
+      console.error('[PARTICIPATE] Competition not found for id:', id)
       return null
     }
     
-    console.log('[PARTICIPATE] Competition found:', competition.id)
+    console.log('[PARTICIPATE] Found competition:', competition.id, competition.title)
     
     // Get active questions for this competition
     const allQuestions = await questionsRepo.listAll()
@@ -62,12 +48,12 @@ async function getCompetitionData(slug: string) {
   }
 }
 
-export default async function CompetitionParticipatePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
+export default async function CompetitionParticipatePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   
-  console.log('[PARTICIPATE PAGE] Rendering with slug:', slug)
+  console.log('[PARTICIPATE PAGE] Rendering with id:', id)
   
-  const data = await getCompetitionData(slug)
+  const data = await getCompetitionData(id)
   
   if (!data) {
     console.error('[PARTICIPATE PAGE] No data returned, showing 404')

@@ -47,18 +47,18 @@ body {
 }
 
 /* Space for fixed header + announcement bar on public pages only */
-body:not(.dashboard-layout) {
+body:not(.dashboard-layout):not(:has(.auth-layout)) {
   padding-top: 80px;
 }
 
 @media (min-width: 640px) {
-  body:not(.dashboard-layout) {
+  body:not(.dashboard-layout):not(:has(.auth-layout)) {
     padding-top: 100px;
   }
 }
 
 @media (min-width: 768px) {
-  body:not(.dashboard-layout) {
+  body:not(.dashboard-layout):not(:has(.auth-layout)) {
     padding-top: 120px;
   }
 }

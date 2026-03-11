@@ -67,41 +67,57 @@ export default function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps)
     }
 
     console.log('Form submitted with:', { username: username.trim(), hasPassword: !!password })
+    console.log('Starting login at:', new Date().toISOString())
 
     setIsSubmitting(true)
 
-    await execute(
-      async () => {
-        const formData = new FormData()
-        formData.append('username', username.trim())
-        formData.append('password', password)
-
-        const result = await loginAction(formData)
-
-        if (result?.error) {
-          throw new Error(result.error)
-        }
-      },
-      {
-        onSuccess: () => {
-          console.log('Login successful')
-          showToast('تم تسجيل الدخول بنجاح', 'success')
+    try {
+      await execute(
+        async () => {
+          console.log('Calling loginAction...')
+          const startTime = Date.now()
           
-          // Small delay for better UX
-          setTimeout(() => {
-            router.push(redirectTo)
-            router.refresh()
-          }, 500)
+          const formData = new FormData()
+          formData.append('username', username.trim())
+          formData.append('password', password)
+
+          const result = await loginAction(formData)
+          
+          const duration = Date.now() - startTime
+          console.log(`loginAction completed in ${duration}ms`)
+
+          if (result?.error) {
+            console.error('Login action returned error:', result.error)
+            throw new Error(result.error)
+          }
+          
+          console.log('Login action succeeded')
         },
-        onError: (err) => {
-          console.error('Login error:', err)
-          const errorMessage = getErrorMessage(err.message)
-          showToast(errorMessage, 'error')
-          setIsSubmitting(false)
-        },
-        timeout: 15000,
-      }
-    )
+        {
+          onSuccess: () => {
+            console.log('Login successful, redirecting...')
+            showToast('تم تسجيل الدخول بنجاح', 'success')
+            
+            // Small delay for better UX
+            setTimeout(() => {
+              console.log('Redirecting to:', redirectTo)
+              router.push(redirectTo)
+              router.refresh()
+            }, 500)
+          },
+          onError: (err) => {
+            console.error('Login error:', err)
+            const errorMessage = getErrorMessage(err.message)
+            showToast(errorMessage, 'error')
+            setIsSubmitting(false)
+          },
+          timeout: 30000, // Increased to 30 seconds for debugging
+        }
+      )
+    } catch (err) {
+      console.error('Unexpected error in handleSubmit:', err)
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -111,48 +127,50 @@ export default function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps)
       className="space-y-6"
       noValidate
     >
-      <Input
-        label="اسم المستخدم"
-        type="text"
-        value={username}
-        onChange={(e) => {
-          setUsername(e.target.value)
-          if (errors.username) setErrors({ ...errors, username: undefined })
-        }}
-        error={errors.username}
-        placeholder="أدخل اسم المستخدم"
-        required
-        disabled={isSubmitting || loading}
-        leftIcon={<Icons.user className="w-5 h-5" />}
-        autoComplete="username"
-        autoFocus
-      />
+      <div className="space-y-5">
+        <Input
+          label="اسم المستخدم"
+          type="text"
+          value={username}
+          onChange={(e) => {
+            setUsername(e.target.value)
+            if (errors.username) setErrors({ ...errors, username: undefined })
+          }}
+          error={errors.username}
+          placeholder="أدخل اسم المستخدم"
+          required
+          disabled={isSubmitting || loading}
+          leftIcon={<Icons.user className="w-5 h-5 text-[#1a5f4f]" />}
+          autoComplete="username"
+          autoFocus
+        />
 
-      <Input
-        label="كلمة المرور"
-        type="password"
-        value={password}
-        onChange={(e) => {
-          setPassword(e.target.value)
-          if (errors.password) setErrors({ ...errors, password: undefined })
-        }}
-        error={errors.password}
-        placeholder="أدخل كلمة المرور"
-        required
-        disabled={isSubmitting || loading}
-        leftIcon={<Icons.lock className="w-5 h-5" />}
-        showPasswordToggle
-        autoComplete="current-password"
-      />
+        <Input
+          label="كلمة المرور"
+          type="password"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value)
+            if (errors.password) setErrors({ ...errors, password: undefined })
+          }}
+          error={errors.password}
+          placeholder="أدخل كلمة المرور"
+          required
+          disabled={isSubmitting || loading}
+          leftIcon={<Icons.lock className="w-5 h-5 text-[#1a5f4f]" />}
+          showPasswordToggle
+          autoComplete="current-password"
+        />
+      </div>
 
       {error && (
         <div
-          className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
+          className="p-4 bg-red-50 border border-red-200 rounded-xl animate-fade-in"
           role="alert"
         >
-          <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
+          <div className="flex items-center gap-3 text-red-700">
             <Icons.AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p className="text-sm">{getErrorMessage(error)}</p>
+            <p className="text-sm font-medium">{getErrorMessage(error)}</p>
           </div>
         </div>
       )}
@@ -164,8 +182,24 @@ export default function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps)
         fullWidth
         loading={isSubmitting || loading}
         disabled={isSubmitting || loading}
+        className="!mt-8 bg-gradient-to-r from-[#1a5f4f] to-[#2d7a67] hover:from-[#0f4438] hover:to-[#1a5f4f] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
       >
-        {isSubmitting || loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
+        {isSubmitting || loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>جاري تسجيل الدخول...</span>
+          </span>
+        ) : (
+          <span className="flex items-center justify-center gap-2">
+            <span>تسجيل الدخول</span>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+          </span>
+        )}
       </Button>
     </form>
   )

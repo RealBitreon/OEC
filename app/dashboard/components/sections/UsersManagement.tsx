@@ -122,9 +122,10 @@ export default function UsersManagement({ profile }: { profile: User }) {
 
     try {
       await deleteUser(userId)
+      showToast('تم حذف المستخدم بنجاح', 'success')
       await loadData()
     } catch (error: any) {
-      alert(error?.message || 'فشل حذف المستخدم')
+      showToast(error?.message || 'فشل حذف المستخدم', 'error')
     }
   }
 

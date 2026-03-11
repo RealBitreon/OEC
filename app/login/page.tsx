@@ -30,100 +30,115 @@ export default async function LoginPage({
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4 py-12" dir="rtl">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-bl from-emerald-50 via-green-50 to-teal-50">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-200/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-green-200/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-teal-200/20 rounded-full blur-3xl animate-pulse delay-500"></div>
+      {/* Modern Gradient Background with Mesh Pattern */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0f4438] via-[#1a5f4f] to-[#2d7a67]">
+        {/* Animated Gradient Orbs */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#c4f542]/20 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[#2d7a67]/30 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-[#c4f542]/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+        
+        {/* Mesh Grid Pattern */}
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                           linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '50px 50px'
+        }}></div>
       </div>
 
       {/* Back to Home Button */}
       <Link 
         href="/"
-        className="absolute top-6 right-6 z-20 inline-flex items-center gap-2 text-emerald-700 hover:text-emerald-800 transition-colors bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm hover:shadow-md"
+        className="absolute top-6 right-6 z-20 inline-flex items-center gap-2 text-white hover:text-[#c4f542] transition-all duration-300 bg-white/10 backdrop-blur-md px-5 py-2.5 rounded-full shadow-lg hover:shadow-xl hover:bg-white/20 border border-white/20"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-        <span className="font-medium">العودة للرئيسية</span>
+        <span className="font-semibold">العودة للرئيسية</span>
       </Link>
 
       {/* Content */}
-      <div className="relative w-full max-w-md z-10">
-        {/* Decorative Elements */}
-        <div className="absolute -top-4 -left-4 w-24 h-24 bg-gradient-to-bl from-emerald-400 to-green-500 rounded-full opacity-20 blur-2xl"></div>
-        <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-gradient-to-bl from-teal-400 to-emerald-500 rounded-full opacity-20 blur-2xl"></div>
+      <div className="relative w-full max-w-md z-10 animate-scale-in">
+        {/* Floating Decorative Elements */}
+        <div className="absolute -top-6 -left-6 w-32 h-32 bg-[#c4f542]/20 rounded-full blur-3xl animate-bounce-subtle"></div>
+        <div className="absolute -bottom-6 -right-6 w-40 h-40 bg-[#c4f542]/15 rounded-full blur-3xl animate-bounce-subtle" style={{ animationDelay: '1s' }}></div>
 
-        {/* Main Card */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-emerald-100/50 overflow-hidden">
-          {/* Header with Gradient */}
-          <div className="bg-gradient-to-l from-emerald-500 via-green-500 to-teal-500 p-8 text-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+        {/* Main Card with Glassmorphism */}
+        <div className="bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden hover:shadow-[0_20px_60px_rgba(0,0,0,0.3)] transition-all duration-500">
+          {/* Header Section */}
+          <div className="relative p-10 text-center overflow-hidden">
+            {/* Subtle Background Pattern */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1a5f4f]/5 to-transparent"></div>
+            
             <div className="relative z-10">
-              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+              {/* Logo/Icon Container */}
+              <div className="w-24 h-24 bg-gradient-to-br from-[#1a5f4f] to-[#2d7a67] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl transform hover:scale-110 transition-transform duration-300 relative">
+                <div className="absolute inset-0 bg-[#c4f542]/20 rounded-3xl blur-xl"></div>
+                <svg className="w-12 h-12 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
+              
+              {/* Title */}
+              <h1 className="text-4xl font-bold text-[#1a5f4f] mb-3 tracking-tight">
                 تسجيل الدخول
               </h1>
-              <p className="text-emerald-50 text-lg">
-                مرحباً بك مرة أخرى
+              <p className="text-neutral-600 text-lg font-medium">
+                مرحباً بعودتك! سجل دخولك للمتابعة
               </p>
-            </div>
-            {/* Decorative Wave */}
-            <div className="absolute bottom-0 left-0 right-0">
-              <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="w-full h-8 fill-white/80">
-                <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"></path>
-              </svg>
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 to-transparent"></div>
+
           {/* Form Container */}
-          <div className="p-8">
+          <div className="p-10">
             <LoginForm redirectTo={safeRedirect} />
 
-            {/* Sign Up Link */}
-            <div className="mt-8 text-center">
+            {/* Divider with Text */}
+            <div className="mt-10 mb-8">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-emerald-200"></div>
+                  <div className="w-full border-t border-neutral-200"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-neutral-500">أو</span>
+                  <span className="px-4 bg-white text-neutral-500 font-medium">أو</span>
                 </div>
               </div>
-              <p className="text-sm text-neutral-600 mt-6 flex items-center justify-center gap-2">
+            </div>
+
+            {/* Sign Up Link */}
+            <div className="text-center">
+              <p className="text-neutral-600 mb-4 flex items-center justify-center gap-2 flex-wrap">
+                <span>ليس لديك حساب؟</span>
                 <a 
                   href="/signup" 
-                  className="text-emerald-600 hover:text-emerald-700 font-bold transition-all duration-200 hover:underline decoration-2 underline-offset-2 flex items-center gap-1"
+                  className="text-[#1a5f4f] hover:text-[#2d7a67] font-bold transition-all duration-200 hover:underline decoration-2 underline-offset-4 inline-flex items-center gap-1.5 group"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                  </svg>
                   <span>إنشاء حساب جديد</span>
+                  <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
                 </a>
-                <span>ليس لديك حساب؟</span>
               </p>
             </div>
           </div>
         </div>
 
         {/* Footer Note */}
-        <div className="mt-8 text-center">
-          <p className="text-sm text-neutral-600 bg-white/60 backdrop-blur-sm rounded-full px-6 py-3 inline-block shadow-sm">
+        <div className="mt-8 text-center animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <p className="text-sm text-white/90 bg-white/10 backdrop-blur-md rounded-2xl px-6 py-3.5 inline-block shadow-lg border border-white/20">
             بتسجيل الدخول، أنت توافق على{' '}
-            <a href="/terms" className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline">
+            <a href="/terms" className="text-[#c4f542] hover:text-[#d4ff6b] font-semibold hover:underline underline-offset-2 transition-colors">
               الشروط والأحكام
             </a>
           </p>
         </div>
 
         {/* Floating Particles */}
-        <div className="absolute top-10 left-10 w-2 h-2 bg-emerald-400 rounded-full animate-ping"></div>
-        <div className="absolute bottom-20 right-10 w-2 h-2 bg-green-400 rounded-full animate-ping delay-300"></div>
-        <div className="absolute top-1/3 right-5 w-1.5 h-1.5 bg-teal-400 rounded-full animate-ping delay-700"></div>
+        <div className="absolute top-10 left-10 w-2 h-2 bg-[#c4f542] rounded-full animate-ping"></div>
+        <div className="absolute bottom-20 right-10 w-2 h-2 bg-[#c4f542] rounded-full animate-ping" style={{ animationDelay: '0.3s' }}></div>
+        <div className="absolute top-1/3 right-5 w-1.5 h-1.5 bg-[#c4f542] rounded-full animate-ping" style={{ animationDelay: '0.7s' }}></div>
       </div>
     </div>
   )

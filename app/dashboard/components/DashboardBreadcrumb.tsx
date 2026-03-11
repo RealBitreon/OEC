@@ -23,10 +23,17 @@ const SECTION_LABELS: Record<DashboardSection, { label: string; icon: React.Reac
 export default function DashboardBreadcrumb({ activeSection, onSectionChange }: DashboardBreadcrumbProps) {
   const currentSection = SECTION_LABELS[activeSection];
   
+  const handleHomeClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (typeof window !== 'undefined') {
+      window.location.href = `/dashboard?section=${activeSection}`;
+    }
+  };
+  
   const items: BreadcrumbItem[] = [
     {
       label: 'لوحة التحكم',
-      href: '#',
+      href: `/dashboard?section=${activeSection}`,
       icon: <Icons.home className="w-4 h-4" />,
     },
     {

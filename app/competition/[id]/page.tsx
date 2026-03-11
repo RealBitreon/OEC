@@ -20,21 +20,24 @@ interface Competition {
   rules: any
 }
 
-export default async function CompetitionDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
+export default async function CompetitionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   
   const supabase = await createClient()
   
-  // Fetch competition details
+  // Get competition by ID - much simpler and more reliable!
   const { data: competition, error } = await supabase
     .from('competitions')
     .select('*')
-    .eq('slug', slug)
+    .eq('id', id)
     .single()
-
+  
   if (error || !competition) {
+    console.error('[COMPETITION DETAIL] Competition not found for id:', id, error)
     notFound()
   }
+  
+  console.log('[COMPETITION DETAIL] ✓ Successfully loaded competition:', competition.id, competition.title)
 
   // Fetch questions count for this competition
   const { count: questionsCount } = await supabase
@@ -211,14 +214,14 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
                       </div>
                       
                       <Link
-                        href={`/competition/${competition.slug}/participate`}
+                        href={`/competition/${encodeURIComponent(competition.slug)}/participate`}
                         className="block w-full bg-primary hover:bg-primary-dark text-white text-center font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
                       >
                         ابدأ المشاركة الآن
                       </Link>
                       
                       <Link
-                        href={`/competition/${competition.slug}/questions`}
+                        href={`/competition/${encodeURIComponent(competition.slug)}/questions`}
                         className="block w-full bg-blue-500 hover:bg-blue-600 text-white text-center font-semibold py-3 px-6 rounded-xl transition-all duration-200"
                       >
                         <Icons.eye className="w-5 h-5 inline-block ml-2" />

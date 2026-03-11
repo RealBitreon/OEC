@@ -119,43 +119,39 @@ export default function ArchivedCompetitions() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: idx * 0.1 }}
               >
-                <Link href={`/competition/${comp.slug}`}>
-                  <div className="card hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer bg-white">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-bold text-neutral-900">{comp.title}</h3>
-                      <span className="text-2xl">📦</span>
-                    </div>
-                    
-                    <div className="text-sm text-neutral-600 space-y-2 mb-4">
-                      <div>📅 {new Date(comp.startAt).toLocaleDateString('ar-OM', { month: 'long', year: 'numeric' })}</div>
-                      {winner && (
-                        <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                          <div className="text-xs text-green-600 mb-1">الفائز</div>
-                          <div className="font-bold text-green-700">{winner.displayName}</div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Link
-                        href={`/competition/${comp.slug}`}
-                        className="flex-1 btn-secondary text-center text-sm py-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        التفاصيل
-                      </Link>
-                      {winner && (
-                        <Link
-                          href={`/competition/${comp.slug}/wheel`}
-                          className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold rounded-lg transition-all text-center text-sm py-2"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          🎡 العجلة
-                        </Link>
-                      )}
-                    </div>
+                <div className="card hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer bg-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-neutral-900">{comp.title}</h3>
+                    <span className="text-2xl">📦</span>
                   </div>
-                </Link>
+                  
+                  <div className="text-sm text-neutral-600 space-y-2 mb-4">
+                    <div>📅 {comp.startAt ? new Date(comp.startAt).toLocaleDateString('ar-OM', { month: 'long', year: 'numeric' }) : 'تاريخ غير محدد'}</div>
+                    {winner && (
+                      <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                        <div className="text-xs text-green-600 mb-1">الفائز</div>
+                        <div className="font-bold text-green-700">{winner.displayName}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Link
+                      href={`/competition/${comp.id}`}
+                      className="flex-1 btn-secondary text-center text-sm py-2"
+                    >
+                      التفاصيل
+                    </Link>
+                    {winner && (
+                      <Link
+                        href={`/competition/${comp.id}/wheel`}
+                        className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold rounded-lg transition-all text-center text-sm py-2"
+                      >
+                        🎡 العجلة
+                      </Link>
+                    )}
+                  </div>
+                </div>
               </motion.div>
             )
           })}

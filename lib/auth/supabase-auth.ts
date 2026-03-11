@@ -114,19 +114,30 @@ export async function login(
   username: string,
   password: string
 ): Promise<{ success: boolean; error?: string }> {
+  const startTime = Date.now()
+  console.log('[SUPABASE AUTH] Login started for username:', username)
+  
   try {
+    console.log('[SUPABASE AUTH] Creating Supabase client...')
+    const clientStart = Date.now()
     const supabase = await createClient()
+    console.log(`[SUPABASE AUTH] Client created in ${Date.now() - clientStart}ms`)
 
     // Convert username to email format
     const email = `${username}@local.app`
+    console.log('[SUPABASE AUTH] Converted to email:', email)
 
+    console.log('[SUPABASE AUTH] Calling signInWithPassword...')
+    const signInStart = Date.now()
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
+    const signInDuration = Date.now() - signInStart
+    console.log(`[SUPABASE AUTH] signInWithPassword completed in ${signInDuration}ms`)
 
     if (error) {
-      console.error('Supabase auth error:', error)
+      console.error('[SUPABASE AUTH] Supabase auth error:', error)
       
       // Provide user-friendly error messages in Arabic
       if (error.message.includes('Invalid login credentials')) {
@@ -141,12 +152,16 @@ export async function login(
     }
 
     if (!data.session) {
+      console.error('[SUPABASE AUTH] No session created')
       return { success: false, error: 'فشل إنشاء الجلسة' }
     }
 
+    const totalDuration = Date.now() - startTime
+    console.log(`[SUPABASE AUTH] Login successful! Total duration: ${totalDuration}ms`)
     return { success: true }
   } catch (error) {
-    console.error('Login error:', error)
+    const totalDuration = Date.now() - startTime
+    console.error(`[SUPABASE AUTH] Login error after ${totalDuration}ms:`, error)
     return { success: false, error: 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى' }
   }
 }

@@ -76,6 +76,8 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
   const [saving, setSaving] = useState(false)
   const [competitions, setCompetitions] = useState<Array<{ id: string; title: string }>>([])
   const [reviewCompetitionRules, setReviewCompetitionRules] = useState<any>(null)
+  const [markingWinner, setMarkingWinner] = useState<string | null>(null)
+  const [deletingSubmission, setDeletingSubmission] = useState<string | null>(null)
   const mountedRef = useRef(true)
 
   useEffect(() => {
@@ -162,6 +164,7 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
   }, [loadData])
 
   const handleMarkWinner = async (submissionId: string, isWinner: boolean) => {
+    setMarkingWinner(submissionId)
     try {
       const response = await fetch('/api/submissions/mark-winner', {
         method: 'POST',
@@ -182,6 +185,8 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
     } catch (error: any) {
       console.error('Mark winner exception:', error)
       showToast(error.message || 'فشل تحديث الحالة', 'error')
+    } finally {
+      setMarkingWinner(null)
     }
   }
 
@@ -226,6 +231,7 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
       return
     }
 
+    setDeletingSubmission(submissionId)
     try {
       const response = await fetch(`/api/submissions/${submissionId}`, {
         method: 'DELETE',
@@ -240,6 +246,8 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
       loadData()
     } catch (error: any) {
       showToast(error.message || 'فشل حذف الإجابة', 'error')
+    } finally {
+      setDeletingSubmission(null)
     }
   }
 
@@ -465,6 +473,8 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                             size="sm"
                             title="تحويل إلى خاسر"
                             aria-label="تحويل إلى خاسر"
+                            loading={markingWinner === submission.id}
+                            disabled={markingWinner !== null}
                           >
                             ❌
                           </Button>
@@ -475,6 +485,8 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                             size="sm"
                             title="تحويل إلى فائز"
                             aria-label="تحويل إلى فائز"
+                            loading={markingWinner === submission.id}
+                            disabled={markingWinner !== null}
                           >
                             🏆
                           </Button>
@@ -486,6 +498,8 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                               size="sm"
                               title="تحديد كفائز"
                               aria-label="تحديد كفائز"
+                              loading={markingWinner === submission.id}
+                              disabled={markingWinner !== null}
                             >
                               🏆
                             </Button>
@@ -495,6 +509,8 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                               size="sm"
                               title="تحديد كخاسر"
                               aria-label="تحديد كخاسر"
+                              loading={markingWinner === submission.id}
+                              disabled={markingWinner !== null}
                             >
                               ❌
                             </Button>
@@ -506,6 +522,8 @@ export default function SubmissionsReview({ profile, competitionId }: { profile:
                           size="sm"
                           title="حذف الإجابة"
                           aria-label="حذف الإجابة"
+                          loading={deletingSubmission === submission.id}
+                          disabled={deletingSubmission !== null}
                         >
                           🗑️
                         </Button>
