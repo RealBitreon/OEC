@@ -101,6 +101,7 @@ export async function POST(
             competition_id: null,
             is_training: true,
             status: 'PUBLISHED',
+            is_active: true,
             correct_answer: correctAnswer,
             updated_at: new Date().toISOString()
           })

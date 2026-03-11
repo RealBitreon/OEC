@@ -73,13 +73,20 @@ export default function MigrateToTrainingPage() {
     try {
       setMigrating(true)
       const result = await autoMigrateWithWinnerAnswers(competitionId)
-      alert(
-        `تم النقل بنجاح!\n` +
-        `تم نقل: ${result.migrated} سؤال\n` +
-        `تم تخطي: ${result.skipped} سؤال\n` +
-        `أخطاء: ${result.errors.length}`
-      )
-      router.push('/dashboard/training-questions')
+      
+      const message = `تم النقل بنجاح! ✅\n\n` +
+        `✓ تم نقل: ${result.migrated} سؤال\n` +
+        `⊘ تم تخطي: ${result.skipped} سؤال\n` +
+        `✗ أخطاء: ${result.errors.length}\n\n` +
+        `سيتم توجيهك الآن إلى صفحة الأسئلة التدريبية...`
+      
+      alert(message)
+      
+      // Wait a moment before redirect to ensure DB updates are complete
+      setTimeout(() => {
+        router.push('/dashboard/training-questions')
+        router.refresh()
+      }, 500)
     } catch (err: any) {
       alert(`خطأ: ${err.message}`)
     } finally {
@@ -88,7 +95,7 @@ export default function MigrateToTrainingPage() {
   }
   
   async function handleManualMigrate() {
-    if (!confirm('هل تريد نقل الأسئلة إلى التدريب؟')) {
+    if (!confirm('هل تريد نقل الأسئلة إلى التدريب؟\n\nملاحظة: سيتم تخطي الأسئلة التي لا تحتوي على إجابات.')) {
       return
     }
     
@@ -97,13 +104,20 @@ export default function MigrateToTrainingPage() {
       const result = await migrateCompetitionToTraining(competitionId, {
         skipQuestionsWithoutAnswers: true
       })
-      alert(
-        `تم النقل بنجاح!\n` +
-        `تم نقل: ${result.migrated} سؤال\n` +
-        `تم تخطي: ${result.skipped} سؤال\n` +
-        `أخطاء: ${result.errors.length}`
-      )
-      router.push('/dashboard/training-questions')
+      
+      const message = `تم النقل بنجاح! ✅\n\n` +
+        `✓ تم نقل: ${result.migrated} سؤال\n` +
+        `⊘ تم تخطي: ${result.skipped} سؤال\n` +
+        `✗ أخطاء: ${result.errors.length}\n\n` +
+        `سيتم توجيهك الآن إلى صفحة الأسئلة التدريبية...`
+      
+      alert(message)
+      
+      // Wait a moment before redirect to ensure DB updates are complete
+      setTimeout(() => {
+        router.push('/dashboard/training-questions')
+        router.refresh()
+      }, 500)
     } catch (err: any) {
       alert(`خطأ: ${err.message}`)
     } finally {

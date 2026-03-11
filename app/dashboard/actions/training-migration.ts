@@ -289,6 +289,7 @@ export async function migrateCompetitionToTraining(
           competition_id: null, // Remove from competition
           is_training: true, // Mark as training
           status: 'PUBLISHED', // Make it available
+          is_active: true, // Ensure it's active
           correct_answer: correctAnswer,
           updated_at: new Date().toISOString()
         })
@@ -320,9 +321,11 @@ export async function migrateCompetitionToTraining(
     }
   })
   
-  revalidatePath('/dashboard')
-  revalidatePath('/dashboard/training-questions')
-  revalidatePath('/dashboard/question-bank')
+  // Force revalidation of all relevant paths
+  revalidatePath('/dashboard', 'layout')
+  revalidatePath('/dashboard/training-questions', 'page')
+  revalidatePath('/dashboard/question-bank', 'page')
+  revalidatePath('/questions', 'page')
   
   return {
     success: true,

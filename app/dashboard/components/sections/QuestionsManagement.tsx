@@ -49,6 +49,7 @@ export default function QuestionsManagement({ profile, mode = 'training' }: Ques
 
   const loadData = async () => {
     try {
+      setLoading(true)
       let questionsData: Question[]
       
       if (mode === 'bank') {
@@ -58,6 +59,7 @@ export default function QuestionsManagement({ profile, mode = 'training' }: Ques
           type: filters.type
         })
         questionsData = result.questions
+        console.log('[QuestionsManagement] Bank mode - loaded questions:', questionsData.length)
       } else {
         // Training: PUBLISHED questions with is_training = true and competition_id = NULL
         const result = await getQuestions({ 
@@ -65,7 +67,22 @@ export default function QuestionsManagement({ profile, mode = 'training' }: Ques
           search: filters.search,
           type: filters.type
         })
-        questionsData = result.questions.filter(q => q.competition_id === null && q.status === 'PUBLISHED')
+        console.log('[QuestionsManagement] Training mode - fetched questions:', result.questions.length)
+        
+        // Filter to ensure we only show training questions (not in any competition)
+        questionsData = result.questions.filter(q => 
+          q.competition_id === null && 
+          q.status === 'PUBLISHED' &&
+          q.is_training === true
+        )
+        console.log('[QuestionsManagement] Training mode - after filter:', questionsData.length)
+        console.log('[QuestionsManagement] Sample questions:', questionsData.slice(0, 2).map(q => ({
+          id: q.id,
+          text: q.question_text.substring(0, 50),
+          competition_id: q.competition_id,
+          is_training: q.is_training,
+          status: q.status
+        })))
       }
       
       const competitionsData = await getCompetitions()
@@ -74,6 +91,7 @@ export default function QuestionsManagement({ profile, mode = 'training' }: Ques
       setCompetitions(competitionsData)
     } catch (error) {
       console.error('Failed to load data:', error)
+      alert('فشل تحميل البيانات. يرجى المحاولة مرة أخرى.')
     } finally {
       setLoading(false)
     }
@@ -205,19 +223,28 @@ export default function QuestionsManagement({ profile, mode = 'training' }: Ques
             }
           </p>
         </div>
-        <button
-          onClick={handleCreate}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          + إضافة سؤال
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={loadData}
+            className="px-4 py-3 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition-colors font-medium"
+            title="تحديث القائمة"
+          >
+            🔄 تحديث
+          </button>
+          <button
+            onClick={handleCreate}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            + إضافة سؤال
+          </button>
+        </div>
       </div>
 
       {/* Info Banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
           <span className="text-2xl">ℹ️</span>
-          <div>
+          <div className="flex-1">
             <h3 className="font-bold text-blue-900 mb-1">
               {mode === 'bank' ? 'مكتبة الأسئلة - جميع الأسئلة' : 'الأسئلة التدريبية'}
             </h3>
@@ -227,6 +254,11 @@ export default function QuestionsManagement({ profile, mode = 'training' }: Ques
                 : 'الأسئلة المنشورة هنا متاحة لجميع الطلاب للتدريب. لإضافة أسئلة لمسابقة معينة، استخدم صفحة إدارة المسابقة.'
               }
             </p>
+            {mode === 'training' && (
+              <p className="text-xs text-blue-600 mt-2">
+                💡 إذا قمت بنقل أسئلة من مسابقة ولم تظهر هنا، اضغط على زر "تحديث" أعلاه.
+              </p>
+            )}
           </div>
         </div>
       </div>

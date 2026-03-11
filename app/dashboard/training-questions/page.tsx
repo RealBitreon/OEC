@@ -2,6 +2,10 @@ import { redirect } from 'next/navigation'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import QuestionsManagement from '../components/sections/QuestionsManagement'
 
+// Disable caching to always show fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function TrainingQuestionsPage() {
   const supabase = await createClient()
   
