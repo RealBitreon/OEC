@@ -8,14 +8,14 @@ import Icons from '@/components/icons'
 
 async function getCompetitionData(id: string) {
   try {
-    console.log('[PARTICIPATE] Fetching competition for id:', id)
+    console.log('[PARTICIPATE] Fetching competition for id/slug:', id)
     
-    // Get all competitions and find by ID
+    // Get all competitions and find by ID or slug
     const competitions = await competitionsRepo.listAll()
-    const competition = competitions.find((c: any) => c.id === id)
+    const competition = competitions.find((c: any) => c.id === id || c.slug === id)
     
     if (!competition) {
-      console.error('[PARTICIPATE] Competition not found for id:', id)
+      console.error('[PARTICIPATE] Competition not found for id/slug:', id)
       return null
     }
     
@@ -97,7 +97,7 @@ export default async function CompetitionParticipatePage({ params }: { params: P
       <div className="flex-1 container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
           <div className="mb-6">
-            <BackButton fallbackUrl={`/competition/${slug}`} label="العودة للمسابقة" />
+            <BackButton fallbackUrl={`/competition/${competition.slug || competition.id}`} label="العودة للمسابقة" />
           </div>
           
           <h1 className="text-4xl font-bold text-primary mb-4">المشاركة في: {competition.title}</h1>
