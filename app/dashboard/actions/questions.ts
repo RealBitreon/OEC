@@ -53,6 +53,9 @@ export interface QuestionFilters {
 export async function getQuestions(filters: QuestionFilters = {}, page = 1, limit = 20) {
   let questions = await questionsRepo.listAll()
   
+  console.log('[getQuestions] Total questions from DB:', questions.length)
+  console.log('[getQuestions] Filters:', filters)
+  
   // Apply filters
   if (filters.competition_id) {
     questions = questions.filter(q => q.competitionId === filters.competition_id)
@@ -62,6 +65,7 @@ export async function getQuestions(filters: QuestionFilters = {}, page = 1, limi
   }
   if (filters.is_training !== undefined) {
     questions = questions.filter(q => q.isTraining === filters.is_training)
+    console.log('[getQuestions] After is_training filter:', questions.length)
   }
   if (filters.has_correct_answer !== undefined) {
     questions = questions.filter(q => 
@@ -74,6 +78,14 @@ export async function getQuestions(filters: QuestionFilters = {}, page = 1, limi
       q.questionText.toLowerCase().includes(search)
     )
   }
+
+  console.log('[getQuestions] After all filters:', questions.length)
+  console.log('[getQuestions] Sample questions:', questions.slice(0, 2).map(q => ({
+    id: q.id,
+    competitionId: q.competitionId,
+    isTraining: q.isTraining,
+    status: q.status
+  })))
 
   // Pagination
   const start = (page - 1) * limit

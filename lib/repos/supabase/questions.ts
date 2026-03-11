@@ -62,7 +62,22 @@ export class SupabaseQuestionsRepo implements IQuestionsRepo {
       .eq('is_active', true)
       .order('created_at', { ascending: true })
 
-    if (error) throw new Error(`Failed to list training questions: ${error.message}`)
+    if (error) {
+      console.error('[SupabaseQuestionsRepo] listTraining error:', error)
+      throw new Error(`Failed to list training questions: ${error.message}`)
+    }
+    
+    console.log('[SupabaseQuestionsRepo] listTraining - raw data count:', data?.length || 0)
+    if (data && data.length > 0) {
+      console.log('[SupabaseQuestionsRepo] listTraining - sample:', data.slice(0, 2).map(q => ({
+        id: q.id,
+        competition_id: q.competition_id,
+        is_training: q.is_training,
+        status: q.status,
+        is_active: q.is_active
+      })))
+    }
+    
     return (data || []).map(q => this.transformFromDb(q))
   }
 
@@ -73,7 +88,21 @@ export class SupabaseQuestionsRepo implements IQuestionsRepo {
       .select('*')
       .order('created_at', { ascending: false })
 
-    if (error) throw new Error(`Failed to list all questions: ${error.message}`)
+    if (error) {
+      console.error('[SupabaseQuestionsRepo] listAll error:', error)
+      throw new Error(`Failed to list all questions: ${error.message}`)
+    }
+    
+    console.log('[SupabaseQuestionsRepo] listAll - total count:', data?.length || 0)
+    
+    const trainingCount = data?.filter(q => 
+      q.is_training === true && 
+      q.competition_id === null && 
+      q.status === 'PUBLISHED'
+    ).length || 0
+    
+    console.log('[SupabaseQuestionsRepo] listAll - training questions count:', trainingCount)
+    
     return (data || []).map(q => this.transformFromDb(q))
   }
 
