@@ -28,6 +28,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { User } from '../../core/types'
 import { getUsers, getUserStats, createUser, updateUser, deleteUser, resetUserPassword, type UserFilters } from '../../actions/users'
 import { safeString } from '@/lib/utils/form-helpers'
+import { useToast } from '@/components/ui/Toast'
 
 interface UserData {
   id: string
@@ -46,6 +47,7 @@ const ROLE_LABELS = {
 }
 
 export default function UsersManagement({ profile }: { profile: User }) {
+  const { showToast } = useToast()
   const [users, setUsers] = useState<UserData[]>([])
   const [stats, setStats] = useState({ total: 0, students: 0, managers: 0, ceos: 0, thisMonth: 0 })
   const [loading, setLoading] = useState(true)
