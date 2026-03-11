@@ -7,14 +7,12 @@ import { getErrorMessage } from '@/lib/utils/error-messages'
 
 interface StartCompetitionButtonProps {
   competitionId?: string
-  competitionSlug?: string
   className?: string
   children?: React.ReactNode
 }
 
 export default function StartCompetitionButton({
   competitionId,
-  competitionSlug,
   className = 'btn-primary',
   children = 'ابدأ الإجابة على الأسئلة',
 }: StartCompetitionButtonProps) {
@@ -25,9 +23,8 @@ export default function StartCompetitionButton({
     await execute(async () => {
       // If no competition provided, fetch active competition
       let targetCompetitionId = competitionId
-      let targetSlug = competitionSlug
 
-      if (!targetCompetitionId || !targetSlug) {
+      if (!targetCompetitionId) {
         const response = await fetch('/api/competitions/active')
         const data = await response.json()
 
@@ -36,7 +33,6 @@ export default function StartCompetitionButton({
         }
 
         targetCompetitionId = data.competition.id
-        targetSlug = data.competition.slug
       }
 
       // Get device fingerprint
@@ -71,9 +67,9 @@ export default function StartCompetitionButton({
       }
 
       // Redirect to competition questions
-      const encodedSlug = encodeURIComponent(targetSlug)
-      console.log('[START BUTTON] Redirecting to:', `/competition/${encodedSlug}/participate`)
-      router.push(`/competition/${encodedSlug}/participate`)
+      const encodedId = encodeURIComponent(targetCompetitionId)
+      console.log('[START BUTTON] Redirecting to:', `/competition/${encodedId}/participate`)
+      router.push(`/competition/${encodedId}/participate`)
     }, {
       onError: (err) => {
         console.error('Error starting competition:', err)

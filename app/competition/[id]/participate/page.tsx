@@ -97,7 +97,7 @@ export default async function CompetitionParticipatePage({ params }: { params: P
       <div className="flex-1 container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
           <div className="mb-6">
-            <BackButton fallbackUrl={`/competition/${competition.slug || competition.id}`} label="العودة للمسابقة" />
+            <BackButton fallbackUrl={`/competition/${encodeURIComponent(competition.id)}`} label="العودة للمسابقة" />
           </div>
           
           <h1 className="text-4xl font-bold text-primary mb-4">المشاركة في: {competition.title}</h1>

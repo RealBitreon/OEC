@@ -11,15 +11,36 @@ export default async function CompetitionWheelPage({ params }: { params: Promise
   
   const supabase = await createClient()
   
-  // Get competition by ID
-  const { data: competition, error } = await supabase
+  // Try to fetch competition by ID first, then by slug
+  let competition = null
+  let error = null
+  
+  // First attempt: Try as UUID
+  const { data: compById, error: errorById } = await supabase
     .from('competitions')
     .select('*')
     .eq('id', id)
-    .single()
+    .maybeSingle()
+  
+  if (compById) {
+    competition = compById
+  } else {
+    // Second attempt: Try as slug
+    const { data: compBySlug, error: errorBySlug } = await supabase
+      .from('competitions')
+      .select('*')
+      .eq('slug', id)
+      .maybeSingle()
+    
+    if (compBySlug) {
+      competition = compBySlug
+    } else {
+      error = errorById || errorBySlug
+    }
+  }
   
   if (error || !competition) {
-    console.error('[WHEEL] Competition not found for id:', id, error)
+    console.error('[WHEEL] Competition not found for id/slug:', id, error)
     notFound()
   }
   
@@ -50,7 +71,7 @@ export default async function CompetitionWheelPage({ params }: { params: Promise
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <div className="mb-6">
-              <BackButton fallbackUrl={`/competition/${competition.id}`} label="العودة للمسابقة" />
+              <BackButton fallbackUrl={`/competition/${encodeURIComponent(competition.id)}`} label="العودة للمسابقة" />
             </div>
 
             {/* Page Header */}
@@ -215,7 +236,7 @@ export default async function CompetitionWheelPage({ params }: { params: Promise
 
                 <div className="mt-8">
                   <Link
-                    href={`/competition/${competition.id}`}
+                    href={`/competition/${encodeURIComponent(competition.id)}`}
                     className="inline-flex items-center gap-2 text-primary hover:text-primary-dark font-semibold transition-colors"
                   >
                     <Icons.arrowRight className="w-5 h-5" />

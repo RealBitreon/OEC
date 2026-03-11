@@ -11,15 +11,36 @@ export default async function CompetitionQuestionsPage({ params }: { params: Pro
   
   const supabase = await createClient()
   
-  // Get competition by ID
-  const { data: competition, error } = await supabase
+  // Try to fetch competition by ID first, then by slug
+  let competition = null
+  let error = null
+  
+  // First attempt: Try as UUID
+  const { data: compById, error: errorById } = await supabase
     .from('competitions')
     .select('*')
     .eq('id', id)
-    .single()
+    .maybeSingle()
+  
+  if (compById) {
+    competition = compById
+  } else {
+    // Second attempt: Try as slug
+    const { data: compBySlug, error: errorBySlug } = await supabase
+      .from('competitions')
+      .select('*')
+      .eq('slug', id)
+      .maybeSingle()
+    
+    if (compBySlug) {
+      competition = compBySlug
+    } else {
+      error = errorById || errorBySlug
+    }
+  }
   
   if (error || !competition) {
-    console.error('[QUESTIONS] Competition not found for id:', id, error)
+    console.error('[QUESTIONS] Competition not found for id/slug:', id, error)
     notFound()
   }
   
@@ -42,7 +63,7 @@ export default async function CompetitionQuestionsPage({ params }: { params: Pro
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <div className="mb-6">
-              <BackButton fallbackUrl={`/competition/${competition.id}`} label="العودة للمسابقة" />
+              <BackButton fallbackUrl={`/competition/${encodeURIComponent(competition.id)}`} label="العودة للمسابقة" />
             </div>
 
             {/* Page Header */}
@@ -164,7 +185,7 @@ export default async function CompetitionQuestionsPage({ params }: { params: Pro
                     </div>
                   </div>
                   <Link
-                    href={`/competition/${competition.id}/participate`}
+                    href={`/competition/${encodeURIComponent(competition.id)}/participate`}
                     className="bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 whitespace-nowrap"
                   >
                     ابدأ المشاركة الآن

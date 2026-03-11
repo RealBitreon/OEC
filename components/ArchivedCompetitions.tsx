@@ -137,14 +137,14 @@ export default function ArchivedCompetitions() {
 
                   <div className="flex gap-2">
                     <Link
-                      href={`/competition/${comp.id}`}
+                      href={`/competition/${encodeURIComponent(comp.id)}`}
                       className="flex-1 btn-secondary text-center text-sm py-2"
                     >
                       التفاصيل
                     </Link>
                     {winner && (
                       <Link
-                        href={`/competition/${comp.id}/wheel`}
+                        href={`/competition/${encodeURIComponent(comp.id)}/wheel`}
                         className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold rounded-lg transition-all text-center text-sm py-2"
                       >
                         🎡 العجلة
